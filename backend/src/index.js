@@ -1,12 +1,12 @@
-const express = require('express')
-const mongoose = require('mongoose')
-const cors = require('cors')
-require('dotenv').config()
+const express = require('express');
+const hbs = require('hbs');
+const path = require('path');
+require('dotenv').config();
 
-const app = express()
+// 1. CREIAMO L'APP (Questa riga DEVE stare sopra le altre)
+const app = express(); 
 
-app.use(cors())
-app.use(express.json())
+const port = process.env.PORT || 3000;
 
 const authRoutes = require('./routes/auth')
 const museiRoutes = require('./routes/musei')
@@ -18,18 +18,18 @@ app.use('/api/items', itemsRoutes)
 app.use('/api/visite', visiteRoutes)
 
 // Route di test
-app.get('/', (req, res) => {
-  res.json({ messaggio: 'ArtAround backend funziona' })
-})
+// 2. CONFIGURIAMO L'APP
+app.set('view engine', 'hbs');
 
-// Connessione MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connesso a MongoDB')
-    app.listen(process.env.PORT, () => {
-      console.log(`Server avviato sulla porta ${process.env.PORT}`)
-    })
-  })
-  .catch(err => {console.error('Errore connessione MongoDB:', err);
-  process.exit(1);
-  })
+// Qui diciamo a Node che la cartella 'views' è un livello sopra rispetto a 'src'
+app.set('views', path.join(__dirname, '../view'));
+
+// 3. DEFINIAMO LE ROTTE
+app.get('/', (req, res) => {
+    res.render('marketplace'); 
+});
+
+// 4. ACCENDIAMO IL MOTORE
+app.listen(port, () => {
+    console.log(`Server acceso su http://localhost:${port}`);
+});
