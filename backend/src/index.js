@@ -1,35 +1,47 @@
 const express = require('express');
 const hbs = require('hbs');
 const path = require('path');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
-// 1. CREIAMO L'APP (Questa riga DEVE stare sopra le altre)
 const app = express(); 
-
 const port = process.env.PORT || 3000;
 
-const authRoutes = require('./routes/auth')
-const museiRoutes = require('./routes/musei')
-const itemsRoutes = require('./routes/items')
-const visiteRoutes = require('./routes/visite')
-app.use('/api/auth', authRoutes)
-app.use('/api/musei', museiRoutes)
-app.use('/api/items', itemsRoutes)
-app.use('/api/visite', visiteRoutes)
+// Importiamo i modelli di Daniel (User e Museo)
+const Utente = require('./models/Utente'); 
+const Museo = require('./models/Museo'); 
 
-// Route di test
-// 2. CONFIGURIAMO L'APP
+// Rotte API di Daniel
+const authRoutes = require('./routes/auth');
+const museiRoutes = require('./routes/musei');
+const itemsRoutes = require('./routes/items');
+const visiteRoutes = require('./routes/visite');
+
+app.use(express.json());
+app.use('/api/auth', authRoutes);
+app.use('/api/musei', museiRoutes);
+app.use('/api/items', itemsRoutes);
+app.use('/api/visite', visiteRoutes);
+
 app.set('view engine', 'hbs');
-
-// Qui diciamo a Node che la cartella 'views' è un livello sopra rispetto a 'src'
 app.set('views', path.join(__dirname, '../view'));
 
-// 3. DEFINIAMO LE ROTTE
-app.get('/', (req, res) => {
-    res.render('marketplace'); 
+// Connessione al DB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connesso al Database di Daniel'))
+  .catch(err => console.error('❌ Errore di connessione al DB:', err));
+
+// Tua rotta Marketplace
+app.get('/', async (req, res) => {
+    try {
+        // Leggiamo solo quello che c'è davvero nel database
+        const listaMusei = await Museo.find(); 
+        res.render('marketplace', { utente: "Mattia", musei: listaMusei });
+    } catch (error) {
+        res.render('marketplace', { utente: "Mattia", musei: [] });
+    }
 });
 
-// 4. ACCENDIAMO IL MOTORE
 app.listen(port, () => {
-    console.log(`Server acceso su http://localhost:${port}`);
+    console.log(`🚀 Server pronto su http://localhost:${port}`);
 });
