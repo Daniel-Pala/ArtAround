@@ -8,10 +8,14 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const authRoutes = require('./src/routes/auth')
-const museiRoutes = require('./src/routes/musei')
+const authRoutes = require('./routes/auth')
+const museiRoutes = require('./routes/musei')
+const itemsRoutes = require('./routes/items')
+const visiteRoutes = require('./routes/visite')
 app.use('/api/auth', authRoutes)
 app.use('/api/musei', museiRoutes)
+app.use('/api/items', itemsRoutes)
+app.use('/api/visite', visiteRoutes)
 
 // Route di test
 app.get('/', (req, res) => {

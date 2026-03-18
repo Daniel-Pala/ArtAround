@@ -4,11 +4,15 @@ const Item = require('../models/Item')
 
 router.get('/', async (req, res) => {
   try {
-    const { museoId, livello } = req.query
-    const filtro = {}
+    //cerca in url se è presente un museoId, se sì filtra gli item per quel museo, altrimenti ritorna tutti gli item
+    //es . /api/items?museoId=1234
+    const { museoId, livello } = req.query 
+    //oggetto filtro per non avere museoId undefined
+    const filtro = {} 
     if (museoId){
         filtro.museoId = museoId
     } 
+    // items è composto dal nome dell'autore e dal nome del museo, grazie a populate
     const items = await Item.find(filtro).populate('autoreId', 'username').populate('museoId', 'nome')
     res.json(items)
   } catch (err) {
@@ -16,6 +20,7 @@ router.get('/', async (req, res) => {
   }
 })
 
+//ritorna un item specifico per id, con i dati dell'autore e del museo
 router.get('/:id', async (req, res) => {
   try {
     const item = await Item.findById(req.params.id).populate('autoreId', 'username').populate('museoId', 'nome')
