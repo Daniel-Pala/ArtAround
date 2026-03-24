@@ -1,32 +1,35 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors'); // Serve per far parlare frontend e backend separati
-require('dotenv').config();
+const express = require('express')
+const mongoose = require('mongoose')
+const cors = require('cors')
+require('dotenv').config()
 
-const app = express();
-const port = process.env.PORT || 3000;
+const app = express()
 
-// Importiamo le rotte di Daniel
-const authRoutes = require('./routes/auth');
-const museiRoutes = require('./routes/musei');
-const itemsRoutes = require('./routes/items');
-const visiteRoutes = require('./routes/visite');
+app.use(cors())
+app.use(express.json())
 
-// Middleware
-app.use(express.json());
-app.use(cors()); // Permette al tuo Marketplace di fare chiamate API senza essere bloccato
+const authRoutes = require('./routes/auth')
+const museiRoutes = require('./routes/musei')
+const itemsRoutes = require('./routes/items')
+const visiteRoutes = require('./routes/visite')
+app.use('/api/auth', authRoutes)
+app.use('/api/musei', museiRoutes)
+app.use('/api/items', itemsRoutes)
+app.use('/api/visite', visiteRoutes)
 
-// Agganciamo le rotte di Daniel
-app.use('/api/auth', authRoutes);
-app.use('/api/musei', museiRoutes);
-app.use('/api/items', itemsRoutes);
-app.use('/api/visite', visiteRoutes);
+// Route di test
+app.get('/', (req, res) => {
+  res.json({ messaggio: 'ArtAround backend funziona' })
+})
 
-// Connessione al DB
+// Connessione MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connesso al Database di Daniel'))
-  .catch(err => console.error('❌ Errore DB:', err));
-
-app.listen(port, () => {
-    console.log(`🚀 Backend API acceso su http://localhost:${port}`);
-});
+  .then(() => {
+    console.log('Connesso a MongoDB')
+    app.listen(process.env.PORT, () => {
+      console.log(`Server avviato sulla porta ${process.env.PORT}`)
+    })
+  })
+  .catch(err => {console.error('Errore connessione MongoDB:', err);
+  process.exit(1);
+  })
