@@ -1,45 +1,43 @@
-// Appena la pagina si carica, eseguiamo questa funzione
+const API_URL = 'http://localhost:3000/api/musei';
+
+// 1. Caricamento iniziale
 document.addEventListener('DOMContentLoaded', () => {
     caricaMusei();
 });
 
-// Funzione che chiama l'API costruita da Daniel
+// 2. Funzione per LEGGERE i musei (GET)
 async function caricaMusei() {
     try {
-        // Facciamo una chiamata GET alla rotta creata da Daniel
-        const response = await fetch('http://localhost:3000/api/musei');
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error("Errore nel server");
         
-        if (!response.ok) throw new Error("Errore nella risposta del server");
-        
-        const musei = await response.json(); // Trasformiamo la risposta in JSON
+        const musei = await response.json();
         disegnaTabella(musei);
-
     } catch (error) {
-        console.error('Errore durante il caricamento:', error);
+        console.error('Errore:', error);
         document.getElementById('tabella-musei').innerHTML = `
-            <tr><td colspan="3" class="text-danger">Impossibile collegarsi al database. Assicurati che il backend sia acceso.</td></tr>
+            <tr><td colspan="3" class="text-center text-danger">Errore di connessione al backend.</td></tr>
         `;
     }
 }
 
-// Funzione che prende i dati JSON e costruisce le righe HTML
+// 3. Funzione per mostrare i dati nella tabella
 function disegnaTabella(musei) {
     const tbody = document.getElementById('tabella-musei');
-    tbody.innerHTML = ''; // Svuotiamo la scritta "Caricamento in corso..."
+    tbody.innerHTML = '';
 
     if (musei.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">Nessun museo trovato nel database.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nessun museo in archivio.</td></tr>';
         return;
     }
 
-    // Per ogni museo, creiamo una riga (<tr>) e la aggiungiamo alla tabella
     musei.forEach(museo => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${museo.nome}</strong></td>
-            <td>${museo.citta || 'Non specificata'}</td>
-            <td>
-                <button class="btn btn-success btn-sm" onclick="selezionaMuseo('${museo._id}')">
+            <td>${museo.citta || 'N/A'}</td>
+            <td class="text-end">
+                <button class="btn btn-outline-primary btn-sm" onclick="selezionaMuseo('${museo._id}')">
                     Configura Visita
                 </button>
             </td>
@@ -48,7 +46,38 @@ function disegnaTabella(musei) {
     });
 }
 
+// 4. Funzione per CREARE un museo (POST)
+document.getElementById('formCreaMuseo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+        nome: document.getElementById('nomeMuseo').value,
+        citta: document.getElementById('cittaMuseo').value
+    };
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            alert('Museo creato!');
+            // Chiudi il modal e resetta
+            const modalEl = document.getElementById('modalNuovoMuseo');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+            document.getElementById('formCreaMuseo').reset();
+            
+            // Aggiorna la lista subito
+            caricaMusei();
+        }
+    } catch (error) {
+        alert('Errore durante il salvataggio.');
+    }
+});
+
 function selezionaMuseo(id) {
-    // In futuro, questo manderà alla pagina della singola visita
-    alert("Hai cliccato il museo con ID: " + id);
+    alert("Hai selezionato il museo ID: " + id);
 }
