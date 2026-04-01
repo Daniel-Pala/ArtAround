@@ -79,5 +79,6 @@ document.getElementById('formCreaMuseo').addEventListener('submit', async (e) =>
 });
 
 function selezionaMuseo(id) {
-    alert("Hai selezionato il museo ID: " + id);
+    // Reindirizziamo l'utente alla nuova pagina, passando l'ID nell'URL
+    window.location.href = `configura.html?id=${id}`;
 }
