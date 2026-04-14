@@ -8,10 +8,9 @@ router.get('/', async (req, res) => {
     //es . /api/items?museoId=1234
     const { museoId, livello } = req.query 
     //oggetto filtro per non avere museoId undefined
-    const filtro = {} 
-    if (museoId){
-        filtro.museoId = museoId
-    } 
+    const filtro = {}
+    if (museoId) filtro.museoId = museoId
+    if (livello) filtro['testi.livello'] = livello
     // items è composto dal nome dell'autore e dal nome del museo, grazie a populate
     const items = await Item.find(filtro).populate('autoreId', 'username').populate('museoId', 'nome')
     res.json(items)
