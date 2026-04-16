@@ -1,84 +1,117 @@
-const API_URL = 'http://localhost:3000/api/musei';
-
-// 1. Caricamento iniziale
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("App.js caricato: provo a recuperare i musei...");
     caricaMusei();
+
+    // Colleghiamo la funzione di creazione al form dell'HTML
+    const formCreaMuseo = document.getElementById('formCreaMuseo');
+    if (formCreaMuseo) {
+        formCreaMuseo.addEventListener('submit', creaMuseo);
+    }
 });
 
-// 2. Funzione per LEGGERE i musei (GET)
 async function caricaMusei() {
+    const tableBody = document.getElementById('tabella-musei');
+    
     try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error("Errore nel server");
+        const response = await fetch('http://localhost:3000/api/musei');
+        
+        if (!response.ok) {
+            throw new Error(`Errore dal server: ${response.status}`);
+        }
         
         const musei = await response.json();
-        disegnaTabella(musei);
+        console.log("Musei recuperati con successo:", musei);
+
+        tableBody.innerHTML = ''; // Svuota la scritta "Caricamento in corso..."
+
+        if (musei.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center">Nessun museo presente. Aggiungine uno!</td></tr>';
+            return;
+        }
+
+        musei.forEach(museo => {
+            const row = `
+                <tr>
+                    <td class="align-middle"><strong>${museo.nome}</strong></td>
+                    <td class="align-middle">${museo.citta || 'N/D'}</td>
+                    <td class="text-end">
+                        <button class="btn btn-primary btn-sm me-2" onclick="selezionaMuseo('${museo._id}')">
+                            Configura Visita
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="eliminaMuseo('${museo._id}')">
+                            🗑️ Elimina
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
     } catch (error) {
-        console.error('Errore:', error);
-        document.getElementById('tabella-musei').innerHTML = `
-            <tr><td colspan="3" class="text-center text-danger">Errore di connessione al backend.</td></tr>
-        `;
+        console.error("Ops! C'è stato un problema nella fetch:", error);
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger fw-bold">Errore di connessione al backend. Assicurati che il server sia acceso (npm start).</td></tr>';
     }
 }
 
-// 3. Funzione per mostrare i dati nella tabella
-function disegnaTabella(musei) {
-    const tbody = document.getElementById('tabella-musei');
-    tbody.innerHTML = '';
+function selezionaMuseo(id) {
+    window.location.href = `configura.html?id=${id}`;
+}
 
-    if (musei.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nessun museo in archivio.</td></tr>';
+async function eliminaMuseo(id) {
+    if (confirm("Sei sicuro di voler eliminare questo museo in modo definitivo?")) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/musei/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                console.log("Museo eliminato correttamente.");
+                caricaMusei(); // Ricarica la tabella da zero
+            } else {
+                alert("Errore durante l'eliminazione dal database.");
+            }
+        } catch (error) {
+            console.error("Errore nella richiesta di eliminazione:", error);
+            alert("Impossibile connettersi al server per eliminare.");
+        }
+    }
+}
+
+async function creaMuseo(event) {
+    // Evita che la pagina si ricarichi quando si clicca "Salva"
+    event.preventDefault(); 
+
+    const nome = document.getElementById('nomeMuseo').value;
+    const citta = document.getElementById('cittaMuseo').value;
+
+    if (!nome) {
+        alert("Inserisci almeno il nome!");
         return;
     }
 
-    musei.forEach(museo => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${museo.nome}</strong></td>
-            <td>${museo.citta || 'N/A'}</td>
-            <td class="text-end">
-                <button class="btn btn-outline-primary btn-sm" onclick="selezionaMuseo('${museo._id}')">
-                    Configura Visita
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// 4. Funzione per CREARE un museo (POST)
-document.getElementById('formCreaMuseo').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const data = {
-        nome: document.getElementById('nomeMuseo').value,
-        citta: document.getElementById('cittaMuseo').value
-    };
-
     try {
-        const response = await fetch(API_URL, {
+        const response = await fetch('http://localhost:3000/api/musei', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ nome, citta })
         });
 
         if (response.ok) {
-            alert('Museo creato!');
-            // Chiudi il modal e resetta
-            const modalEl = document.getElementById('modalNuovoMuseo');
-            const modal = bootstrap.Modal.getInstance(modalEl);
+            console.log("Nuovo museo creato con successo!");
+            // Chiude la finestra popup usando l'ID corretto del tuo HTML
+            const modalElement = document.getElementById('modalNuovoMuseo');
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
             modal.hide();
-            document.getElementById('formCreaMuseo').reset();
             
-            // Aggiorna la lista subito
-            caricaMusei();
+            // Resetta i campi testuali
+            document.getElementById('nomeMuseo').value = '';
+            document.getElementById('cittaMuseo').value = '';
+            
+            caricaMusei(); // Ricarica la tabella
+        } else {
+            alert("Errore dal server durante la creazione.");
         }
     } catch (error) {
-        alert('Errore durante il salvataggio.');
+        console.error("Errore creazione museo:", error);
+        alert("Impossibile connettersi al server per creare il museo.");
     }
-});
-
-function selezionaMuseo(id) {
-    // Reindirizziamo l'utente alla nuova pagina, passando l'ID nell'URL
-    window.location.href = `configura.html?id=${id}`;
 }
