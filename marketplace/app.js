@@ -1,13 +1,47 @@
-document.addEventListener('DOMContentLoaded', getMusei);
+// =============================================================================
+// app.js — dashboard musei (index.html)
+// =============================================================================
+// Lo <script src="app.js"> sta in fondo al <body> di index.html, quindi quando
+// questo file parte il DOM è già completo. Non serve DOMContentLoaded.
+// =============================================================================
+
+
+// --- GUARDIA DI ACCESSO ---------------------------------------------------
+// richiediLogin() vive in auth.js: se non c'è utente in localStorage redirige
+// a login.html e tutto quello che c'è sotto non viene eseguito.
+richiediLogin();
+
+
+// --- NAVBAR: saluto utente + logout ---------------------------------------
+// Sostituiamo il contenuto di #userBox (che nell'HTML contiene già il bottone
+// Logout) aggiungendo il saluto. Poi riattacchiamo il listener al bottone
+// nuovo (quello vecchio è stato distrutto dall'innerHTML).
+const utente = getUtenteLoggato();
+document.getElementById('userBox').innerHTML = `
+    <span class="navbar-text text-light me-3">
+        Ciao, <strong>${utente.username}</strong>
+    </span>
+    <button class="btn btn-outline-light btn-sm" id="btnLogout">
+        <i class="bi bi-box-arrow-right me-1"></i>Logout
+    </button>
+`;
+document.getElementById('btnLogout').addEventListener('click', logout);
+
+
+// --- CARICAMENTO INIZIALE -------------------------------------------------
+getMusei();
+
+
+// --- FUNZIONI -------------------------------------------------------------
 
 async function getMusei() {
     try {
         const response = await fetch('http://localhost:3000/api/musei');
         const musei = await response.json();
-        
+
         // Aggiorna il contatore in alto
         document.getElementById('countMusei').innerText = musei.length;
-        
+
         const container = document.getElementById('listaMusei');
         container.innerHTML = '';
 
@@ -52,7 +86,7 @@ document.getElementById('formMuseo').addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
-            location.reload(); 
+            location.reload();
         }
     } catch (error) {
         alert("Errore durante il salvataggio");
@@ -68,7 +102,7 @@ async function eliminaMuseo(id) {
         });
 
         if (response.ok) {
-            getMusei(); 
+            getMusei();
         } else {
             alert("Errore durante l'eliminazione");
         }
