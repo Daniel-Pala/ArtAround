@@ -1,12 +1,17 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
+const path = require('path')
 require('dotenv').config()
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
+
+// Serve i file statici del marketplace (login.html, index.html, app.js, ecc.)
+// così tutto vive sotto http://localhost:3000 — stesso origin, un solo localStorage.
+app.use(express.static(path.join(__dirname, '../../marketplace')))
 
 const authRoutes = require('./routes/auth')
 const museiRoutes = require('./routes/musei')
