@@ -2,6 +2,7 @@
 let opereDisponibili = [];
 let opereSelezionate = [];
 let museoIdAttuale = null;
+richiediLogin(); // Assicurati che l'utente sia autenticato prima di caricare i dati
 
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
