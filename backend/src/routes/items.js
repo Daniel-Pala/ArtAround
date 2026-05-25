@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Item = require('../models/Item')
+const { richiediAutore, richiediProprietario } = require('../middleware/auth')
 
 router.get('/', async (req, res) => {
   try {
@@ -8,7 +9,7 @@ router.get('/', async (req, res) => {
     //es . /api/items?museoId=1234
     const { museoId, livello } = req.query;
     const filtro = {};
-    
+
     if (museoId) filtro.museoId = museoId;
     if (livello) filtro['testi.livello'] = livello;
     // items è composto dal nome dell'autore e dal nome del museo, grazie a populate
@@ -30,9 +31,10 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', richiediAutore, async (req, res) => {
   try {
-    const item = new Item(req.body)
+    // autoreId viene SEMPRE dal token, mai dal body, così nessuno può fingersi un altro autore
+    const item = new Item({ ...req.body, autoreId: req.user.userId })
     await item.save()
     res.status(201).json(item)
   } catch (err) {
@@ -40,17 +42,18 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', richiediProprietario(id => Item.findById(id)), async (req, res) => {
   try {
-    const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true })
-    if (!item) return res.status(404).json({ message: 'Item non trovato' })
+    // non lasciamo cambiare autoreId via body
+    const { autoreId, ...aggiornamento } = req.body
+    const item = await Item.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
     res.json(item)
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', richiediProprietario(id => Item.findById(id)), async (req, res) => {
   try {
     await Item.findByIdAndDelete(req.params.id)
     res.json({ messaggio: 'Item eliminato' })

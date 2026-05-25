@@ -131,7 +131,7 @@ async function creaMuseo(e) {
     const citta = document.getElementById('cittaMuseo').value;
 
     try {
-        const response = await fetch(`${API_URL}/musei`, {
+        const response = await fetchAuth(`${API_URL}/musei`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nome, citta })
@@ -143,6 +143,9 @@ async function creaMuseo(e) {
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
             getMusei();
+        } else {
+            const err = await response.json();
+            alert(err.message || "Errore durante il salvataggio");
         }
     } catch (error) {
         alert("Errore durante il salvataggio");
@@ -152,7 +155,12 @@ async function creaMuseo(e) {
 async function eliminaMuseo(id) {
     if (!confirm("Sei sicuro?")) return;
     try {
-        await fetch(`${API_URL}/musei/${id}`, { method: 'DELETE' });
+        const res = await fetchAuth(`${API_URL}/musei/${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.message || "Errore nell'eliminazione");
+            return;
+        }
         getMusei();
     } catch (error) {
         alert("Errore nell'eliminazione");
@@ -208,18 +216,18 @@ async function creaOpera(e) {
         });
     });
 
+    // autoreId lo mette il backend dal token, non lo mandiamo dal client
     const payload = {
         operaId: document.getElementById('operaWikidata').value,
         museoId: museoIdOpera,
         titolo: document.getElementById('operaTitolo').value,
         testi: testi,
-        autoreId: utente.userId,
         licenza: document.getElementById('operaLicenza').value,
         prezzo: parseFloat(document.getElementById('operaPrezzo').value) || 0
     };
 
     try {
-        const res = await fetch(`${API_URL}/items`, {
+        const res = await fetchAuth(`${API_URL}/items`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -227,6 +235,9 @@ async function creaOpera(e) {
         if (res.ok) {
             alert("Opera creata!");
             bootstrap.Modal.getInstance(document.getElementById('modalNuovaOpera')).hide();
+        } else {
+            const err = await res.json();
+            alert(err.message || "Errore salvataggio opera");
         }
     } catch (err) { alert("Errore salvataggio opera"); }
 }
@@ -251,7 +262,12 @@ async function visualizzaVisite(id, nome) {
 
 async function eliminaVisita(id, mId, mNome) {
     if (!confirm("Eliminare visita?")) return;
-    await fetch(`${API_URL}/visite/${id}`, { method: 'DELETE' });
+    const res = await fetchAuth(`${API_URL}/visite/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || "Errore eliminazione visita");
+        return;
+    }
     visualizzaVisite(mId, mNome);
 }
 

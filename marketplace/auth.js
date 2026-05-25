@@ -4,7 +4,7 @@
 // Questo file fa due cose:
 //   1) gestisce i form di login/register su login.html
 //   2) esporta funzioni che le ALTRE pagine (index.html, configura.html)
-//      possono usare per sapere chi è loggato.
+//      possono usare per sapere chi è loggato e fare chiamate autenticate.
 // =============================================================================
 
 
@@ -25,7 +25,7 @@ function salvaUtente(utente) {
 }
 
 // Legge l'utente loggato dal localStorage.
-// Ritorna null se non c'è nessuno, altrimenti l'oggetto { userId, username, ruolo }.
+// Ritorna null se non c'è nessuno, altrimenti l'oggetto { userId, username, ruolo, token }.
 function getUtenteLoggato() {
     const raw = localStorage.getItem('utente');
     if (!raw) return null;
@@ -44,6 +44,23 @@ function richiediLogin() {
     if (!getUtenteLoggato()) {
         window.location.href = 'login.html';
     }
+}
+
+// fetch con header Authorization: Bearer <token> automatico.
+// Usalo per qualsiasi POST/PUT/DELETE che colpisce route protette del backend.
+// Se il backend ritorna 401 (token scaduto/non valido) facciamo logout d'ufficio.
+async function fetchAuth(url, options = {}) {
+    const utente = getUtenteLoggato();
+    const headers = { ...(options.headers || {}) };
+    if (utente && utente.token) {
+        headers['Authorization'] = `Bearer ${utente.token}`;
+    }
+    const res = await fetch(url, { ...options, headers });
+    if (res.status === 401) {
+        // token mancante o scaduto: butta fuori l'utente
+        logout();
+    }
+    return res;
 }
 
 
@@ -76,49 +93,37 @@ if (formLogin) {
     }
 
     // ============ HANDLER LOGIN ============
-    // addEventListener('submit', ...) intercetta l'invio del form.
-    // 'async' ci permette di usare 'await' dentro la funzione.
     formLogin.addEventListener('submit', async (e) => {
-        // preventDefault() blocca il comportamento default del browser
-        // (che sarebbe ricaricare la pagina facendo un GET con i campi in URL).
         e.preventDefault();
 
-        // Leggiamo i valori dai due input.
         const username = document.getElementById('loginUsername').value;
         const password = document.getElementById('loginPassword').value;
 
         try {
-            // fetch() è il modo moderno di fare richieste HTTP dal browser.
-            // Equivale al "axios.post" o "request.post" che hai visto in Node.
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
 
-            // response.json() legge il body e lo parsifica come JSON.
             const data = await response.json();
 
-            // response.ok è true se status code è 2xx, false altrimenti.
             if (!response.ok) {
-                // Il backend ci ha mandato 401 con { message: 'Credenziali errate' }.
                 mostraMessaggio(data.message || 'Errore di login', 'danger');
                 return;
             }
 
-            // Login riuscito: il backend ci ha mandato { userId, username, ruolo }.
-            // Salviamo nel localStorage e mandiamo l'utente alla dashboard.
+            // Login riuscito: il backend ci ha mandato { userId, username, ruolo, token }.
             salvaUtente({
                 userId: data.userId,
                 username: data.username,
-                ruolo: data.ruolo
+                ruolo: data.ruolo,
+                token: data.token
             });
 
             window.location.href = 'index.html';
 
         } catch (err) {
-            // Questo catch scatta solo per errori di rete (server down, no internet),
-            // non per errori HTTP. Per quelli c'è il check response.ok sopra.
             console.error(err);
             mostraMessaggio('Server non raggiungibile. Avvia il backend.', 'danger');
         }
@@ -144,14 +149,11 @@ if (formRegister) {
             const data = await response.json();
 
             if (!response.ok) {
-                // Tipico errore qui: username già esistente (Mongoose unique).
                 mostraMessaggio(data.message || 'Errore in registrazione', 'danger');
                 return;
             }
 
-            // Registrazione riuscita. Il tuo backend ora NON fa login automatico:
-            // ritorna solo { messaggio, username }. Quindi facciamo subito una
-            // chiamata di login per ottenere userId e ruolo.
+            // Register ok → facciamo subito login per ottenere il token.
             mostraMessaggio('Account creato! Accesso in corso...', 'success');
 
             const loginResp = await fetch(`${API_URL}/auth/login`, {
@@ -164,7 +166,8 @@ if (formRegister) {
             salvaUtente({
                 userId: loginData.userId,
                 username: loginData.username,
-                ruolo: loginData.ruolo
+                ruolo: loginData.ruolo,
+                token: loginData.token
             });
 
             window.location.href = 'index.html';

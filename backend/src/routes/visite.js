@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Visita = require('../models/Visita')
+const { richiediAutore, richiediProprietario } = require('../middleware/auth')
 
 router.get('/', async (req, res) => {
   try {
@@ -29,9 +30,10 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', richiediAutore, async (req, res) => {
   try {
-    const visita = new Visita(req.body)
+    // autoreId viene SEMPRE dal token
+    const visita = new Visita({ ...req.body, autoreId: req.user.userId })
     await visita.save()
     res.status(201).json(visita)
   } catch (err) {
@@ -39,17 +41,17 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', richiediProprietario(id => Visita.findById(id)), async (req, res) => {
   try {
-    const visita = await Visita.findByIdAndUpdate(req.params.id, req.body, { new: true })
-    if (!visita) return res.status(404).json({ message: 'Visita non trovata' })
+    const { autoreId, ...aggiornamento } = req.body
+    const visita = await Visita.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
     res.json(visita)
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', richiediProprietario(id => Visita.findById(id)), async (req, res) => {
   try {
     await Visita.findByIdAndDelete(req.params.id)
     res.json({ messaggio: 'Visita eliminata' })

@@ -204,9 +204,7 @@ async function salvaVisita() {
         return;
     }
 
-    const utente = getUtenteLoggato();
-    
-    // Raccogli dati aggiuntivi se presenti
+    // autoreId lo mette il backend dal token, non lo mandiamo dal client
     const infoLogistiche = document.getElementById('infoLogistiche')?.value || '';
     const prezzo = parseFloat(document.getElementById('prezzoVisita')?.value) || 0;
     const pubblica = document.getElementById('pubblicaVisita')?.checked || false;
@@ -214,7 +212,6 @@ async function salvaVisita() {
     const payload = {
         nome: nomeVisita,
         museoId: museoIdAttuale,
-        autoreId: utente.userId,
         items: opereSelezionate.map((opera, index) => ({
             itemId: opera._id,
             ordine: index + 1
@@ -239,7 +236,7 @@ async function salvaVisita() {
             endpoint = `${API_URL}/visite`;
         }
 
-        response = await fetch(endpoint, {
+        response = await fetchAuth(endpoint, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

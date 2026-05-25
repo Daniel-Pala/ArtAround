@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Museo = require('../models/Museo')
+const { richiediAutore } = require('../middleware/auth')
 
 router.get('/', async (req, res) => {
   try {
@@ -11,7 +12,7 @@ router.get('/', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', richiediAutore, async (req, res) => {
   try {
     const museo = new Museo(req.body)
     await museo.save()
@@ -31,7 +32,7 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', richiediAutore, async (req, res) => {
   try {
     const museo = await Museo.findByIdAndUpdate(req.params.id, req.body, { new: true })
     if (!museo) return res.status(404).json({ message: 'Museo non trovato' })
@@ -41,7 +42,7 @@ router.put('/:id', async (req, res) => {
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', richiediAutore, async (req, res) => {
   try {
     await Museo.findByIdAndDelete(req.params.id)
     res.json({ messaggio: 'Museo eliminato' })
