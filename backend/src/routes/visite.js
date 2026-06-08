@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Visita = require('../models/Visita')
-const { richiediAutore, richiediProprietario } = require('../middleware/auth')
+const { richiediAutore } = require('../middleware/auth')
 
 router.get('/', async (req, res) => {
   try {
@@ -41,18 +41,28 @@ router.post('/', richiediAutore, async (req, res) => {
   }
 })
 
-router.put('/:id', richiediProprietario(id => Visita.findById(id)), async (req, res) => {
+router.put('/:id', richiediAutore, async (req, res) => {
   try {
+    const visita = await Visita.findById(req.params.id)
+    if (!visita) return res.status(404).json({ message: 'Visita non trovata' })
+    if (String(visita.autoreId) !== req.user.userId) {
+      return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' })
+    }
     const { autoreId, ...aggiornamento } = req.body
-    const visita = await Visita.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
-    res.json(visita)
+    const visitaAggiornata = await Visita.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
+    res.json(visitaAggiornata)
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
 })
 
-router.delete('/:id', richiediProprietario(id => Visita.findById(id)), async (req, res) => {
+router.delete('/:id', richiediAutore, async (req, res) => {
   try {
+    const visita = await Visita.findById(req.params.id)
+    if (!visita) return res.status(404).json({ message: 'Visita non trovata' })
+    if (String(visita.autoreId) !== req.user.userId) {
+      return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' })
+    }
     await Visita.findByIdAndDelete(req.params.id)
     res.json({ messaggio: 'Visita eliminata' })
   } catch (err) {

@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Item = require('../models/Item')
-const { richiediAutore, richiediProprietario } = require('../middleware/auth')
+const { richiediAutore } = require('../middleware/auth')
 
 router.get('/', async (req, res) => {
   try {
@@ -42,19 +42,28 @@ router.post('/', richiediAutore, async (req, res) => {
   }
 })
 
-router.put('/:id', richiediProprietario(id => Item.findById(id)), async (req, res) => {
+router.put('/:id', richiediAutore, async (req, res) => {
   try {
-    // non lasciamo cambiare autoreId via body
+    const item = await Item.findById(req.params.id)
+    if (!item) return res.status(404).json({ message: 'Item non trovato' })
+    if (String(item.autoreId) !== req.user.userId) {
+      return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' })
+    }
     const { autoreId, ...aggiornamento } = req.body
-    const item = await Item.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
-    res.json(item)
+    const itemAggiornato = await Item.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
+    res.json(itemAggiornato)
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
 })
 
-router.delete('/:id', richiediProprietario(id => Item.findById(id)), async (req, res) => {
+router.delete('/:id', richiediAutore, async (req, res) => {
   try {
+    const item = await Item.findById(req.params.id)
+    if (!item) return res.status(404).json({ message: 'Item non trovato' })
+    if (String(item.autoreId) !== req.user.userId) {
+      return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' })
+    }
     await Item.findByIdAndDelete(req.params.id)
     res.json({ messaggio: 'Item eliminato' })
   } catch (err) {
