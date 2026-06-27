@@ -4,12 +4,11 @@ const Utente = require('../models/Utente')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
-// Genera un JWT firmato con userId e ruolo. Scadenza 7 giorni.
+// Genera un JWT firmato con userId e ruolo. Non scade (progetto non pubblicato).
 function generaToken(utente) {
   return jwt.sign(
     { userId: utente._id, ruolo: utente.ruolo },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    process.env.JWT_SECRET
   )
 }
 

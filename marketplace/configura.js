@@ -8,7 +8,7 @@ let opereSelezionate = [];
 let museoIdAttuale = null;
 let visitaIdAttuale = null; // Per modifiche di visite esistenti
 
-// API_URL è già dichiarata in auth.js
+// API_URL è già dichiarata in sessione.js
 
 richiediLogin();
 

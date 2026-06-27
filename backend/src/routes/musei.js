@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Museo = require('../models/Museo')
-const { richiediAutore } = require('../middleware/auth')
+const { richiediAutore } = require('../middleware/autorizzazione')
 
 router.get('/', async (req, res) => {
   try {

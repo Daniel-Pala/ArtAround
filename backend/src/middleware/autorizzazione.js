@@ -13,7 +13,7 @@ function richiediAuth(req, res, next) {
     req.user = { userId: payload.userId, ruolo: payload.ruolo }
     next()
   } catch (err) {
-    return res.status(401).json({ message: 'Token non valido o scaduto' })
+    return res.status(401).json({ message: 'Token non valido' })
   }
 }
 

@@ -9,7 +9,7 @@ const testoSchema = new mongoose.Schema({
 const itemSchema = new mongoose.Schema({
   operaId: { type: String, required: true },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
-  descrizione: { type: String, required: false }, // Campo fondamentale
+  descrizione: { type: String}, // Campo fondamentale
   titolo: { type: String, required: true },
   testi: [testoSchema],
   immagine: String,

@@ -1,5 +1,5 @@
 // =============================================================================
-// auth.js — gestione sessione utente lato client
+// sessione.js — gestione sessione utente lato client
 // =============================================================================
 // Questo file fa due cose:
 //   1) gestisce i form di login/register su login.html
@@ -15,7 +15,7 @@ const API_URL = 'http://localhost:3000/api';
 
 
 // -----------------------------------------------------------------------------
-// FUNZIONI DI SESSIONE — usabili da qualsiasi pagina che includa auth.js
+// FUNZIONI DI SESSIONE — usabili da qualsiasi pagina che includa sessione.js
 // -----------------------------------------------------------------------------
 
 // Salva i dati dell'utente loggato nel localStorage del browser.
@@ -79,7 +79,7 @@ function mostraMessaggio(testo, tipo) {
 // LOGICA SPECIFICA DELLA PAGINA login.html
 // -----------------------------------------------------------------------------
 // Tutto quello che riguarda i form sta dentro questo blocco "if",
-// così se carichiamo auth.js da index.html (dove i form non esistono)
+// così se carichiamo sessione.js da index.html (dove i form non esistono)
 // non esplode.
 // -----------------------------------------------------------------------------
 

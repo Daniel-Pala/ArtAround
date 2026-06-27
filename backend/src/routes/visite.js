@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Visita = require('../models/Visita')
-const { richiediAutore } = require('../middleware/auth')
+const { richiediAutore } = require('../middleware/autorizzazione')
 
 router.get('/', async (req, res) => {
   try {

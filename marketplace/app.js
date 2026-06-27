@@ -2,14 +2,14 @@
 // app.js — dashboard principale (versione ultra-robusta)
 // =============================================================================
 
-// API_URL è già dichiarata in auth.js
+// API_URL è già dichiarata in sessione.js
 
 // --- LOG DI AVVIO ---
 console.log("App.js caricato correttamente");
 
-// Assicuriamoci che auth.js sia caricato
+// Assicuriamoci che sessione.js sia caricato
 if (typeof richiediLogin !== 'function') {
-    console.error("ERRORE: auth.js non è caricato correttamente!");
+    console.error("ERRORE: sessione.js non è caricato correttamente!");
 } else {
     richiediLogin();
 }

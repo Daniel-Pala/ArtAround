@@ -9,7 +9,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-app.use('/api/auth', require('./routes/auth'))
+app.use('/api/auth', require('./routes/autenticazione'))
 app.use('/api/musei', require('./routes/musei'))
 app.use('/api/items', require('./routes/items'))
 app.use('/api/visite', require('./routes/visite'))
