@@ -1,31 +1,38 @@
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 
-// Verifica il token JWT nell'header Authorization: Bearer <token>.
-// Se valido, popola req.user con { userId, ruolo }.
-function richiediAuth(req, res, next) {
-  const header = req.headers.authorization
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Token mancante' })
-  }
-  const token = header.slice(7)
+// Middleware per QUALSIASI utente loggato (sia Visitatore che Autore)
+const richiediAutenticazione = (req, res, next) => {
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = { userId: payload.userId, ruolo: payload.ruolo }
-    next()
-  } catch (err) {
-    return res.status(401).json({ message: 'Token non valido' })
+    const authHeader = req.headers.authorization;
+    if (!authHeader) throw new Error('Header mancante');
+    
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Popola req.user con { userId, ruolo, username }
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Autenticazione fallita o token scaduto' });
   }
-}
+};
 
-// Richiede che l'utente sia autenticato e abbia ruolo 'autore'.
-// Da usare per le route POST.
-function richiediAutore(req, res, next) {
-  richiediAuth(req, res, () => {
-    if (req.user.ruolo !== 'autore') {
-      return res.status(403).json({ message: 'Solo gli autori possono eseguire questa azione' })
+// Middleware SOLO per chi ha ruolo 'autore'
+const richiediAutore = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) throw new Error('Header mancante');
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    if (decoded.ruolo !== 'autore') {
+      return res.status(403).json({ message: 'Accesso negato: richiesto ruolo autore' });
     }
-    next()
-  })
-}
+    
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Autenticazione fallita o token scaduto' });
+  }
+};
 
-module.exports = { richiediAuth, richiediAutore }
+module.exports = { richiediAutenticazione, richiediAutore };

@@ -9,10 +9,13 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+// Registrazione delle rotte (Unione tra i file di Daniel e i tuoi)
 app.use('/api/auth', require('./routes/autenticazione'))
 app.use('/api/musei', require('./routes/musei'))
 app.use('/api/items', require('./routes/items'))
 app.use('/api/visite', require('./routes/visite'))
+// Questa è la riga che mancava per far funzionare l'acquisto:
+app.use('/api/utenti', require('./routes/utenti')) 
 
 app.get('/api-status', (req, res) => {
   res.json({ messaggio: 'ArtAround backend funziona' })

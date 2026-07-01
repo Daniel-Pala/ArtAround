@@ -1,46 +1,70 @@
-const express = require('express')
-const router = express.Router()
-const Utente = require('../models/Utente')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const Utente = require('../models/Utente');
 
-// Genera un JWT firmato con userId e ruolo. Non scade (progetto non pubblicato).
-function generaToken(utente) {
-  return jwt.sign(
-    { userId: utente._id, ruolo: utente.ruolo },
-    process.env.JWT_SECRET
-  )
-}
-
+// ==========================================
+// REGISTRAZIONE NUOVO UTENTE
+// ==========================================
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, ruolo } = req.body
-    const utente = new Utente({ username, password, ruolo })
-    await utente.save() //metodo mondgoose per salvare in MongoDB
-    res.status(201).json({ messaggio: 'Utente creato', username })
-  } catch (err) {
-    res.status(400).json({ message: err.message })
-  }
-})
+    const { username, password, ruolo } = req.body;
+    const cleanUsername = username.trim();
 
+    const utenteEsistente = await Utente.findOne({ username: cleanUsername });
+    if (utenteEsistente) {
+      return res.status(400).json({ message: 'Username già in uso. Scegline un altro.' });
+    }
+
+    const nuovoUtente = new Utente({
+      username: cleanUsername,
+      password: password,
+      ruolo: ruolo || 'visitatore'
+    });
+
+    await nuovoUtente.save();
+    res.status(201).json({ message: 'Utente creato con successo' });
+  } catch (err) {
+    console.error("Errore registrazione:", err);
+    res.status(500).json({ message: 'Errore del server durante la registrazione' });
+  }
+});
+
+// ==========================================
+// LOGIN UTENTE
+// ==========================================
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body
-    const utente = await Utente.findOne({ username })
-    if (!utente) return res.status(401).json({ message: 'Credenziali errate' })
-    const valida = await bcrypt.compare(password, utente.password)
-    if (!valida) return res.status(401).json({ message: 'Credenziali errate' })
-    const token = generaToken(utente)
-    res.json({
-      messaggio: 'Login ok',
-      userId: utente._id,
-      username,
-      ruolo: utente.ruolo,
-      token
-    })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
+    const { username, password } = req.body;
+    const cleanUsername = username.trim();
 
-module.exports = router
+    const utente = await Utente.findOne({ username: cleanUsername });
+    if (!utente) {
+      return res.status(401).json({ message: 'Credenziali errate' });
+    }
+
+    const passwordValida = await bcrypt.compare(password, utente.password);
+    if (!passwordValida) {
+      return res.status(401).json({ message: 'Credenziali errate' });
+    }
+
+    const token = jwt.sign(
+      { userId: utente._id, ruolo: utente.ruolo, username: utente.username },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      userId: utente._id,
+      username: utente.username,
+      ruolo: utente.ruolo,
+      token: token
+    });
+  } catch (err) {
+    console.error("Errore login:", err);
+    res.status(500).json({ message: 'Errore del server durante il login' });
+  }
+});
+
+module.exports = router;

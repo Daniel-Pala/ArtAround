@@ -9,6 +9,9 @@ import NuovaOpera from './pages/NuovaOpera';
 import DettaglioOpera from './pages/DettaglioOpera';
 import NuovoPercorso from './pages/NuovoPercorso';
 
+// Importazione della nuova applicazione mobile-first
+import Player from './pages/Player';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -26,6 +29,9 @@ export default function App() {
         <Route path="/percorso/:id/opere" element={<Opere />} />
         <Route path="/percorso/:id/nuova-opera" element={<NuovaOpera />} />
         <Route path="/opera/:id" element={<DettaglioOpera />} />
+        
+        {/* Nuova rotta per il Player dell'utente finale */}
+        <Route path="/player/:visitaId" element={<Player />} />
       </Routes>
     </BrowserRouter>
   );

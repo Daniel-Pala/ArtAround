@@ -13,21 +13,18 @@
         .testo-row { background-color: #f8f9fa; border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; }
         .testo-row.empty { border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; min-height: 80px; }
     </style>
-
 </head>
 <body class="bg-light">
 
     <nav class="navbar navbar-dark bg-primary shadow-sm mb-4">
         <div class="container">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-bank2 me-2"></i>ArtAround</span>
-            <div id="userBox">
-                <button class="btn btn-outline-light btn-sm" id="btnLogout"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
-            </div>
+            <div id="userBox" class="d-flex align-items-center">
+                </div>
         </div>
     </nav>
 
     <div class="container">
-        <!-- SEZIONE AUTORE: Dashboard musei -->
         <div id="sezioneAutore" style="display: none;">
             <div class="row mb-4">
                 <div class="col-md-4">
@@ -68,10 +65,8 @@
                         </table>
                     </div>
                 </div>
-            </card>
-        </div>
+            </div> </div>
 
-        <!-- SEZIONE VISITATORE: Marketplace -->
         <div id="sezioneVisitatore" style="display: none;">
             <div class="row mb-4">
                 <div class="col-12">
@@ -89,7 +84,6 @@
         </div>
     </div>
 
-    <!-- MODAL: Nuovo Museo -->
     <div class="modal fade" id="modalNuovoMuseo" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -114,7 +108,6 @@
         </div>
     </div>
 
-    <!-- MODAL: Nuova Opera -->
     <div class="modal fade" id="modalNuovaOpera" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -128,13 +121,10 @@
                             <label class="form-label fw-bold">Titolo Opera</label>
                             <input type="text" id="operaTitolo" class="form-control" placeholder="es. Ritratto di Giulio II" required>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-bold">ID Wikidata</label>
                             <input type="text" id="operaWikidata" class="form-control" placeholder="es. Q126599960" required>
-                            <small class="text-muted">Codice identificativo dell'opera su Wikidata</small>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-bold">Licenza</label>
                             <select id="operaLicenza" class="form-select" required>
@@ -145,46 +135,14 @@
                                 <option value="Proprietaria">Proprietaria</option>
                             </select>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-bold">Prezzo (€)</label>
-                            <input type="number" id="operaPrezzo" class="form-control" placeholder="0" min="0" step="0.01" value="0">
+                            <input type="number" id="operaPrezzo" class="form-control" min="0" step="0.01" value="0">
                         </div>
-
-                        <hr>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descrizioni Testuali</label>
-                            <small class="text-muted d-block mb-2">Aggiungi varianti di testo per diverse durate e livelli di competenza</small>
-                            <div id="containerTesti"></div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="aggiungiRigaTesto()">
-                                <i class="bi bi-plus-circle me-1"></i>Aggiungi Testo
-                            </button>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                            <button type="submit" class="btn btn-primary">Salva Opera</button>
+                        <div class="footer-modal mt-4">
+                            <button type="submit" class="btn btn-primary w-100">Salva Opera</button>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: Gestione Visite di un Museo -->
-    <div class="modal fade" id="modalGestioneVisite" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Visite per <span id="nomeMuseoVisite"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                    <div id="listaVisiteMuseo"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
                 </div>
             </div>
         </div>

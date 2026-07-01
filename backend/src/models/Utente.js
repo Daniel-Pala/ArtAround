@@ -2,17 +2,17 @@ const mongoose = require("mongoose")
 const bcrypt = require("bcrypt")
 
 const utenteSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true, trim: true },
   password: { type: String, required: true },
   ruolo: { type: String, enum: ['autore', 'visitatore'], default: 'visitatore' },
+  visiteAcquistate: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Visita' }], // Nuova lista acquisti
   createdAt: { type: Date, default: Date.now }
 })
 
-// Cifra la password prima di salvarla
 utenteSchema.pre('save', async function() {
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 10)
-  }
+  if (!this.isModified('password')) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 })
 
 module.exports = mongoose.model("Utente", utenteSchema)
