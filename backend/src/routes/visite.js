@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
       .populate('museoId', 'nome');
     res.json(visite);
   } catch (err) {
+    console.error("Errore recupero visite:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -22,13 +23,23 @@ router.get('/', async (req, res) => {
 // NUOVA: Ottiene SOLO le visite acquistate dall'utente loggato
 router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   try {
-    const utente = await Utente.findById(req.user.userId).populate({
+    const utente = await Utente.findById(req.user.userId);
+    if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
+
+    // CONTROLLO DI SICUREZZA: Se l'utente non ha la lista acquisti o è vuota, restituisci un array vuoto
+    if (!utente.acquisti || utente.acquisti.length === 0) {
+      return res.json([]);
+    }
+
+    // Se l'utente ha degli acquisti, usa populate per prendere i dettagli del museo
+    await utente.populate({
       path: 'acquisti',
       populate: { path: 'museoId', select: 'nome' }
     });
-    if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
+
     res.json(utente.acquisti);
   } catch (err) {
+    console.error("Errore recupero mie-visite:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -43,6 +54,7 @@ router.get('/:id', async (req, res) => {
     if (!visita) return res.status(404).json({ message: 'Visita non trovata' });
     res.json(visita);
   } catch (err) {
+    console.error("Errore recupero singola visita:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -54,7 +66,12 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
     if (!visita) return res.status(404).json({ message: 'Visita non trovata' });
 
     const utente = await Utente.findById(req.user.userId);
+    if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
     
+    if (!utente.acquisti) {
+      utente.acquisti = [];
+    }
+
     if (utente.acquisti.includes(visita._id)) {
       return res.status(400).json({ message: 'Hai già sbloccato questo percorso' });
     }
@@ -64,6 +81,7 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
 
     res.json({ message: 'Percorso sbloccato con successo!', acquisti: utente.acquisti });
   } catch (err) {
+    console.error("Errore durante l'acquisto:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -75,6 +93,7 @@ router.post('/', richiediAutore, async (req, res) => {
     await visita.save();
     res.status(201).json(visita);
   } catch (err) {
+    console.error("Errore creazione visita:", err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -91,6 +110,7 @@ router.put('/:id', richiediAutore, async (req, res) => {
     const visitaAggiornata = await Visita.findByIdAndUpdate(req.params.id, aggiornamento, { new: true });
     res.json(visitaAggiornata);
   } catch (err) {
+    console.error("Errore aggiornamento visita:", err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -106,6 +126,7 @@ router.delete('/:id', richiediAutore, async (req, res) => {
     await Visita.findByIdAndDelete(req.params.id);
     res.json({ messaggio: 'Visita eliminata' });
   } catch (err) {
+    console.error("Errore eliminazione visita:", err);
     res.status(500).json({ message: err.message });
   }
 });

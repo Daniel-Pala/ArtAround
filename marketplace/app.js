@@ -1,5 +1,5 @@
 // =============================================================================
-// app.js — Gestione Dashboard Autore e Visitatore (Versione Corretta + Player)
+// app.js — Gestione Dashboard Autore e Visitatore (Versione Definitiva e Stabile)
 // =============================================================================
 
 console.log("App.js caricato correttamente");
@@ -127,7 +127,6 @@ async function caricaMarketplaceVisitatore() {
     if (!listaVisite) return;
 
     try {
-        // Interroghiamo il database per tutte le visite e per quelle già sbloccate (Logica di Daniel)
         const [resVisite, resAcquisti] = await Promise.all([
             fetch(`${API_URL}/visite`),
             fetchAuth(`${API_URL}/visite/mie-visite`)
@@ -135,10 +134,14 @@ async function caricaMarketplaceVisitatore() {
 
         const visite = await resVisite.json();
         let acquistiIds = [];
+        
         if (resAcquisti.ok) {
             const acquistiRaw = await resAcquisti.json();
-            // Estraiamo solo gli ID delle visite acquistate
-            acquistiIds = acquistiRaw.map(a => typeof a === 'object' ? a._id : a);
+            // FORZATURA STRINGA: assicuriamoci che gli ID vengano salvati come stringhe semplici per poterli confrontare
+            acquistiIds = acquistiRaw.map(a => {
+                if (a && typeof a === 'object' && a._id) return String(a._id);
+                return String(a);
+            });
         }
 
         if (visite.length === 0) {
@@ -148,7 +151,8 @@ async function caricaMarketplaceVisitatore() {
 
         let htmlCards = '';
         visite.forEach(v => {
-            const isAcquistata = acquistiIds.includes(v._id);
+            // Confrontiamo forzando anche l'id del percorso a stringa
+            const isAcquistata = acquistiIds.includes(String(v._id));
             const urlPlayer = `http://localhost:5173/player/${v._id}`;
             
             htmlCards += `
@@ -177,7 +181,6 @@ async function caricaMarketplaceVisitatore() {
     }
 }
 
-// Funzione che comunica con il backend di Daniel
 async function acquistaVisita(visitaId) {
     try {
         const response = await fetchAuth(`${API_URL}/visite/${visitaId}/acquista`, {
@@ -185,13 +188,16 @@ async function acquistaVisita(visitaId) {
         });
 
         if (response.ok) {
-            caricaMarketplaceVisitatore(); // Ricarica e mostra il player
+            // AGGIUNTO POPUP DI SUCCESSO!
+            alert("🎉 Percorso sbloccato con successo!");
+            caricaMarketplaceVisitatore(); // Ricarica la lista per mostrare il bottone verde
         } else {
             const data = await response.json();
             alert(data.message || "Errore durante l'acquisto");
         }
     } catch (error) {
         console.error(error);
+        alert("Si è verificato un errore di rete.");
     }
 }
 
