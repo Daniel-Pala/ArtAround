@@ -88,6 +88,7 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
 // Crea una nuova visita (Solo Autori)
 router.post('/', richiediAutore, async (req, res) => {
   try {
+    //autoreID viene dal token JWT, quindi non può essere manipolato dall'utente
     const visita = new Visita({ ...req.body, autoreId: req.user.userId });
     await visita.save();
     res.status(201).json(visita);

@@ -20,13 +20,13 @@ router.post('/register', async (req, res) => {
     const nuovoUtente = new Utente({
       username: cleanUsername,
       password: password,
-      ruolo: ruolo || 'visitatore'
+      ruolo: ruolo
     });
 
     await nuovoUtente.save();
     res.status(201).json({ message: 'Utente creato con successo' });
   } catch (err) {
-    res.status(500).json({ message: 'Errore del server durante la registrazione' });
+    res.status(400).json({ message: err.message });
   }
 });
 
