@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 
     if (museoId) filtro.museoId = museoId;
     if (livello) filtro['testi.livello'] = livello;
-    // items è composto dal nome dell'autore e dal nome del museo, grazie a populate
+    // items viene arricchito dal nome dell'autore e dal nome del museo, grazie a populate
     const items = await Item.find(filtro).populate('autoreId', 'username').populate('museoId', 'nome')
     res.json(items)
   } catch (err) {
@@ -49,8 +49,7 @@ router.put('/:id', richiediAutore, async (req, res) => {
     if (String(item.autoreId) !== req.user.userId) {
       return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' })
     }
-    const { autoreId, ...aggiornamento } = req.body
-    const itemAggiornato = await Item.findByIdAndUpdate(req.params.id, aggiornamento, { new: true })
+    const itemAggiornato = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true })
     res.json(itemAggiornato)
   } catch (err) {
     res.status(400).json({ message: err.message })

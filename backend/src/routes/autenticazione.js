@@ -26,7 +26,6 @@ router.post('/register', async (req, res) => {
     await nuovoUtente.save();
     res.status(201).json({ message: 'Utente creato con successo' });
   } catch (err) {
-    console.error("Errore registrazione:", err);
     res.status(500).json({ message: 'Errore del server durante la registrazione' });
   }
 });
@@ -51,8 +50,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: utente._id, ruolo: utente.ruolo, username: utente.username },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      process.env.JWT_SECRET
     );
 
     res.json({
@@ -62,7 +60,6 @@ router.post('/login', async (req, res) => {
       token: token
     });
   } catch (err) {
-    console.error("Errore login:", err);
     res.status(500).json({ message: 'Errore del server durante il login' });
   }
 });

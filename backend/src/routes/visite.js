@@ -15,7 +15,6 @@ router.get('/', async (req, res) => {
       .populate('museoId', 'nome');
     res.json(visite);
   } catch (err) {
-    console.error("Errore recupero visite:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -39,7 +38,6 @@ router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
 
     res.json(utente.acquisti);
   } catch (err) {
-    console.error("Errore recupero mie-visite:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -54,7 +52,6 @@ router.get('/:id', async (req, res) => {
     if (!visita) return res.status(404).json({ message: 'Visita non trovata' });
     res.json(visita);
   } catch (err) {
-    console.error("Errore recupero singola visita:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -67,7 +64,7 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
 
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
-    
+
     if (!utente.acquisti) {
       utente.acquisti = [];
     }
@@ -81,7 +78,6 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
 
     res.json({ message: 'Percorso sbloccato con successo!', acquisti: utente.acquisti });
   } catch (err) {
-    console.error("Errore durante l'acquisto:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -93,7 +89,6 @@ router.post('/', richiediAutore, async (req, res) => {
     await visita.save();
     res.status(201).json(visita);
   } catch (err) {
-    console.error("Errore creazione visita:", err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -106,11 +101,9 @@ router.put('/:id', richiediAutore, async (req, res) => {
     if (String(visita.autoreId) !== req.user.userId) {
       return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' });
     }
-    const { autoreId, ...aggiornamento } = req.body;
-    const visitaAggiornata = await Visita.findByIdAndUpdate(req.params.id, aggiornamento, { new: true });
+    const visitaAggiornata = await Visita.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(visitaAggiornata);
   } catch (err) {
-    console.error("Errore aggiornamento visita:", err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -126,7 +119,6 @@ router.delete('/:id', richiediAutore, async (req, res) => {
     await Visita.findByIdAndDelete(req.params.id);
     res.json({ messaggio: 'Visita eliminata' });
   } catch (err) {
-    console.error("Errore eliminazione visita:", err);
     res.status(500).json({ message: err.message });
   }
 });

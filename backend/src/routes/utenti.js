@@ -31,7 +31,6 @@ router.post('/acquista', async (req, res) => {
 
         res.status(200).json({ message: "Acquisto effettuato con successo", utente: utenteAggiornato });
     } catch (error) {
-        console.error("Errore durante l'acquisto:", error);
         res.status(500).json({ error: "Errore interno del server durante l'acquisto" });
     }
 });
