@@ -25,12 +25,11 @@ router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
 
-    // CONTROLLO DI SICUREZZA: Se l'utente non ha la lista acquisti o è vuota, restituisci un array vuoto
+    // CONTROLLO DI SICUREZZA
     if (!utente.acquisti || utente.acquisti.length === 0) {
       return res.json([]);
     }
 
-    // Se l'utente ha degli acquisti, usa populate per prendere i dettagli del museo
     await utente.populate({
       path: 'acquisti',
       populate: { path: 'museoId', select: 'nome' }
@@ -65,11 +64,15 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
 
+    // Fallback di sicurezza se l'array è assente nei vecchi utenti
     if (!utente.acquisti) {
       utente.acquisti = [];
     }
 
-    if (utente.acquisti.includes(visita._id)) {
+    // Controllo a prova di bomba convertendo in stringa gli ObjectId
+    const haGiaAcquistato = utente.acquisti.some(id => id.toString() === visita._id.toString());
+    
+    if (haGiaAcquistato) {
       return res.status(400).json({ message: 'Hai già sbloccato questo percorso' });
     }
 

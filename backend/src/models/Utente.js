@@ -5,7 +5,7 @@ const utenteSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   password: { type: String, required: true },
   ruolo: { type: String, enum: ['autore', 'visitatore'], default: 'visitatore' },
-  visiteAcquistate: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Visita' }], // Nuova lista acquisti
+  acquisti: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Visita', default: [] }], // Corretto: Nome allineato alle rotte e default sicuro
   createdAt: { type: Date, default: Date.now }
 })
 
