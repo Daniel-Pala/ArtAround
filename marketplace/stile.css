@@ -1,0 +1,121 @@
+/* ArtAround — tema marketplace.
+   Override di Bootstrap verso un'estetica "galleria contemporanea":
+   carta + inchiostro, un accento vermiglio, titoli serif.
+   Gli stessi token (colori + font) vanno riusati nel Navigator per coerenza. */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
+
+:root {
+  /* palette */
+  --bs-body-bg: #F4F1E9;      /* carta */
+  --bs-light: #F4F1E9;        /* così anche .bg-light diventa carta */
+  --bs-body-color: #1B1917;   /* inchiostro */
+  --bs-border-color: #E4DDD0;
+
+  --bs-primary: #C63A24;      /* vermiglio: accento principale */
+  --bs-primary-rgb: 198, 58, 36;
+  --bs-success: #4C6B4F;      /* verde smorzato: azioni "aggiungi" */
+  --bs-success-rgb: 76, 107, 79;
+  --bs-danger: #9E2B20;       /* mattone: elimina */
+  --bs-danger-rgb: 158, 43, 32;
+
+  --bs-link-color: #C63A24;
+  --bs-link-color-rgb: 198, 58, 36;
+  --bs-link-hover-color: #93281A;
+
+  /* forme: meno arrotondato del default "template" */
+  --bs-border-radius: .25rem;
+  --bs-border-radius-lg: .375rem;
+  --bs-border-radius-sm: .2rem;
+}
+
+body {
+  font-family: 'Work Sans', system-ui, sans-serif;
+  background-color: var(--bs-body-bg);
+}
+
+/* titoli serif con carattere */
+h1, h2, h3, h4, h5, h6,
+.navbar-brand, .modal-title {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -.01em;
+}
+
+/* barra superiore in inchiostro invece che accento pieno */
+.navbar.bg-primary {
+  background-color: #1B1917 !important;
+}
+
+/* niente ombre morbide diffuse (stilema riconoscibile): bordo sottile */
+.card {
+  border: 1px solid var(--bs-border-color);
+}
+.shadow-sm, .shadow {
+  box-shadow: none !important;
+}
+
+.btn {
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* Bootstrap 5.3: i bottoni NON leggono --bs-primary, hanno colori propri.
+   Vanno ridefinite le loro variabili una per una. */
+.btn-primary {
+  --bs-btn-bg: #C63A24; --bs-btn-border-color: #C63A24;
+  --bs-btn-hover-bg: #AE3320; --bs-btn-hover-border-color: #AE3320;
+  --bs-btn-active-bg: #932A1A; --bs-btn-active-border-color: #932A1A;
+}
+.btn-success {
+  --bs-btn-bg: #4C6B4F; --bs-btn-border-color: #4C6B4F;
+  --bs-btn-hover-bg: #415B44; --bs-btn-hover-border-color: #415B44;
+  --bs-btn-active-bg: #37503A; --bs-btn-active-border-color: #37503A;
+}
+.btn-outline-danger {
+  --bs-btn-color: #9E2B20; --bs-btn-border-color: #9E2B20;
+  --bs-btn-hover-bg: #9E2B20; --bs-btn-hover-border-color: #9E2B20;
+  --bs-btn-active-bg: #7F2219; --bs-btn-active-border-color: #7F2219;
+}
+
+/* tab pill del login → vermiglio */
+.nav-pills {
+  --bs-nav-pills-link-active-bg: #C63A24;
+}
+
+/* via il focus azzurro di default */
+.form-control:focus, .form-select:focus {
+  border-color: #D99B8F;
+  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .2);
+}
+
+/* etichette maiuscole (es. label statistiche) */
+.uppercase {
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* --- regole migrate da index.html, allineate alla palette --- */
+.card-museo {
+  transition: transform .2s, border-color .2s;
+}
+.card-museo:hover {
+  transform: translateY(-4px);
+  border-color: var(--bs-primary);
+}
+.stats-card {
+  border-left: 4px solid var(--bs-primary);
+}
+.testo-row {
+  background-color: #EEE8DC;
+  border-radius: var(--bs-border-radius);
+  padding: 1rem;
+  margin-bottom: .75rem;
+}
+.testo-row.empty {
+  border: 2px dashed var(--bs-border-color);
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
