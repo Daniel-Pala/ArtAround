@@ -161,7 +161,7 @@ async function caricaMarketplaceVisitatore() {
                 <div class="col-md-4">
                     <article class="card card-interactive h-100">
                         <div class="card-body d-flex flex-column">
-                            <div class="eyebrow mb-2">Percorso</div>
+                            <div class="eyebrow mb-2">${v.museoId?.nome || ''}</div>
                             <h5 class="card-title mb-2">${v.nome}</h5>
                             <p class="card-text text-muted small flex-grow-1">${v.infoLogistiche || 'Nessuna informazione logistica.'}</p>
                             <div class="d-flex justify-content-between align-items-end pt-3 border-top">
