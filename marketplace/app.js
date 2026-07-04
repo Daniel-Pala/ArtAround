@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sezAutore) sezAutore.style.display = 'block';
         caricaDashboardAutore();
         setupFormMuseo();
+        setupFormOpera();
     } else if (utente.ruolo === 'visitatore') {
         const sezVisitatore = document.getElementById('sezioneVisitatore');
         if (sezVisitatore) sezVisitatore.style.display = 'block';
@@ -72,15 +73,15 @@ async function caricaDashboardAutore() {
         musei.forEach(museo => {
             htmlRighe += `
                 <tr>
-                    <td class="ps-4 fw-bold text-dark">🏛️ ${museo.nome}</td>
-                    <td><span class="badge bg-secondary">${museo.citta || 'N/A'}</span></td>
+                    <td class="ps-4 fw-semibold">${museo.nome}</td>
+                    <td class="text-muted">${museo.citta || '—'}</td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="apriModalNuovaOpera('${museo._id}')">
+                        <button class="btn btn-sm btn-outline-success me-1" onclick="apriModalNuovaOpera('${museo._id}')">
                             <i class="bi bi-plus-lg me-1"></i>Opera
                         </button>
-                        <a href="configura.html?id=${museo._id}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-gear me-1"></i>Configura
-                        </a>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="apriModalVisite('${museo._id}')">
+                            <i class="bi bi-collection me-1"></i>Percorsi
+                        </button>
                     </td>
                 </tr>`;
         });
@@ -154,25 +155,27 @@ async function caricaMarketplaceVisitatore() {
             // Confrontiamo forzando anche l'id del percorso a stringa
             const isAcquistata = acquistiIds.includes(String(v._id));
             const urlPlayer = `http://localhost:5173/player/${v._id}`;
-            
+            const prezzoLabel = v.prezzo > 0 ? `${v.prezzo} €` : 'Gratis';
+
             htmlCards += `
-                <div class="col-md-4 mb-4">
-                    <div class="card card-museo shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold">🗺️ ${v.nome}</h5>
-                            <p class="card-text text-muted small">${v.infoLogistiche || 'Nessuna informazione aggiuntiva.'}</p>
-                            <hr class="mt-auto mb-3 text-muted">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-dark">${v.prezzo} €</span>
+                <div class="col-md-4">
+                    <article class="card card-interactive h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="eyebrow mb-2">Percorso</div>
+                            <h5 class="card-title mb-2">${v.nome}</h5>
+                            <p class="card-text text-muted small flex-grow-1">${v.infoLogistiche || 'Nessuna informazione logistica.'}</p>
+                            <div class="d-flex justify-content-between align-items-end pt-3 border-top">
                                 <div>
-                                    ${isAcquistata 
-                                        ? `<a href="${urlPlayer}" target="_blank" class="btn btn-sm btn-success text-white shadow-sm fw-bold">▶ Avvia Player</a>`
-                                        : `<button class="btn btn-sm btn-primary shadow-sm" onclick="acquistaVisita('${v._id}')">Acquista</button>`
-                                    }
+                                    <div class="price-label">Prezzo</div>
+                                    <div class="price">${prezzoLabel}</div>
                                 </div>
+                                ${isAcquistata
+                                    ? `<a href="${urlPlayer}" target="_blank" class="btn btn-sm btn-success"><i class="bi bi-play-fill me-1"></i>Avvia</a>`
+                                    : `<button class="btn btn-sm btn-primary" onclick="acquistaVisita('${v._id}')">Acquista</button>`
+                                }
                             </div>
                         </div>
-                    </div>
+                    </article>
                 </div>`;
         });
         listaVisite.innerHTML = htmlCards;
@@ -188,9 +191,8 @@ async function acquistaVisita(visitaId) {
         });
 
         if (response.ok) {
-            // AGGIUNTO POPUP DI SUCCESSO!
-            alert("🎉 Percorso sbloccato con successo!");
-            caricaMarketplaceVisitatore(); // Ricarica la lista per mostrare il bottone verde
+            alert("Percorso sbloccato.");
+            caricaMarketplaceVisitatore(); // Ricarica la lista per mostrare il bottone Avvia
         } else {
             const data = await response.json();
             alert(data.message || "Errore durante l'acquisto");
@@ -203,6 +205,131 @@ async function acquistaVisita(visitaId) {
 
 function apriModalNuovaOpera(museoId) {
     window.currentMuseoId = museoId;
-    const modal = new bootstrap.Modal(document.getElementById('modalNuovaOpera'));
-    modal.show();
+    document.getElementById('testiContainer').innerHTML = '';
+    aggiungiRigaTesto();
+    new bootstrap.Modal(document.getElementById('modalNuovaOpera')).show();
+}
+
+// Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal opera.
+function aggiungiRigaTesto() {
+    const riga = document.createElement('div');
+    riga.className = 'testo-riga border rounded p-2 mb-2';
+    riga.innerHTML = `
+        <div class="row g-2 mb-2 align-items-center">
+            <div class="col">
+                <select class="form-select form-select-sm testo-durata">
+                    <option value="3s">3 secondi</option>
+                    <option value="15s" selected>15 secondi</option>
+                    <option value="1min">1 minuto</option>
+                    <option value="4min">4 minuti</option>
+                </select>
+            </div>
+            <div class="col">
+                <select class="form-select form-select-sm testo-livello">
+                    <option value="infantile">Infantile</option>
+                    <option value="elementare">Elementare</option>
+                    <option value="medio" selected>Medio</option>
+                    <option value="specialistico">Specialistico</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="this.closest('.testo-riga').remove()" aria-label="Rimuovi testo">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+        <textarea class="form-control form-control-sm testo-contenuto" rows="2" placeholder="Testo della descrizione…"></textarea>
+    `;
+    document.getElementById('testiContainer').appendChild(riga);
+}
+
+function setupFormOpera() {
+    const form = document.getElementById('formOpera');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const testi = [...document.querySelectorAll('#testiContainer .testo-riga')].map(riga => ({
+            durata: riga.querySelector('.testo-durata').value,
+            livello: riga.querySelector('.testo-livello').value,
+            testo: riga.querySelector('.testo-contenuto').value.trim()
+        })).filter(t => t.testo);
+
+        if (testi.length === 0) {
+            alert("Aggiungi almeno un testo all'opera.");
+            return;
+        }
+
+        const payload = {
+            operaId: document.getElementById('operaWikidata').value.trim(),
+            museoId: window.currentMuseoId,
+            titolo: document.getElementById('operaTitolo').value.trim(),
+            licenza: document.getElementById('operaLicenza').value,
+            prezzo: parseFloat(document.getElementById('operaPrezzo').value) || 0,
+            testi
+        };
+
+        try {
+            const response = await fetchAuth(`${API_URL}/items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('modalNuovaOpera')).hide();
+                form.reset();
+                alert("Opera creata.");
+            } else {
+                const data = await response.json();
+                alert(data.message || "Errore durante il salvataggio dell'opera.");
+            }
+        } catch (error) {
+            alert("Errore di connessione al server.");
+        }
+    });
+}
+
+function apriModalVisite(museoId) {
+    document.getElementById('btnNuovoPercorso').href = `configura.html?id=${museoId}`;
+    new bootstrap.Modal(document.getElementById('modalVisite')).show();
+    caricaVisiteMuseo(museoId);
+}
+
+async function caricaVisiteMuseo(museoId) {
+    const container = document.getElementById('listaVisiteMuseo');
+    const utente = getUtenteLoggato();
+
+    const response = await fetch(`${API_URL}/visite?museoId=${museoId}`);
+    const visite = (await response.json()).filter(v => v.autoreId && v.autoreId._id === utente.userId);
+
+    if (visite.length === 0) {
+        container.innerHTML = `<p class="text-muted text-center mb-0">Non hai ancora creato percorsi in questo museo.</p>`;
+        return;
+    }
+
+    container.innerHTML = visite.map(v => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+            <span class="fw-semibold text-truncate me-2">${v.nome}</span>
+            <span class="text-nowrap">
+                <a href="configura.html?id=${museoId}&visitaId=${v._id}" class="btn btn-sm btn-outline-secondary me-1">
+                    <i class="bi bi-pencil me-1"></i>Modifica
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="eliminaVisita('${v._id}', '${museoId}')" aria-label="Elimina percorso">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </span>
+        </div>
+    `).join('');
+}
+
+async function eliminaVisita(visitaId, museoId) {
+    if (!confirm("Eliminare questo percorso?")) return;
+
+    const response = await fetchAuth(`${API_URL}/visite/${visitaId}`, { method: 'DELETE' });
+    if (response.ok) {
+        caricaVisiteMuseo(museoId);
+    } else {
+        alert("Errore durante l'eliminazione del percorso.");
+    }
 }

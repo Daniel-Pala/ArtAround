@@ -3,62 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configura Visita - ArtAround</title>
+    <title>Configura percorso - ArtAround</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="stile.css">
 </head>
 <body class="bg-light">
-    <div class="container mt-5">
-        <a href="index.html" class="btn btn-outline-secondary mb-4">← Torna alla Dashboard</a>
-        
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h2 id="titoloMuseo" class="text-primary">Caricamento museo...</h2>
-                <p id="infoMuseo" class="text-muted mb-0"></p>
-            </div>
+    <div class="container py-5">
+        <a href="index.html" class="btn btn-outline-secondary btn-sm mb-4">
+            <i class="bi bi-arrow-left me-1"></i>Dashboard
+        </a>
+
+        <div class="section-head mb-4">
+            <div class="eyebrow">Configura percorso</div>
+            <h1 class="section-title" id="titoloMuseo">Caricamento…</h1>
+            <p class="section-sub mb-0 mt-2" id="infoMuseo"></p>
         </div>
 
-        <div class="row">
+        <div class="row g-4">
+            <!-- Colonna opere disponibili -->
             <div class="col-lg-8">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0">Opere disponibili</h4>
-                    <input type="text" id="cercaOpera" class="form-control w-50 shadow-sm" placeholder="🔍 Cerca un'opera..." oninput="renderOpereDisponibili()">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h2 class="h4 mb-0">Opere disponibili</h2>
+                    <div class="input-group" style="max-width: 280px;">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="cercaOpera" class="form-control" placeholder="Cerca un'opera" oninput="renderOpereDisponibili()">
+                    </div>
                 </div>
-                
+
                 <div id="listaOpere">
-                    <div class="alert alert-info">In attesa che il backend fornisca le opere...</div>
+                    <div class="text-muted py-3">Caricamento opere…</div>
                 </div>
             </div>
 
+            <!-- Colonna itinerario (carrello) -->
             <div class="col-lg-4">
-                <div class="card shadow-sm sticky-top" style="top: 20px;">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">📍 Il tuo percorso</h5>
+                <div class="card sticky-top" style="top: 1.5rem;">
+                    <div class="card-header bg-transparent border-bottom">
+                        <div class="eyebrow">Percorso</div>
+                        <h3 class="h5 mb-0">Il tuo itinerario</h3>
                     </div>
-                    <div class="card-body" style="max-height: 80vh; overflow-y: auto;">
+                    <div class="card-body" style="max-height: 78vh; overflow-y: auto;">
                         <!-- Sezione visibile solo agli autori -->
                         <div id="saveSection" style="display: none;">
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">Nome della Visita</label>
+                                <label class="form-label small fw-semibold">Nome del percorso</label>
                                 <input type="text" id="nomeVisita" class="form-control form-control-sm" placeholder="es. Tour del Rinascimento">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">Informazioni Logistiche</label>
-                                <textarea id="infoLogistiche" class="form-control form-control-sm" placeholder="es. Entrata principale, orari..." rows="2"></textarea>
+                                <label class="form-label small fw-semibold">Informazioni logistiche</label>
+                                <textarea id="infoLogistiche" class="form-control form-control-sm" placeholder="es. Entrata principale, orari…" rows="2"></textarea>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">Prezzo (€)</label>
+                                <label class="form-label small fw-semibold">Prezzo (€)</label>
                                 <input type="number" id="prezzoVisita" class="form-control form-control-sm" placeholder="0" min="0" step="0.01" value="0">
                             </div>
 
                             <div class="mb-3 form-check">
                                 <input type="checkbox" id="pubblicaVisita" class="form-check-input">
-                                <label class="form-check-label small" for="pubblicaVisita">
-                                    Pubblica nel marketplace
-                                </label>
+                                <label class="form-check-label small" for="pubblicaVisita">Pubblica nel marketplace</label>
                             </div>
 
                             <hr>
@@ -66,21 +71,22 @@
                             <ul id="carrelloVisita" class="list-group mb-3">
                                 <li class="list-group-item text-muted text-center">Nessuna opera selezionata.</li>
                             </ul>
-                            <button id="btnSalvaVisita" class="btn btn-primary w-100" disabled onclick="salvaVisita()">
-                                Salva Visita Definitiva
+                            <button id="btnSalvaVisita" class="btn btn-success w-100" disabled onclick="salvaVisita()">
+                                Salva percorso
                             </button>
                         </div>
 
                         <!-- Sezione visibile solo ai visitatori -->
                         <div id="readOnlySection" class="text-center py-3" style="display: none;">
                             <p class="text-muted small">Solo gli autori possono creare percorsi.</p>
-                            <a href="index.html" class="btn btn-sm btn-outline-secondary">Torna alla Dashboard</a>
+                            <a href="index.html" class="btn btn-sm btn-outline-secondary">Torna alla dashboard</a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="sessione.js"></script>
     <script src="configura.js"></script>

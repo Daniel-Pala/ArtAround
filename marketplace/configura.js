@@ -37,8 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const museoResponse = await fetch(`${API_URL}/musei/${museoIdAttuale}`);
         if (museoResponse.ok) {
             const museo = await museoResponse.json();
-            titoloElement.innerText = `Configurazione: ${museo.nome}`;
-            infoElement.innerText = `Sede di ${museo.citta || 'N/A'}.`;
+            titoloElement.innerText = museo.nome;
         }
 
         const opereResponse = await fetch(`${API_URL}/items?museoId=${museoIdAttuale}`);
@@ -115,36 +114,36 @@ function renderOpereDisponibili() {
     });
 
     if (opereDisponibili.length === 0) {
-        containerOpere.innerHTML = `<div class="alert alert-warning shadow-sm">Nessuna opera presente in questo museo per ora.</div>`;
+        containerOpere.innerHTML = `<div class="text-muted py-3">Nessuna opera presente in questo museo per ora.</div>`;
         return;
     }
 
     if (opereFiltrate.length === 0) {
-        containerOpere.innerHTML = `<div class="alert alert-info shadow-sm">Nessuna opera corrisponde alla ricerca "${termineRicerca}".</div>`;
+        containerOpere.innerHTML = `<div class="text-muted py-3">Nessuna opera corrisponde a "${termineRicerca}".</div>`;
         return;
     }
 
-    let htmlLista = '<ul class="list-group shadow-sm">';
-    
+    let htmlLista = '<ul class="list-group">';
+
     opereFiltrate.forEach(opera => {
         const nomeAutore = opera.autoreId ? opera.autoreId.username : 'Autore sconosciuto';
         const giaSelezionata = opereSelezionate.some(sel => sel._id === opera._id);
-        
-        const bottoneHtml = giaSelezionata 
-            ? `<button class="btn btn-sm btn-secondary px-3 rounded-pill" disabled>✓ Aggiunta</button>`
-            : `<button class="btn btn-sm btn-outline-success px-3 rounded-pill" onclick="aggiungiAVisita('${opera._id}')">+ Aggiungi</button>`;
+
+        const bottoneHtml = giaSelezionata
+            ? `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-check-lg me-1"></i>Aggiunta</button>`
+            : `<button class="btn btn-sm btn-outline-success" onclick="aggiungiAVisita('${opera._id}')"><i class="bi bi-plus-lg me-1"></i>Aggiungi</button>`;
 
         htmlLista += `
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <div>
-                    <h6 class="mb-0 text-dark">🎨 ${opera.titolo || 'Opera senza titolo'}</h6>
-                    <small class="text-muted">Autore: ${nomeAutore}</small>
+                    <h6 class="mb-0">${opera.titolo || 'Opera senza titolo'}</h6>
+                    <small class="text-muted">di ${nomeAutore}</small>
                 </div>
                 ${bottoneHtml}
             </li>
         `;
     });
-    
+
     htmlLista += '</ul>';
     containerOpere.innerHTML = htmlLista;
 }
@@ -181,11 +180,13 @@ function renderCarrello() {
 
     opereSelezionate.forEach((opera, index) => {
         htmlCarrello += `
-            <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
                 <span class="text-truncate" style="max-width: 200px;">
-                    <small><b>${index + 1}.</b> ${opera.titolo}</small>
+                    <small><span class="fw-semibold">${index + 1}.</span> ${opera.titolo}</small>
                 </span>
-                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="rimuoviDaVisita('${opera._id}')">❌</button>
+                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="rimuoviDaVisita('${opera._id}')" aria-label="Rimuovi opera">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </li>
         `;
     });
