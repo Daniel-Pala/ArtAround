@@ -38,7 +38,7 @@ export default function Login() {
 
   return (
     <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-      <div className="card shadow-sm" style={{ width: '100%', maxWidth: '400px' }}>
+      <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="card-body p-4">
           <h3 className="card-title text-center mb-4">Accedi ad ArtAround</h3>
           

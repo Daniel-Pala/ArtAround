@@ -46,27 +46,24 @@ export default function Percorsi() {
     <div>
       <Navbar />
       <div className="container mt-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <button onClick={() => navigate('/')} className="btn btn-outline-secondary btn-sm fw-bold">
-            ← Torna ai Musei
-          </button>
-        </div>
+        <button onClick={() => navigate('/')} className="btn btn-outline-secondary btn-sm fw-bold mb-4">
+          <i className="bi bi-arrow-left me-1"></i>Torna ai musei
+        </button>
 
-        <div className="p-4 p-md-5 mb-4 text-white rounded bg-dark">
-          <div className="col-md-8 px-0">
-            <h1 className="display-6 fw-bold fst-italic">{museo?.nome || "Dettaglio Museo"}</h1>
-            <p className="lead my-3 text-light">{museo?.descrizione || "Nessuna descrizione disponibile."}</p>
-          </div>
+        <div className="section-head mb-4">
+          <div className="eyebrow">Museo</div>
+          <h1 className="section-title">{museo?.nome || 'Dettaglio museo'}</h1>
+          {museo?.descrizione && <p className="section-sub mt-2 mb-0">{museo.descrizione}</p>}
         </div>
 
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="text-secondary fw-semibold mb-0">Percorsi di Visita</h3>
+          <h3 className="mb-0">Percorsi di visita</h3>
           {utente?.ruolo?.toLowerCase() === 'autore' && (
-            <button 
-              onClick={() => navigate(`/museo/${museoId}/nuovo-percorso`)} 
+            <button
+              onClick={() => navigate(`/museo/${museoId}/nuovo-percorso`)}
               className="btn btn-primary fw-bold"
             >
-              + Crea Nuovo Percorso
+              <i className="bi bi-plus-lg me-1"></i>Crea percorso
             </button>
           )}
         </div>
@@ -79,19 +76,22 @@ export default function Percorsi() {
           <div className="row g-3">
             {visite.map(v => (
               <div key={v._id} className="col-12">
-                <div className="card shadow-sm border-start border-primary border-4">
+                <div className="card card-interactive">
                   <div className="card-body d-flex justify-content-between align-items-center p-4">
                     <div>
-                      <h5 className="fw-bold mb-1 text-dark">{v.nome}</h5>
-                      <span className="text-muted small">Creato da: <strong>{v.autoreId?.username || 'Autore Anonimo'}</strong></span>
+                      <h5 className="fw-bold mb-1">{v.nome}</h5>
+                      <span className="text-muted small">di <strong>{v.autoreId?.username || 'Autore anonimo'}</strong></span>
                     </div>
-                    <div className="text-end">
-                      <span className="badge bg-secondary me-3 p-2">Prezzo: {v.prezzo ? `${v.prezzo}€` : 'Gratis'}</span>
-                      <button 
+                    <div className="d-flex align-items-center gap-4">
+                      <div className="text-end">
+                        <div className="price-label">Prezzo</div>
+                        <div className="price">{v.prezzo ? `${v.prezzo}€` : 'Gratis'}</div>
+                      </div>
+                      <button
                         onClick={() => navigate(`/percorso/${v._id}/opere`)}
                         className="btn btn-outline-primary btn-sm fw-bold"
                       >
-                        Esplora Opere
+                        Esplora opere<i className="bi bi-arrow-right ms-1"></i>
                       </button>
                     </div>
                   </div>

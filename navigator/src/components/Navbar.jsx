@@ -15,11 +15,11 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
       <div className="container-fluid px-4">
         {/* Logo e Titolo */}
         <Link className="navbar-brand fw-bold d-flex align-items-center" to="/">
-          <span className="me-2 fs-4">🏛️</span> ArtAround Navigator
+          <i className="bi bi-palette me-2"></i> ArtAround Navigator
         </Link>
         
         {/* Area Utente a destra */}
@@ -31,7 +31,7 @@ export default function Navbar() {
                 Ciao, <strong>{utente.username}</strong>
               </span>
               <button 
-                className="btn btn-outline-light btn-sm fw-bold shadow-sm" 
+                className="btn btn-outline-light btn-sm fw-bold" 
                 onClick={handleLogout}
               >
                 Esci
@@ -40,7 +40,7 @@ export default function Navbar() {
           ) : (
             <>
               {/* Se NON loggato: Mostra bottone Accedi */}
-              <Link className="btn btn-outline-light btn-sm fw-bold shadow-sm" to="/login">
+              <Link className="btn btn-outline-light btn-sm fw-bold" to="/login">
                 Accedi
               </Link>
             </>

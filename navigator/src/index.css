@@ -1,0 +1,136 @@
+/* ArtAround — tema Navigator.
+   Stessa direzione del marketplace (vedi Design.md e marketplace/stile.css):
+   carta + inchiostro, accento vermiglio, titoli serif, superfici piatte con bordo.
+   Bootstrap qui è SOLO CSS: il comportamento lo gestisce React, mai il JS di Bootstrap. */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
+
+:root {
+  /* palette */
+  --bs-body-bg: #F4F1E9;        /* carta */
+  --bs-light: #F4F1E9;          /* così anche .bg-light diventa carta */
+  --bs-body-color: #1B1917;     /* inchiostro */
+  --bs-border-color: #E4DDD0;
+  --bs-secondary-color: #6F675C;   /* muted caldo per .text-muted */
+  --bs-secondary-rgb: 111, 103, 92;
+
+  --bs-primary: #C63A24;        /* vermiglio: accento principale */
+  --bs-primary-rgb: 198, 58, 36;
+  --bs-success: #4C6B4F;        /* verde smorzato: azioni "aggiungi/conferma" */
+  --bs-success-rgb: 76, 107, 79;
+  --bs-danger: #9E2B20;         /* mattone: elimina/errori */
+  --bs-danger-rgb: 158, 43, 32;
+
+  --bs-link-color: #C63A24;
+  --bs-link-color-rgb: 198, 58, 36;
+  --bs-link-hover-color: #93281A;
+
+  /* forme: meno arrotondato del default "template" */
+  --bs-border-radius: .25rem;
+  --bs-border-radius-lg: .375rem;
+  --bs-border-radius-sm: .2rem;
+
+  /* token propri (non Bootstrap) */
+  --surface: #EEE8DC;      /* superficie righe/box */
+  --ink-faint: #8A7F70;    /* etichette ed elementi tenui */
+}
+
+body {
+  font-family: 'Work Sans', system-ui, sans-serif;
+  background-color: var(--bs-body-bg);
+}
+
+/* titoli serif con carattere */
+h1, h2, h3, h4, h5, h6,
+.navbar-brand, .modal-title {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -.01em;
+}
+
+/* barra superiore in inchiostro invece che accento pieno */
+.navbar.bg-primary {
+  background-color: #1B1917 !important;
+}
+
+/* superfici piatte: bordo sottile al posto delle ombre morbide */
+.card {
+  border: 1px solid var(--bs-border-color);
+}
+.shadow-sm, .shadow, .shadow-lg {
+  box-shadow: none !important;
+}
+
+/* bottoni: in Bootstrap 5.3 NON leggono --bs-primary, hanno variabili proprie */
+.btn { font-weight: 600; letter-spacing: .01em; }
+.btn-primary {
+  --bs-btn-bg: #C63A24; --bs-btn-border-color: #C63A24;
+  --bs-btn-hover-bg: #AE3320; --bs-btn-hover-border-color: #AE3320;
+  --bs-btn-active-bg: #932A1A; --bs-btn-active-border-color: #932A1A;
+}
+.btn-success {
+  --bs-btn-bg: #4C6B4F; --bs-btn-border-color: #4C6B4F;
+  --bs-btn-hover-bg: #415B44; --bs-btn-hover-border-color: #415B44;
+  --bs-btn-active-bg: #37503A; --bs-btn-active-border-color: #37503A;
+}
+.btn-outline-primary {
+  --bs-btn-color: #C63A24; --bs-btn-border-color: #C63A24;
+  --bs-btn-hover-bg: #C63A24; --bs-btn-hover-border-color: #C63A24;
+  --bs-btn-active-bg: #AE3320; --bs-btn-active-border-color: #AE3320;
+}
+.btn-outline-success {
+  --bs-btn-color: #4C6B4F; --bs-btn-border-color: #4C6B4F;
+  --bs-btn-hover-bg: #4C6B4F; --bs-btn-hover-border-color: #4C6B4F;
+}
+.btn-outline-danger {
+  --bs-btn-color: #9E2B20; --bs-btn-border-color: #9E2B20;
+  --bs-btn-hover-bg: #9E2B20; --bs-btn-hover-border-color: #9E2B20;
+  --bs-btn-active-bg: #7F2219; --bs-btn-active-border-color: #7F2219;
+}
+
+/* focus caldo, non azzurro */
+.form-control:focus, .form-select:focus {
+  border-color: #D99B8F;
+  box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .2);
+}
+
+/* ---- struttura editoriale (intestazioni di sezione) ---- */
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.section-head {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+.section-title {
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.05;
+  margin: .15rem 0 0;
+}
+.section-sub {
+  color: var(--bs-secondary-color);
+  max-width: 54ch;
+}
+.uppercase { text-transform: uppercase; letter-spacing: .05em; }
+
+/* ---- card catalogo (musei / percorsi) ---- */
+.card-interactive { transition: transform .18s ease, border-color .18s ease; }
+.card-interactive:hover { transform: translateY(-3px); border-color: var(--bs-primary); }
+
+.price-label {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink-faint); margin-bottom: .15rem;
+}
+.price {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.35rem; font-weight: 600; line-height: 1;
+}
+
+/* ---- liste ---- */
+.list-group-item {
+  background-color: transparent;
+  border-color: var(--bs-border-color);
+}
