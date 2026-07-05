@@ -1,18 +1,24 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { getUtenteLoggato } from './auth';
 
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Percorsi from './pages/Percorsi';
 import Player from './pages/Player';
 
+// Catalogo dietro login: senza sessione si finisce sempre su /login
+function ProtectedRoute({ children }) {
+  return getUtenteLoggato() ? children : <Navigate to="/login" replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/museo/:id" element={<Percorsi />} />
-        <Route path="/player/:visitaId" element={<Player />} />
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/museo/:id" element={<ProtectedRoute><Percorsi /></ProtectedRoute>} />
+        <Route path="/player/:visitaId" element={<ProtectedRoute><Player /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
