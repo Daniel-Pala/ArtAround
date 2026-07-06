@@ -1,52 +1,41 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { getUtenteLoggato } from '../auth';
 
-export default function Navbar() {
+function Navbar() {
   const navigate = useNavigate();
-  
-  // Leggiamo l'utente salvato in memoria locale per capire se siamo loggati
-  const utenteRaw = localStorage.getItem('utente');
-  const utente = utenteRaw ? JSON.parse(utenteRaw) : null;
+  const utente = getUtenteLoggato();
 
-  // Funzione per gestire l'uscita
   const handleLogout = () => {
-    localStorage.removeItem('utente'); // Cancella la sessione
-    navigate('/login'); // Riporta alla schermata di accesso
+    localStorage.removeItem('utente');
+    navigate('/login');
   };
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
       <div className="container-fluid px-4">
-        {/* Logo e Titolo */}
         <Link className="navbar-brand fw-bold d-flex align-items-center" to="/">
           <i className="bi bi-palette me-2"></i> ArtAround Navigator
         </Link>
-        
-        {/* Area Utente a destra */}
+
         <div className="d-flex align-items-center">
           {utente ? (
             <>
-              {/* Se loggato: Mostra Nome e bottone Logout */}
               <span className="navbar-text text-light me-3 d-none d-sm-inline">
                 Ciao, <strong>{utente.username}</strong>
               </span>
-              <button 
-                className="btn btn-outline-light btn-sm fw-bold" 
-                onClick={handleLogout}
-              >
+              <button className="btn btn-outline-light btn-sm fw-bold" onClick={handleLogout}>
                 Esci
               </button>
             </>
           ) : (
-            <>
-              {/* Se NON loggato: Mostra bottone Accedi */}
-              <Link className="btn btn-outline-light btn-sm fw-bold" to="/login">
-                Accedi
-              </Link>
-            </>
+            <Link className="btn btn-outline-light btn-sm fw-bold" to="/login">
+              Accedi
+            </Link>
           )}
         </div>
       </div>
     </nav>
   );
 }
+export default Navbar;

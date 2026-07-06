@@ -2,53 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAuth } from '../auth';
 
-export default function Player() {
+function Player() {
   const { visitaId } = useParams();
   const navigate = useNavigate();
 
-  // Stati per i dati
   const [visita, setVisita] = useState(null);
   const [opere, setOpere] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [errore, setErrore] = useState('');
 
-  // Stati per la navigazione del player
   const [indiceAttuale, setIndiceAttuale] = useState(0);
   const [livelloScelto, setLivelloScelto] = useState('medio');
   const [durataScelta, setDurataScelta] = useState('15s');
 
   useEffect(() => {
-    const fetchVisita = async () => {
-      try {
-        const res = await fetchAuth(`/api/visite/${visitaId}`);
-        if (!res.ok) {
-          throw new Error('Impossibile caricare il percorso.');
-        }
-
-        const data = await res.json();
+    fetchAuth(`/api/visite/${visitaId}`)
+      .then(res => res.json())
+      .then(data => {
         setVisita(data);
-        
-        // Estraiamo le opere popolate dal backend
-        if (data.items && data.items.length > 0) {
-          setOpere(data.items.map(item => item.itemId).filter(Boolean));
-        }
-      } catch (err) {
-        setErrore(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVisita();
+        // la visita arriva gia con gli items dentro, a me servono solo le opere
+        if (data.items) setOpere(data.items.map(item => item.itemId));
+      })
+      .finally(() => setLoading(false));
   }, [visitaId]);
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
-  if (errore) return <div className="alert alert-danger m-3 text-center">{errore}</div>;
   if (opere.length === 0) return <div className="alert alert-warning m-3 text-center">Nessuna opera presente in questo percorso.</div>;
 
   const operaCorrente = opere[indiceAttuale];
 
-  // Logica per trovare il testo esatto in base alle scelte dell'utente
+  // tra i testi dell'opera cerco quello che combacia con livello e durata scelti
   let testoDaMostrare = "Testo non disponibile per questa combinazione di livello e durata.";
   if (operaCorrente && operaCorrente.testi) {
     const testoTrovato = operaCorrente.testi.find(
@@ -59,10 +41,8 @@ export default function Player() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', background: 'var(--bs-body-color)' }}>
-      {/* Container che simula lo schermo di uno smartphone */}
       <div className="bg-light" style={{ width: '100%', maxWidth: '480px', minHeight: '100vh', position: 'relative', paddingBottom: '80px' }}>
 
-        {/* Header del Player */}
         <div className="bg-light border-bottom p-3 d-flex justify-content-between align-items-center sticky-top">
           <button className="btn btn-sm btn-link text-body text-decoration-none p-0 fw-semibold" onClick={() => navigate(-1)}>
             <i className="bi bi-x-lg me-1"></i>Chiudi
@@ -71,10 +51,7 @@ export default function Player() {
           <span className="small text-muted">{indiceAttuale + 1} / {opere.length}</span>
         </div>
 
-        {/* Contenitore principale */}
         <div className="p-4">
-          
-          {/* Selettori di Profilazione */}
           <div className="card mb-4">
             <div className="card-body p-3">
               <div className="eyebrow mb-2">Le tue preferenze</div>
@@ -99,7 +76,6 @@ export default function Player() {
             </div>
           </div>
 
-          {/* Dettagli Opera */}
           <h2 className="fw-bold mb-1">{operaCorrente?.titolo}</h2>
           <p className="text-muted small mb-4">Licenza: {operaCorrente?.licenza || 'Standard'}</p>
 
@@ -108,10 +84,8 @@ export default function Player() {
               {testoDaMostrare}
             </div>
           </div>
-
         </div>
 
-        {/* Controlli di Navigazione Fissi in basso */}
         <div className="position-absolute bottom-0 start-0 w-100 bg-light border-top p-3 d-flex justify-content-between align-items-center">
           <button
             className="btn btn-outline-secondary px-4 fw-bold"
@@ -133,3 +107,4 @@ export default function Player() {
     </div>
   );
 }
+export default Player;

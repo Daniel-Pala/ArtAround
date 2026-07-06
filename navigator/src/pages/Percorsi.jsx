@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAuth, getUtenteLoggato } from '../auth';
 import Navbar from '../components/Navbar';
 
-export default function Percorsi() {
+function Percorsi() {
   const { id: museoId } = useParams();
   const navigate = useNavigate();
   const utente = getUtenteLoggato();
@@ -13,25 +13,16 @@ export default function Percorsi() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!museoId) return;
-
-    // Aggiunto il prefisso /api mancante che causava il crash
     fetchAuth(`/api/musei/${museoId}`)
       .then(res => res.json())
-      .then(data => setMuseo(data))
-      .catch(err => console.error('Errore fetch museo:', err));
+      .then(data => setMuseo(data));
 
-    // Aggiunto il prefisso /api mancante anche qui
     fetchAuth(`/api/visite?museoId=${museoId}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setVisite(data);
-        setLoading(false);
       })
-      .catch(err => {
-        console.error('Errore fetch visite:', err);
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, [museoId]);
 
   if (loading) {
@@ -104,3 +95,4 @@ export default function Percorsi() {
     </div>
   );
 }
+export default Percorsi;

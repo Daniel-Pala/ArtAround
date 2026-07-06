@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Login() {
+function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errore, setErrore] = useState('');
@@ -13,7 +13,6 @@ export default function Login() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Aggiunto il .trim() qui per pulire l'input prima di spedirlo al server
         body: JSON.stringify({ username: username.trim(), password })
       });
       const data = await res.json();
@@ -80,3 +79,4 @@ export default function Login() {
     </div>
   );
 }
+export default Login;
