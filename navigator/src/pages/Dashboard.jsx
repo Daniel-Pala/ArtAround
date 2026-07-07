@@ -24,17 +24,16 @@ function Dashboard() {
       <Navbar />
       <div className="container mt-4">
         <div className="section-head mb-4">
-          <div className="eyebrow">Il tuo profilo</div>
           <h1 className="section-title">Le mie visite</h1>
-          <p className="section-sub mt-2 mb-0">I percorsi che hai sbloccato. Toccane uno per avviarlo.</p>
+          <p className="section-sub mt-2 mb-0">Tocca una visita per avviarla.</p>
         </div>
 
         {loading ? (
           <div className="text-center py-5"><div className="spinner-border text-primary"></div></div>
         ) : visite.length === 0 ? (
           <div className="text-muted text-center py-5">
-            Non hai ancora sbloccato nessun percorso.<br />
-            Acquistane uno dal marketplace per iniziare.
+            Non hai ancora sbloccato nessuna visita.<br />
+            Acquistane una dal marketplace per iniziare.
           </div>
         ) : (
           <div className="row g-3">

@@ -6,6 +6,15 @@ import { fetchAuth } from '../auth';
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
+// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X"
+const LOGISTICA = [
+  ['uscita', 'Uscita'],
+  ['toilette', 'Toilette'],
+  ['bar', 'Bar'],
+  ['shop', 'Shop'],
+  ['ostacoli', 'Ostacoli e accessibilita'],
+];
+
 function Player() {
   const { visitaId } = useParams();
   const navigate = useNavigate();
@@ -29,6 +38,7 @@ function Player() {
 
   const [config, setConfig] = useState(null);
   const [mostraMappa, setMostraMappa] = useState(false);
+  const [mostraInfo, setMostraInfo] = useState(false);
 
   useEffect(() => {
     fetchAuth(`/api/visite/${visitaId}`)
@@ -86,18 +96,30 @@ function Player() {
     t => t.livello === livelloScelto && t.durata === durataScelta
   );
 
-  // azioni: le richiamano sia i bottoni sia i comandi vocali
-  const leggi = () => {
-    if (!testoTrovato) return;
+  // pronuncia un testo con la voce scelta; onEnd opzionale
+  const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
-    const voce = new SpeechSynthesisUtterance(testoTrovato.testo);
+    const voce = new SpeechSynthesisUtterance(testo);
     voce.lang = 'it-IT';
     const vocePreferita = voci.find(v => v.voiceURI === voceScelta);
     if (vocePreferita) voce.voice = vocePreferita;
-    voce.onend = () => { setParlando(false); setInPausa(false); };
+    if (onEnd) voce.onend = onEnd;
     window.speechSynthesis.speak(voce);
+  };
+
+  // azioni: le richiamano sia i bottoni sia i comandi vocali
+  const leggi = () => {
+    if (!testoTrovato) return;
+    parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
     setParlando(true);
     setInPausa(false);
+  };
+
+  // risposta a "dov'e X": apre il pannello info e pronuncia l'indicazione
+  const rispondiLogistica = (chiave) => {
+    if (!config?.logistica?.[chiave]) return;
+    setMostraInfo(true);
+    parla(config.logistica[chiave]);
   };
 
   const pausa = () => {
@@ -135,6 +157,13 @@ function Player() {
     { nome: 'Piu semplice', frasi: ['non capisco', 'piu semplice', 'troppo difficile'], azione: () => cambiaLivello(-1) },
     { nome: 'Piu avanzato', frasi: ['troppo semplice', 'piu difficile', 'piu avanzato'], azione: () => cambiaLivello(1) },
     { nome: 'Esci', frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate(-1) },
+    ...(config?.logistica ? [
+      { nome: 'Uscita', frasi: ['uscita'], azione: () => rispondiLogistica('uscita') },
+      { nome: 'Toilette', frasi: ['toilette', 'bagno'], azione: () => rispondiLogistica('toilette') },
+      { nome: 'Bar', frasi: ['bar'], azione: () => rispondiLogistica('bar') },
+      { nome: 'Shop', frasi: ['shop', 'negozio'], azione: () => rispondiLogistica('shop') },
+      { nome: 'Ostacoli', frasi: ['ostacol'], azione: () => rispondiLogistica('ostacoli') },
+    ] : []),
   ];
 
   const eseguiComando = (trascrizione) => {
@@ -166,10 +195,10 @@ function Player() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-color)' }}>
-      <div className="bg-light d-flex flex-column" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
+      <div className="bg-light d-flex flex-column position-relative" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
 
         <div className="bg-light border-bottom p-3 d-flex align-items-center flex-shrink-0">
-          <div className="d-flex flex-shrink-0" style={{ width: '92px' }}>
+          <div className="d-flex flex-shrink-0" style={{ width: '124px' }}>
             <button
               className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
               style={{ width: '38px', height: '38px' }}
@@ -185,7 +214,15 @@ function Player() {
             <div className="small text-muted">{indiceAttuale + 1} / {opere.length}</div>
           </div>
 
-          <div className="d-flex align-items-center justify-content-end gap-2 flex-shrink-0" style={{ width: '92px' }}>
+          <div className="d-flex align-items-center justify-content-end gap-1 flex-shrink-0" style={{ width: '124px' }}>
+            <button
+              className={`btn btn-sm ${mostraInfo ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
+              style={{ width: '38px', height: '38px' }}
+              onClick={() => setMostraInfo(m => !m)}
+              aria-label="Informazioni utili"
+            >
+              <i className="bi bi-info-lg"></i>
+            </button>
             {config?.mappa && (
               <button
                 className={`btn btn-sm ${mostraMappa ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
@@ -320,6 +357,38 @@ function Player() {
             <i className="bi bi-skip-end-fill fs-5"></i>
           </button>
         </div>
+
+        {mostraInfo && (
+          <div className="position-absolute d-flex align-items-center justify-content-center p-3" style={{ inset: 0, zIndex: 20, background: 'rgba(27,25,23,.35)' }} onClick={() => setMostraInfo(false)}>
+            <div
+              className="bg-light rounded border p-3"
+              style={{ width: '100%', maxWidth: '360px', maxHeight: '80%', overflowY: 'auto' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h3 className="fs-5 fw-bold mb-0">Informazioni utili</h3>
+                <button
+                  className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                  style={{ width: '34px', height: '34px' }}
+                  onClick={() => setMostraInfo(false)}
+                  aria-label="Chiudi"
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
+              </div>
+              {visita?.infoLogistiche && <p className="text-muted small mb-2">{visita.infoLogistiche}</p>}
+              {LOGISTICA.map(([chiave, etichetta]) => config?.logistica?.[chiave] && (
+                <div key={chiave} className="py-2 border-top">
+                  <div className="fw-semibold small">{etichetta}</div>
+                  <div className="text-muted small">{config.logistica[chiave]}</div>
+                </div>
+              ))}
+              {!visita?.infoLogistiche && !config?.logistica && (
+                <p className="text-muted small fst-italic mb-0">Nessuna informazione disponibile.</p>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
