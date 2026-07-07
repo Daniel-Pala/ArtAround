@@ -27,12 +27,24 @@ function Player() {
   const [statoVoce, setStatoVoce] = useState('');
   const riconoscimentoRef = useRef(null);
 
+  const [config, setConfig] = useState(null);
+  const [mostraMappa, setMostraMappa] = useState(false);
+
   useEffect(() => {
     fetchAuth(`/api/visite/${visitaId}`)
       .then(res => res.json())
       .then(data => setVisita(data))
       .finally(() => setLoading(false));
   }, [visitaId]);
+
+  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica
+  useEffect(() => {
+    const file = visita?.museoId?.configFile;
+    if (!file) return;
+    fetch(`/config/${file}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(setConfig);
+  }, [visita]);
 
   // le voci del browser arrivano in modo asincrono: tengo quelle italiane e ne scelgo una
   useEffect(() => {
@@ -157,12 +169,33 @@ function Player() {
       <div className="bg-light d-flex flex-column" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
 
         <div className="bg-light border-bottom p-3 d-flex align-items-center flex-shrink-0">
-          <button className="btn btn-sm btn-link text-body text-decoration-none p-0 fw-semibold flex-shrink-0" style={{ width: '88px' }} onClick={() => navigate(-1)}>
-            <i className="bi bi-x-lg me-1"></i>Chiudi
-          </button>
-          <span className="fw-semibold text-truncate text-center flex-grow-1 px-2" style={{ minWidth: 0 }}>{visita?.nome}</span>
-          <div className="d-flex align-items-center justify-content-end gap-2 flex-shrink-0" style={{ width: '88px' }}>
-            <span className="small text-muted">{indiceAttuale + 1} / {opere.length}</span>
+          <div className="d-flex flex-shrink-0" style={{ width: '92px' }}>
+            <button
+              className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+              style={{ width: '38px', height: '38px' }}
+              onClick={() => navigate(-1)}
+              aria-label="Chiudi visita"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div className="flex-grow-1 text-center px-2" style={{ minWidth: 0 }}>
+            <div className="fw-semibold text-truncate">{visita?.nome}</div>
+            <div className="small text-muted">{indiceAttuale + 1} / {opere.length}</div>
+          </div>
+
+          <div className="d-flex align-items-center justify-content-end gap-2 flex-shrink-0" style={{ width: '92px' }}>
+            {config?.mappa && (
+              <button
+                className={`btn btn-sm ${mostraMappa ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
+                style={{ width: '38px', height: '38px' }}
+                onClick={() => setMostraMappa(m => !m)}
+                aria-label={mostraMappa ? 'Torna alla lettura' : 'Mappa'}
+              >
+                <i className={`bi ${mostraMappa ? 'bi-arrow-left' : 'bi-map'}`}></i>
+              </button>
+            )}
             {riconoscimentoSupportato && (
               <button
                 className={`btn btn-sm ${ascoltando ? 'btn-danger' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
@@ -185,59 +218,78 @@ function Player() {
           </div>
         )}
 
-        <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
-          <h2 className="fs-4 fw-bold mb-3">{operaCorrente?.titolo}</h2>
+        {mostraMappa ? (
+          <div className="flex-grow-1" style={{ minHeight: 0, background: '#F4F1E9' }}>
+            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }}>
+              <image href={config.mappa} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
+              {opere.map((op, i) => {
+                const pos = config.posizioni?.[op?.operaId];
+                if (!pos) return null;
+                const corrente = i === indiceAttuale;
+                return (
+                  <g key={op?._id || i} style={{ cursor: 'pointer' }} onClick={() => setIndiceAttuale(i)}>
+                    <circle cx={pos.x} cy={pos.y} r={corrente ? 4.6 : 3.6} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />
+                    <text x={pos.x} y={pos.y + 1.5} textAnchor="middle" fontSize="4.2" fontWeight="600" fill={corrente ? '#fff' : '#1B1917'}>{i + 1}</text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        ) : (
+          <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
+            <h2 className="fs-4 fw-bold mb-3">{operaCorrente?.titolo}</h2>
 
-          {operaCorrente?.immagine ? (
-            <img
-              src={operaCorrente.immagine}
-              alt={operaCorrente.titolo}
-              className="img-fluid rounded mb-3 w-100"
-              style={{ maxHeight: '200px', objectFit: 'cover' }}
-            />
-          ) : (
-            <div className="d-flex align-items-center justify-content-center text-muted mx-auto rounded mb-3" style={{ width: '96px', height: '96px', border: '1px dashed var(--bs-border-color)' }}>
-              <i className="bi bi-image fs-4"></i>
-            </div>
-          )}
-
-          {testoTrovato ? (
-            <div className="mb-3" style={{ lineHeight: '1.6' }}>
-              {testoTrovato.testo}
-            </div>
-          ) : (
-            <div className="text-muted fst-italic mb-3">Nessun testo disponibile.</div>
-          )}
-
-          <div className="row g-2">
-            <div className="col-6">
-              <label className="form-label small text-muted mb-1">Livello</label>
-              <select className="form-select form-select-sm" value={livelloScelto} onChange={(e) => setLivelloScelto(e.target.value)}>
-                <option value="infantile">Bambino</option>
-                <option value="elementare">Studente</option>
-                <option value="medio">Generale</option>
-                <option value="specialistico">Esperto</option>
-              </select>
-            </div>
-            <div className="col-6">
-              <label className="form-label small text-muted mb-1">Durata</label>
-              <select className="form-select form-select-sm" value={durataScelta} onChange={(e) => setDurataScelta(e.target.value)}>
-                <option value="3s">3 sec</option>
-                <option value="15s">15 sec</option>
-                <option value="1min">1 min</option>
-                <option value="4min">4 min</option>
-              </select>
-            </div>
-            {voci.length > 1 && (
-              <div className="col-12">
-                <label className="form-label small text-muted mb-1">Voce</label>
-                <select className="form-select form-select-sm" value={voceScelta} onChange={(e) => setVoceScelta(e.target.value)}>
-                  {voci.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
-                </select>
+            {operaCorrente?.immagine ? (
+              <img
+                src={operaCorrente.immagine}
+                alt={operaCorrente.titolo}
+                className="img-fluid rounded mb-3 w-100"
+                style={{ maxHeight: '200px', objectFit: 'cover' }}
+              />
+            ) : (
+              <div className="d-flex align-items-center justify-content-center text-muted mx-auto rounded mb-3" style={{ width: '96px', height: '96px', border: '1px dashed var(--bs-border-color)' }}>
+                <i className="bi bi-image fs-4"></i>
               </div>
             )}
+
+            {testoTrovato ? (
+              <div className="mb-3" style={{ lineHeight: '1.6' }}>
+                {testoTrovato.testo}
+              </div>
+            ) : (
+              <div className="text-muted fst-italic mb-3">Nessun testo disponibile.</div>
+            )}
+
+            <div className="row g-2">
+              <div className="col-6">
+                <label className="form-label small text-muted mb-1">Livello</label>
+                <select className="form-select form-select-sm" value={livelloScelto} onChange={(e) => setLivelloScelto(e.target.value)}>
+                  <option value="infantile">Bambino</option>
+                  <option value="elementare">Studente</option>
+                  <option value="medio">Generale</option>
+                  <option value="specialistico">Esperto</option>
+                </select>
+              </div>
+              <div className="col-6">
+                <label className="form-label small text-muted mb-1">Durata</label>
+                <select className="form-select form-select-sm" value={durataScelta} onChange={(e) => setDurataScelta(e.target.value)}>
+                  <option value="3s">3 sec</option>
+                  <option value="15s">15 sec</option>
+                  <option value="1min">1 min</option>
+                  <option value="4min">4 min</option>
+                </select>
+              </div>
+              {voci.length > 1 && (
+                <div className="col-12">
+                  <label className="form-label small text-muted mb-1">Voce</label>
+                  <select className="form-select form-select-sm" value={voceScelta} onChange={(e) => setVoceScelta(e.target.value)}>
+                    {voci.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-light border-top py-2 px-4 d-flex justify-content-between align-items-center flex-shrink-0">
           <button

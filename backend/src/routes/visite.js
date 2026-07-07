@@ -46,7 +46,7 @@ router.get('/:id', async (req, res) => {
   try {
     const visita = await Visita.findById(req.params.id)
       .populate('autoreId', 'username')
-      .populate('museoId', 'nome')
+      .populate('museoId', 'nome configFile')
       .populate('items.itemId');
     if (!visita) return res.status(404).json({ message: 'Visita non trovata' });
     res.json(visita);

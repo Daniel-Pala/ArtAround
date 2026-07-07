@@ -1,0 +1,16 @@
+{
+  "nome": "Pinacoteca Nazionale di Bologna",
+  "mappa": "/config/pinacoteca-bologna.svg",
+  "posizioni": {
+    "Q126599960": { "x": 26, "y": 25 },
+    "Q1103801": { "x": 73, "y": 25 },
+    "Q3907499": { "x": 50, "y": 58 }
+  },
+  "logistica": {
+    "uscita": "In fondo alla sala Ingresso, sulla destra.",
+    "toilette": "Vicino all'ingresso, corridoio a sinistra.",
+    "bar": "Al piano terra, oltre la biglietteria.",
+    "shop": "Accanto all'uscita.",
+    "ostacoli": "Scalini tra la Sala 3 e l'uscita; disponibile ascensore."
+  }
+}

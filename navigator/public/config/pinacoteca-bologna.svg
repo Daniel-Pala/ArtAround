@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect x="0" y="0" width="100" height="100" fill="#F4F1E9"/>
+  <g fill="#F7F4EC" stroke="#8a7f6d" stroke-width="0.6">
+    <rect x="5" y="5" width="43" height="40"/>
+    <rect x="52" y="5" width="43" height="40"/>
+    <rect x="5" y="48" width="90" height="21"/>
+    <rect x="5" y="72" width="90" height="18"/>
+  </g>
+  <g fill="#6F675C" font-family="sans-serif" font-size="4" text-anchor="middle">
+    <text x="26.5" y="11">Sala 1</text>
+    <text x="73.5" y="11">Sala 2</text>
+    <text x="50" y="52.5">Sala 3</text>
+    <text x="50" y="82.5">Ingresso</text>
+  </g>
+</svg>
