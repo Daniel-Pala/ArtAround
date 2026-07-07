@@ -87,6 +87,16 @@ h1, h2, h3, h4, h5, h6,
   --bs-btn-active-bg: #7F2219; --bs-btn-active-border-color: #7F2219;
 }
 
+/* su touch l'hover/tap resta "impresso" dopo il click: lo azzero sui dispositivi senza hover reale */
+.btn { -webkit-tap-highlight-color: transparent; }
+@media (hover: none) {
+  .btn:hover {
+    color: var(--bs-btn-color);
+    background-color: var(--bs-btn-bg);
+    border-color: var(--bs-btn-border-color);
+  }
+}
+
 /* focus caldo, non azzurro */
 .form-control:focus, .form-select:focus {
   border-color: #D99B8F;
