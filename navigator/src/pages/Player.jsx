@@ -7,7 +7,6 @@ function Player() {
   const navigate = useNavigate();
 
   const [visita, setVisita] = useState(null);
-  const [opere, setOpere] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [indiceAttuale, setIndiceAttuale] = useState(0);
@@ -23,11 +22,7 @@ function Player() {
   useEffect(() => {
     fetchAuth(`/api/visite/${visitaId}`)
       .then(res => res.json())
-      .then(data => {
-        setVisita(data);
-        // la visita arriva gia con gli items dentro, a me servono solo le opere
-        if (data.items) setOpere(data.items.map(item => item.itemId));
-      })
+      .then(data => setVisita(data))
       .finally(() => setLoading(false));
   }, [visitaId]);
 
@@ -54,6 +49,9 @@ function Player() {
 
   // esco dal player: fermo l'audio
   useEffect(() => () => window.speechSynthesis.cancel(), []);
+
+  // la visita arriva gia con gli items dentro, a me servono solo le opere
+  const opere = visita?.items?.map(item => item.itemId) ?? [];
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
   if (opere.length === 0) return <div className="alert alert-warning m-3 text-center">Nessuna opera presente in questo percorso.</div>;
@@ -118,9 +116,7 @@ function Player() {
               </div>
             </div>
           ) : (
-            <div className="text-muted fst-italic mb-4 d-flex align-items-start gap-2">
-              <span> Nessun testo disponibile.</span>
-            </div>
+            <div className="text-muted fst-italic mb-4">Nessun testo disponibile.</div>
           )}
 
           <div className="row g-2">
