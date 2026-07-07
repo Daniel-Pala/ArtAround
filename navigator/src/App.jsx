@@ -3,7 +3,6 @@ import { getUtenteLoggato } from './auth';
 
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
-import Percorsi from './pages/Percorsi';
 import Player from './pages/Player';
 
 // Catalogo dietro login: senza sessione si finisce sempre su /login
@@ -17,7 +16,6 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/museo/:id" element={<ProtectedRoute><Percorsi /></ProtectedRoute>} />
         <Route path="/player/:visitaId" element={<ProtectedRoute><Player /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
