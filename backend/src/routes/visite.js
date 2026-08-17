@@ -4,12 +4,15 @@ const Visita = require('../models/Visita');
 const Utente = require('../models/Utente');
 const { richiediAutore, richiediAutenticazione } = require('../middleware/autorizzazione');
 
-// Ottiene tutte le visite (filtrabili per museo)
+// Ottiene tutte le visite (filtrabili per museo e per stato di pubblicazione).
+// La vetrina del visitatore passa ?pubblica=true; l'autore chiama senza filtro
+// perche' nel suo museo deve continuare a vedere le proprie bozze.
 router.get('/', async (req, res) => {
   try {
-    const { museoId } = req.query;
+    const { museoId, pubblica } = req.query;
     const filtro = {};
     if (museoId) filtro.museoId = museoId;
+    if (pubblica === 'true') filtro.pubblica = true;
     const visite = await Visita.find(filtro)
       .populate('autoreId', 'username')
       .populate('museoId', 'nome');

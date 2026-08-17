@@ -129,7 +129,7 @@ async function caricaMarketplaceVisitatore() {
 
     try {
         const [resVisite, resAcquisti] = await Promise.all([
-            fetch(`${API_URL}/visite`),
+            fetch(`${API_URL}/visite?pubblica=true`),
             fetchAuth(`${API_URL}/visite/mie-visite`)
         ]);
 
