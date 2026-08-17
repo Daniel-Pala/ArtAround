@@ -1,14 +1,6 @@
-// =============================================================================
-// app.js — Gestione Dashboard Autore e Visitatore (Versione Definitiva e Stabile)
-// =============================================================================
+// app.js — dashboard autore e vetrina visitatore
 
-console.log("App.js caricato correttamente");
-
-if (typeof richiediLogin !== 'function') {
-    console.error("ERRORE: sessione.js non è caricato correttamente!");
-} else {
-    richiediLogin();
-}
+richiediLogin();
 
 document.addEventListener('DOMContentLoaded', () => {
     const utente = getUtenteLoggato();
@@ -76,8 +68,8 @@ async function caricaDashboardAutore() {
                     <td class="ps-4 fw-semibold">${museo.nome}</td>
                     <td class="text-muted">${museo.citta || '—'}</td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-outline-success me-1" onclick="apriModalNuovaOpera('${museo._id}')">
-                            <i class="bi bi-plus-lg me-1"></i>Opera
+                        <button class="btn btn-sm btn-outline-success me-1" onclick="apriModalOpere('${museo._id}')">
+                            <i class="bi bi-images me-1"></i>Opere
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="apriModalVisite('${museo._id}')">
                             <i class="bi bi-collection me-1"></i>Percorsi
@@ -138,11 +130,8 @@ async function caricaMarketplaceVisitatore() {
         
         if (resAcquisti.ok) {
             const acquistiRaw = await resAcquisti.json();
-            // FORZATURA STRINGA: assicuriamoci che gli ID vengano salvati come stringhe semplici per poterli confrontare
-            acquistiIds = acquistiRaw.map(a => {
-                if (a && typeof a === 'object' && a._id) return String(a._id);
-                return String(a);
-            });
+            // la rotta restituisce le visite popolate, ma in altri punti sono solo id: normalizzo a stringa
+            acquistiIds = acquistiRaw.map(a => String(a._id || a));
         }
 
         if (visite.length === 0) {
@@ -200,6 +189,55 @@ async function acquistaVisita(visitaId) {
     } catch (error) {
         console.error(error);
         alert("Si è verificato un errore di rete.");
+    }
+}
+
+function apriModalOpere(museoId) {
+    window.currentMuseoId = museoId;
+    new bootstrap.Modal(document.getElementById('modalOpere')).show();
+    caricaOpereMuseo(museoId);
+}
+
+// Bootstrap non tiene aperte due modali insieme: chiudo questa e apro l'altra quando è sparita
+function passaANuovaOpera() {
+    const modale = document.getElementById('modalOpere');
+    modale.addEventListener('hidden.bs.modal', () => apriModalNuovaOpera(window.currentMuseoId), { once: true });
+    bootstrap.Modal.getInstance(modale).hide();
+}
+
+async function caricaOpereMuseo(museoId) {
+    const container = document.getElementById('listaOpereMuseo');
+    const utente = getUtenteLoggato();
+
+    const response = await fetch(`${API_URL}/items?museoId=${museoId}`);
+    const opere = (await response.json()).filter(o => o.autoreId && o.autoreId._id === utente.userId);
+
+    if (opere.length === 0) {
+        container.innerHTML = `<p class="text-muted text-center mb-0">Non hai ancora creato opere in questo museo.</p>`;
+        return;
+    }
+
+    container.innerHTML = opere.map(o => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+            <span class="text-truncate me-2">
+                <span class="fw-semibold">${o.titolo}</span>
+                <small class="text-muted d-block">${o.operaId} · ${o.testi.length} testi</small>
+            </span>
+            <button class="btn btn-sm btn-outline-danger" onclick="eliminaOpera('${o._id}', '${museoId}')" aria-label="Elimina opera">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+async function eliminaOpera(itemId, museoId) {
+    if (!confirm("Eliminare questa opera? Sparirà anche dai percorsi che la contengono.")) return;
+
+    const response = await fetchAuth(`${API_URL}/items/${itemId}`, { method: 'DELETE' });
+    if (response.ok) {
+        caricaOpereMuseo(museoId);
+    } else {
+        alert("Errore durante l'eliminazione dell'opera.");
     }
 }
 

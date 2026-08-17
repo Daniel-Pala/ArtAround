@@ -83,8 +83,9 @@ function Player() {
     riconoscimentoRef.current?.abort();
   }, []);
 
-  // la visita arriva gia con gli items dentro, a me servono solo le opere
-  const opere = visita?.items?.map(item => item.itemId) ?? [];
+  // la visita arriva gia con gli items dentro, a me servono solo le opere.
+  // se un'opera e' stata cancellata dal marketplace la populate restituisce null: la scarto
+  const opere = visita?.items?.map(item => item.itemId).filter(Boolean) ?? [];
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
   if (opere.length === 0) return <div className="alert alert-warning m-3 text-center">Nessuna opera presente in questo percorso.</div>;

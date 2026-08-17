@@ -22,16 +22,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// NUOVA: Ottiene SOLO le visite acquistate dall'utente loggato
+// Ottiene solo le visite acquistate dall'utente loggato
 router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   try {
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
-
-    // CONTROLLO DI SICUREZZA
-    if (!utente.acquisti || utente.acquisti.length === 0) {
-      return res.json([]);
-    }
 
     await utente.populate({
       path: 'acquisti',
@@ -58,7 +53,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// NUOVA: Sblocca/Acquista una visita
+// Sblocca una visita per l'utente loggato (checkout finto, nessun pagamento)
 router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
   try {
     const visita = await Visita.findById(req.params.id);
@@ -67,14 +62,9 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
 
-    // Fallback di sicurezza se l'array è assente nei vecchi utenti
-    if (!utente.acquisti) {
-      utente.acquisti = [];
-    }
-
-    // Controllo a prova di bomba convertendo in stringa gli ObjectId
+    // gli ObjectId non si confrontano con ===, servono le stringhe
     const haGiaAcquistato = utente.acquisti.some(id => id.toString() === visita._id.toString());
-    
+
     if (haGiaAcquistato) {
       return res.status(400).json({ message: 'Hai già sbloccato questo percorso' });
     }
