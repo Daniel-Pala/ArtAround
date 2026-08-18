@@ -21,18 +21,18 @@
         </div>
 
         <div class="row g-4">
-            <!-- Colonna opere disponibili -->
+            <!-- Colonna item disponibili -->
             <div class="col-lg-8">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <h2 class="h4 mb-0">Opere disponibili</h2>
+                    <h2 class="h4 mb-0">Item disponibili</h2>
                     <div class="input-group" style="max-width: 280px;">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" id="cercaOpera" class="form-control" placeholder="Cerca un'opera" oninput="renderOpereDisponibili()">
+                        <input type="text" id="cercaItem" class="form-control" placeholder="Cerca un item" oninput="renderItemsDisponibili()">
                     </div>
                 </div>
 
-                <div id="listaOpere">
-                    <div class="text-muted py-3">Caricamento opere…</div>
+                <div id="listaItems">
+                    <div class="text-muted py-3">Caricamento item…</div>
                 </div>
             </div>
 
@@ -69,7 +69,7 @@
                             <hr>
 
                             <ul id="carrelloVisita" class="list-group mb-3">
-                                <li class="list-group-item text-muted text-center">Nessuna opera selezionata.</li>
+                                <li class="list-group-item text-muted text-center">Nessun item selezionato.</li>
                             </ul>
                             <button id="btnSalvaVisita" class="btn btn-success w-100" disabled onclick="salvaVisita()">
                                 Salva percorso

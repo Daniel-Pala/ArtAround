@@ -47,7 +47,7 @@ io.on('connection', (socket) => {
     const sessione = sessioni.get(codice)
     if (sessione) {
       sessione.indiceCorrente = indice
-      io.to(codice).emit('stato:opera', { indice }) // Broadcast solo alla stanza
+      io.to(codice).emit('stato:item', { indice }) // Broadcast solo alla stanza
     }
   })
 
@@ -73,8 +73,8 @@ io.on('connection', (socket) => {
       // Aggiunge lo studente alla Map della sessione
       sessione.studenti.set(socket.id, { nome, livello: 'base', durata: 'corta', risposte: [] })
 
-      // Manda lo stato attuale dell'opera allo studente appena entrato
-      socket.emit('stato:opera', { indice: sessione.indiceCorrente })
+      // Manda lo stato attuale dell'item allo studente appena entrato
+      socket.emit('stato:item', { indice: sessione.indiceCorrente })
       
       // Notifica il docente della lista studenti aggiornata
       const listaStudenti = Array.from(sessione.studenti.values())

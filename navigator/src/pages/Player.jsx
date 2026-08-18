@@ -70,7 +70,7 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
-  // se cambia opera o combinazione livello/durata, azzero l'audio in corso
+  // se cambia item o combinazione livello/durata, azzero l'audio in corso
   useEffect(() => {
     window.speechSynthesis.cancel();
     setParlando(false);
@@ -83,17 +83,17 @@ function Player() {
     riconoscimentoRef.current?.abort();
   }, []);
 
-  // la visita arriva gia con gli items dentro, a me servono solo le opere.
-  // se un'opera e' stata cancellata dal marketplace la populate restituisce null: la scarto
-  const opere = visita?.items?.map(item => item.itemId).filter(Boolean) ?? [];
+  // la visita arriva gia con gli item dentro, a me serve solo il contenuto
+  // se un item e' stato cancellato dal marketplace la populate restituisce null: lo scarto
+  const items = visita?.items?.map(item => item.itemId).filter(Boolean) ?? [];
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
-  if (opere.length === 0) return <div className="alert alert-warning m-3 text-center">Nessuna opera presente in questo percorso.</div>;
+  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">Nessun item presente in questo percorso.</div>;
 
-  const operaCorrente = opere[indiceAttuale];
+  const itemCorrente = items[indiceAttuale];
 
-  // tra i testi dell'opera cerco quello che combacia con livello e durata scelti
-  const testoTrovato = operaCorrente?.testi?.find(
+  // tra i testi dell'item cerco quello che combacia con livello e durata scelti
+  const testoTrovato = itemCorrente?.testi?.find(
     t => t.livello === livelloScelto && t.durata === durataScelta
   );
 
@@ -138,7 +138,7 @@ function Player() {
   };
 
   const vaiIndietro = () => { if (indiceAttuale > 0) setIndiceAttuale(indiceAttuale - 1); };
-  const vaiAvanti = () => { if (indiceAttuale < opere.length - 1) setIndiceAttuale(indiceAttuale + 1); };
+  const vaiAvanti = () => { if (indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); };
 
   const cambiaDurata = (verso) => setDurataScelta(d => DURATE[Math.min(Math.max(DURATE.indexOf(d) + verso, 0), DURATE.length - 1)]);
   const cambiaLivello = (verso) => setLivelloScelto(l => LIVELLI[Math.min(Math.max(LIVELLI.indexOf(l) + verso, 0), LIVELLI.length - 1)]);
@@ -212,7 +212,7 @@ function Player() {
 
           <div className="flex-grow-1 text-center px-2" style={{ minWidth: 0 }}>
             <div className="fw-semibold text-truncate">{visita?.nome}</div>
-            <div className="small text-muted">{indiceAttuale + 1} / {opere.length}</div>
+            <div className="small text-muted">{indiceAttuale + 1} / {items.length}</div>
           </div>
 
           <div className="d-flex align-items-center justify-content-end gap-1 flex-shrink-0" style={{ width: '124px' }}>
@@ -260,7 +260,7 @@ function Player() {
           <div className="flex-grow-1" style={{ minHeight: 0, background: '#F4F1E9' }}>
             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }}>
               <image href={config.mappa} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
-              {opere.map((op, i) => {
+              {items.map((op, i) => {
                 const pos = config.posizioni?.[op?.operaId];
                 if (!pos) return null;
                 const corrente = i === indiceAttuale;
@@ -275,12 +275,12 @@ function Player() {
           </div>
         ) : (
           <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
-            <h2 className="fs-4 fw-bold mb-3">{operaCorrente?.titolo}</h2>
+            <h2 className="fs-4 fw-bold mb-3">{itemCorrente?.titolo}</h2>
 
-            {operaCorrente?.immagine ? (
+            {itemCorrente?.immagine ? (
               <img
-                src={operaCorrente.immagine}
-                alt={operaCorrente.titolo}
+                src={itemCorrente.immagine}
+                alt={itemCorrente.titolo}
                 className="img-fluid rounded mb-3 w-100"
                 style={{ maxHeight: '200px', objectFit: 'cover' }}
               />
@@ -335,7 +335,7 @@ function Player() {
             style={{ width: '46px', height: '46px' }}
             disabled={indiceAttuale === 0}
             onClick={vaiIndietro}
-            aria-label="Opera precedente"
+            aria-label="Item precedente"
           >
             <i className="bi bi-skip-start-fill fs-5"></i>
           </button>
@@ -351,9 +351,9 @@ function Player() {
           <button
             className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
             style={{ width: '46px', height: '46px' }}
-            disabled={indiceAttuale === opere.length - 1}
+            disabled={indiceAttuale === items.length - 1}
             onClick={vaiAvanti}
-            aria-label="Opera successiva"
+            aria-label="Item successivo"
           >
             <i className="bi bi-skip-end-fill fs-5"></i>
           </button>

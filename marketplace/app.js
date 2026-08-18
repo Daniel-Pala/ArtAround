@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sezAutore) sezAutore.style.display = 'block';
         caricaDashboardAutore();
         setupFormMuseo();
-        setupFormOpera();
+        setupFormItem();
     } else if (utente.ruolo === 'visitatore') {
         const sezVisitatore = document.getElementById('sezioneVisitatore');
         if (sezVisitatore) sezVisitatore.style.display = 'block';
@@ -68,8 +68,8 @@ async function caricaDashboardAutore() {
                     <td class="ps-4 fw-semibold">${museo.nome}</td>
                     <td class="text-muted">${museo.citta || '—'}</td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-outline-success me-1" onclick="apriModalOpere('${museo._id}')">
-                            <i class="bi bi-images me-1"></i>Opere
+                        <button class="btn btn-sm btn-outline-success me-1" onclick="apriModalItems('${museo._id}')">
+                            <i class="bi bi-images me-1"></i>Item
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="apriModalVisite('${museo._id}')">
                             <i class="bi bi-collection me-1"></i>Percorsi
@@ -192,63 +192,63 @@ async function acquistaVisita(visitaId) {
     }
 }
 
-function apriModalOpere(museoId) {
+function apriModalItems(museoId) {
     window.currentMuseoId = museoId;
-    new bootstrap.Modal(document.getElementById('modalOpere')).show();
-    caricaOpereMuseo(museoId);
+    new bootstrap.Modal(document.getElementById('modalItems')).show();
+    caricaItemsMuseo(museoId);
 }
 
 // Bootstrap non tiene aperte due modali insieme: chiudo questa e apro l'altra quando è sparita
-function passaANuovaOpera() {
-    const modale = document.getElementById('modalOpere');
-    modale.addEventListener('hidden.bs.modal', () => apriModalNuovaOpera(window.currentMuseoId), { once: true });
+function passaANuovoItem() {
+    const modale = document.getElementById('modalItems');
+    modale.addEventListener('hidden.bs.modal', () => apriModalNuovoItem(window.currentMuseoId), { once: true });
     bootstrap.Modal.getInstance(modale).hide();
 }
 
-async function caricaOpereMuseo(museoId) {
-    const container = document.getElementById('listaOpereMuseo');
+async function caricaItemsMuseo(museoId) {
+    const container = document.getElementById('listaItemsMuseo');
     const utente = getUtenteLoggato();
 
     const response = await fetch(`${API_URL}/items?museoId=${museoId}`);
-    const opere = (await response.json()).filter(o => o.autoreId && o.autoreId._id === utente.userId);
+    const items = (await response.json()).filter(o => o.autoreId && o.autoreId._id === utente.userId);
 
-    if (opere.length === 0) {
-        container.innerHTML = `<p class="text-muted text-center mb-0">Non hai ancora creato opere in questo museo.</p>`;
+    if (items.length === 0) {
+        container.innerHTML = `<p class="text-muted text-center mb-0">Non hai ancora creato item in questo museo.</p>`;
         return;
     }
 
-    container.innerHTML = opere.map(o => `
+    container.innerHTML = items.map(o => `
         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
             <span class="text-truncate me-2">
                 <span class="fw-semibold">${o.titolo}</span>
                 <small class="text-muted d-block">${o.operaId} · ${o.testi.length} testi</small>
             </span>
-            <button class="btn btn-sm btn-outline-danger" onclick="eliminaOpera('${o._id}', '${museoId}')" aria-label="Elimina opera">
+            <button class="btn btn-sm btn-outline-danger" onclick="eliminaItem('${o._id}', '${museoId}')" aria-label="Elimina item">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
     `).join('');
 }
 
-async function eliminaOpera(itemId, museoId) {
-    if (!confirm("Eliminare questa opera? Sparirà anche dai percorsi che la contengono.")) return;
+async function eliminaItem(itemId, museoId) {
+    if (!confirm("Eliminare questo item? Sparirà anche dai percorsi che lo contengono.")) return;
 
     const response = await fetchAuth(`${API_URL}/items/${itemId}`, { method: 'DELETE' });
     if (response.ok) {
-        caricaOpereMuseo(museoId);
+        caricaItemsMuseo(museoId);
     } else {
-        alert("Errore durante l'eliminazione dell'opera.");
+        alert("Errore durante l'eliminazione dell'item.");
     }
 }
 
-function apriModalNuovaOpera(museoId) {
+function apriModalNuovoItem(museoId) {
     window.currentMuseoId = museoId;
     document.getElementById('testiContainer').innerHTML = '';
     aggiungiRigaTesto();
-    new bootstrap.Modal(document.getElementById('modalNuovaOpera')).show();
+    new bootstrap.Modal(document.getElementById('modalNuovoItem')).show();
 }
 
-// Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal opera.
+// Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal item.
 function aggiungiRigaTesto() {
     const riga = document.createElement('div');
     riga.className = 'testo-riga border rounded p-2 mb-2';
@@ -281,8 +281,8 @@ function aggiungiRigaTesto() {
     document.getElementById('testiContainer').appendChild(riga);
 }
 
-function setupFormOpera() {
-    const form = document.getElementById('formOpera');
+function setupFormItem() {
+    const form = document.getElementById('formItem');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -294,16 +294,16 @@ function setupFormOpera() {
         })).filter(t => t.testo);
 
         if (testi.length === 0) {
-            alert("Aggiungi almeno un testo all'opera.");
+            alert("Aggiungi almeno un testo all'item.");
             return;
         }
 
         const payload = {
-            operaId: document.getElementById('operaWikidata').value.trim(),
+            operaId: document.getElementById('itemWikidata').value.trim(),
             museoId: window.currentMuseoId,
-            titolo: document.getElementById('operaTitolo').value.trim(),
-            licenza: document.getElementById('operaLicenza').value,
-            prezzo: parseFloat(document.getElementById('operaPrezzo').value) || 0,
+            titolo: document.getElementById('itemTitolo').value.trim(),
+            licenza: document.getElementById('itemLicenza').value,
+            prezzo: parseFloat(document.getElementById('itemPrezzo').value) || 0,
             testi
         };
 
@@ -315,12 +315,12 @@ function setupFormOpera() {
             });
 
             if (response.ok) {
-                bootstrap.Modal.getInstance(document.getElementById('modalNuovaOpera')).hide();
+                bootstrap.Modal.getInstance(document.getElementById('modalNuovoItem')).hide();
                 form.reset();
-                alert("Opera creata.");
+                alert("Item creato.");
             } else {
                 const data = await response.json();
-                alert(data.message || "Errore durante il salvataggio dell'opera.");
+                alert(data.message || "Errore durante il salvataggio dell'item.");
             }
         } catch (error) {
             alert("Errore di connessione al server.");

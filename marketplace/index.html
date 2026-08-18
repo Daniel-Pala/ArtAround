@@ -91,26 +91,26 @@
     </div>
 
     <!-- ============ MODALE NUOVA OPERA ============ -->
-    <div class="modal fade" id="modalNuovaOpera" tabindex="-1">
+    <div class="modal fade" id="modalNuovoItem" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Aggiungi opera</h5>
+                    <h5 class="modal-title">Aggiungi item</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                    <form id="formOpera">
+                    <form id="formItem">
                         <div class="mb-3">
-                            <label class="form-label">Titolo dell'opera</label>
-                            <input type="text" id="operaTitolo" class="form-control" placeholder="es. Ritratto di Giulio II" required>
+                            <label class="form-label">Titolo dell'item</label>
+                            <input type="text" id="itemTitolo" class="form-control" placeholder="es. Ritratto di Giulio II" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">ID Wikidata</label>
-                            <input type="text" id="operaWikidata" class="form-control" placeholder="es. Q126599960" required>
+                            <input type="text" id="itemWikidata" class="form-control" placeholder="es. Q126599960" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Licenza</label>
-                            <select id="operaLicenza" class="form-select" required>
+                            <select id="itemLicenza" class="form-select" required>
                                 <option value="">Seleziona una licenza</option>
                                 <option value="CC-BY">CC-BY</option>
                                 <option value="CC-BY-SA">CC-BY-SA</option>
@@ -120,7 +120,7 @@
                         </div>
                         <div class="mb-4">
                             <label class="form-label">Prezzo (€)</label>
-                            <input type="number" id="operaPrezzo" class="form-control" min="0" step="0.01" value="0">
+                            <input type="number" id="itemPrezzo" class="form-control" min="0" step="0.01" value="0">
                         </div>
 
                         <hr>
@@ -132,7 +132,7 @@
                         </div>
                         <div id="testiContainer" class="mb-4"></div>
 
-                        <button type="submit" class="btn btn-success w-100">Salva opera</button>
+                        <button type="submit" class="btn btn-success w-100">Salva item</button>
                     </form>
                 </div>
             </div>
@@ -140,18 +140,18 @@
     </div>
 
     <!-- ============ MODALE OPERE DEL MUSEO ============ -->
-    <div class="modal fade" id="modalOpere" tabindex="-1">
+    <div class="modal fade" id="modalItems" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Opere del museo</h5>
+                    <h5 class="modal-title">Item del museo</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <button class="btn btn-success w-100 mb-3" onclick="passaANuovaOpera()">
-                        <i class="bi bi-plus-lg me-2"></i>Nuova opera
+                    <button class="btn btn-success w-100 mb-3" onclick="passaANuovoItem()">
+                        <i class="bi bi-plus-lg me-2"></i>Nuovo item
                     </button>
-                    <div id="listaOpereMuseo"></div>
+                    <div id="listaItemsMuseo"></div>
                 </div>
             </div>
         </div>

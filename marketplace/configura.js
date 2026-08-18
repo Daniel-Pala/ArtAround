@@ -1,10 +1,10 @@
 // =============================================================================
 // configura.js — configuratore di visite per autori
-// Permette di selezionare opere e creare/modificare percorsi
+// Permette di selezionare items e creare/modificare percorsi
 // =============================================================================
 
-let opereDisponibili = [];
-let opereSelezionate = [];
+let itemsDisponibili = [];
+let itemsSelezionati = [];
 let museoIdAttuale = null;
 let visitaIdAttuale = null; // Per modifiche di visite esistenti
 
@@ -40,10 +40,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             titoloElement.innerText = museo.nome;
         }
 
-        const opereResponse = await fetch(`${API_URL}/items?museoId=${museoIdAttuale}`);
-        if (opereResponse.ok) {
-            opereDisponibili = await opereResponse.json();
-            renderOpereDisponibili();
+        const itemsResponse = await fetch(`${API_URL}/items?museoId=${museoIdAttuale}`);
+        if (itemsResponse.ok) {
+            itemsDisponibili = await itemsResponse.json();
+            renderItemsDisponibili();
         }
 
         // Se siamo in modalità modifica, carica la visita esistente
@@ -87,15 +87,15 @@ async function caricaVisitaEsistente() {
             pubblicaCheckbox.checked = visita.pubblica || false;
         }
 
-        // Carica le opere selezionate
-        opereSelezionate = visita.items.map(item => ({
+        // Carica gli item selezionati
+        itemsSelezionati = visita.items.map(item => ({
             _id: item.itemId._id,
             titolo: item.itemId.titolo,
             autoreId: item.itemId.autoreId,
             ordine: item.ordine
         })).sort((a, b) => a.ordine - b.ordine);
 
-        renderOpereDisponibili();
+        renderItemsDisponibili();
         renderCarrello();
     } catch (error) {
         console.error("Errore nel caricamento della visita:", error);
@@ -104,39 +104,39 @@ async function caricaVisitaEsistente() {
 
 // --- RICERCA E RENDERING OPERE -----------------------------------------------
 
-function renderOpereDisponibili() {
-    const containerOpere = document.getElementById('listaOpere');
-    const termineRicerca = document.getElementById('cercaOpera').value.toLowerCase();
+function renderItemsDisponibili() {
+    const containerItems = document.getElementById('listaItems');
+    const termineRicerca = document.getElementById('cercaItem').value.toLowerCase();
 
-    const opereFiltrate = opereDisponibili.filter(opera => {
-        const titolo = opera.titolo ? opera.titolo.toLowerCase() : '';
+    const itemsFiltrati = itemsDisponibili.filter(item => {
+        const titolo = item.titolo ? item.titolo.toLowerCase() : '';
         return titolo.includes(termineRicerca);
     });
 
-    if (opereDisponibili.length === 0) {
-        containerOpere.innerHTML = `<div class="text-muted py-3">Nessuna opera presente in questo museo per ora.</div>`;
+    if (itemsDisponibili.length === 0) {
+        containerItems.innerHTML = `<div class="text-muted py-3">Nessun item presente in questo museo per ora.</div>`;
         return;
     }
 
-    if (opereFiltrate.length === 0) {
-        containerOpere.innerHTML = `<div class="text-muted py-3">Nessuna opera corrisponde a "${termineRicerca}".</div>`;
+    if (itemsFiltrati.length === 0) {
+        containerItems.innerHTML = `<div class="text-muted py-3">Nessun item corrisponde a "${termineRicerca}".</div>`;
         return;
     }
 
     let htmlLista = '<ul class="list-group">';
 
-    opereFiltrate.forEach(opera => {
-        const nomeAutore = opera.autoreId ? opera.autoreId.username : 'Autore sconosciuto';
-        const giaSelezionata = opereSelezionate.some(sel => sel._id === opera._id);
+    itemsFiltrati.forEach(item => {
+        const nomeAutore = item.autoreId ? item.autoreId.username : 'Autore sconosciuto';
+        const giaSelezionata = itemsSelezionati.some(sel => sel._id === item._id);
 
         const bottoneHtml = giaSelezionata
-            ? `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-check-lg me-1"></i>Aggiunta</button>`
-            : `<button class="btn btn-sm btn-outline-success" onclick="aggiungiAVisita('${opera._id}')"><i class="bi bi-plus-lg me-1"></i>Aggiungi</button>`;
+            ? `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-check-lg me-1"></i>Aggiunto</button>`
+            : `<button class="btn btn-sm btn-outline-success" onclick="aggiungiAVisita('${item._id}')"><i class="bi bi-plus-lg me-1"></i>Aggiungi</button>`;
 
         htmlLista += `
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <div>
-                    <h6 class="mb-0">${opera.titolo || 'Opera senza titolo'}</h6>
+                    <h6 class="mb-0">${item.titolo || 'Item senza titolo'}</h6>
                     <small class="text-muted">di ${nomeAutore}</small>
                 </div>
                 ${bottoneHtml}
@@ -145,21 +145,21 @@ function renderOpereDisponibili() {
     });
 
     htmlLista += '</ul>';
-    containerOpere.innerHTML = htmlLista;
+    containerItems.innerHTML = htmlLista;
 }
 
-function aggiungiAVisita(operaId) {
-    const opera = opereDisponibili.find(o => o._id === operaId);
-    if (opera && !opereSelezionate.some(o => o._id === operaId)) {
-        opereSelezionate.push(opera);
-        renderOpereDisponibili();
+function aggiungiAVisita(itemId) {
+    const item = itemsDisponibili.find(o => o._id === itemId);
+    if (item && !itemsSelezionati.some(o => o._id === itemId)) {
+        itemsSelezionati.push(item);
+        renderItemsDisponibili();
         renderCarrello();
     }
 }
 
-function rimuoviDaVisita(operaId) {
-    opereSelezionate = opereSelezionate.filter(o => o._id !== operaId);
-    renderOpereDisponibili();
+function rimuoviDaVisita(itemId) {
+    itemsSelezionati = itemsSelezionati.filter(o => o._id !== itemId);
+    renderItemsDisponibili();
     renderCarrello();
 }
 
@@ -169,8 +169,8 @@ function renderCarrello() {
     const carrelloContainer = document.getElementById('carrelloVisita');
     const btnSalva = document.getElementById('btnSalvaVisita');
 
-    if (opereSelezionate.length === 0) {
-        carrelloContainer.innerHTML = '<li class="list-group-item text-muted text-center">Nessuna opera selezionata.</li>';
+    if (itemsSelezionati.length === 0) {
+        carrelloContainer.innerHTML = '<li class="list-group-item text-muted text-center">Nessun item selezionato.</li>';
         btnSalva.disabled = true;
         return;
     }
@@ -178,13 +178,13 @@ function renderCarrello() {
     btnSalva.disabled = false;
     let htmlCarrello = '';
 
-    opereSelezionate.forEach((opera, index) => {
+    itemsSelezionati.forEach((item, index) => {
         htmlCarrello += `
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <span class="text-truncate" style="max-width: 200px;">
-                    <small><span class="fw-semibold">${index + 1}.</span> ${opera.titolo}</small>
+                    <small><span class="fw-semibold">${index + 1}.</span> ${item.titolo}</small>
                 </span>
-                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="rimuoviDaVisita('${opera._id}')" aria-label="Rimuovi opera">
+                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="rimuoviDaVisita('${item._id}')" aria-label="Rimuovi item">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </li>
@@ -197,7 +197,7 @@ function renderCarrello() {
 // --- SALVATAGGIO VISITA -------------------------------------------------------
 
 async function salvaVisita() {
-    if (opereSelezionate.length === 0) return;
+    if (itemsSelezionati.length === 0) return;
 
     const nomeVisita = document.getElementById('nomeVisita').value.trim();
     if (!nomeVisita) {
@@ -213,8 +213,8 @@ async function salvaVisita() {
     const payload = {
         nome: nomeVisita,
         museoId: museoIdAttuale,
-        items: opereSelezionate.map((opera, index) => ({
-            itemId: opera._id,
+        items: itemsSelezionati.map((item, index) => ({
+            itemId: item._id,
             ordine: index + 1
         })),
         infoLogistiche,
@@ -249,7 +249,7 @@ async function salvaVisita() {
             alert(`Visita "${data.nome}" ${azione} con successo!`);
             
             // Reset e torna alla dashboard
-            opereSelezionate = [];
+            itemsSelezionati = [];
             document.getElementById('nomeVisita').value = '';
             setTimeout(() => {
                 window.location.href = 'index.html';
