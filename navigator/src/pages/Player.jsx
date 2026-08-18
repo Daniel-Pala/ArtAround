@@ -83,14 +83,20 @@ function Player() {
     riconoscimentoRef.current?.abort();
   }, []);
 
-  // la visita arriva gia con gli item dentro, a me serve solo il contenuto
-  // se un item e' stato cancellato dal marketplace la populate restituisce null: lo scarto
-  const items = visita?.items?.map(item => item.itemId).filter(Boolean) ?? [];
+  // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
+  // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
+  // tengo tutte e due le liste. Se un item e' stato cancellato dal marketplace la populate
+  // restituisce null e scarto la tappa intera.
+  const tappe = (visita?.items ?? [])
+    .filter(tappa => tappa.itemId)
+    .sort((a, b) => a.ordine - b.ordine);
+  const items = tappe.map(tappa => tappa.itemId);
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
   if (items.length === 0) return <div className="alert alert-warning m-3 text-center">Nessun item presente in questo percorso.</div>;
 
   const itemCorrente = items[indiceAttuale];
+  const tappaCorrente = tappe[indiceAttuale];
 
   // tra i testi dell'item cerco quello che combacia con livello e durata scelti
   const testoTrovato = itemCorrente?.testi?.find(
@@ -111,7 +117,10 @@ function Player() {
   // azioni: le richiamano sia i bottoni sia i comandi vocali
   const leggi = () => {
     if (!testoTrovato) return;
-    parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
+    // mentre cammini guardi il museo, non lo schermo: prima come arrivarci, poi l'opera
+    const indicazione = tappaCorrente?.indicazioneLogistica;
+    const daLeggere = indicazione ? `${indicazione}. ${testoTrovato.testo}` : testoTrovato.testo;
+    parla(daLeggere, () => { setParlando(false); setInPausa(false); });
     setParlando(true);
     setInPausa(false);
   };
@@ -158,6 +167,9 @@ function Player() {
     { nome: 'Piu semplice', frasi: ['non capisco', 'piu semplice', 'troppo difficile'], azione: () => cambiaLivello(-1) },
     { nome: 'Piu avanzato', frasi: ['troppo semplice', 'piu difficile', 'piu avanzato'], azione: () => cambiaLivello(1) },
     { nome: 'Esci', frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate(-1) },
+    ...(tappaCorrente?.indicazioneLogistica ? [
+      { nome: 'Come ci arrivo', frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
+    ] : []),
     ...(config?.logistica ? [
       { nome: 'Uscita', frasi: ['uscita'], azione: () => rispondiLogistica('uscita') },
       { nome: 'Toilette', frasi: ['toilette', 'bagno'], azione: () => rispondiLogistica('toilette') },
@@ -275,7 +287,19 @@ function Player() {
           </div>
         ) : (
           <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
-            <h2 className="fs-4 fw-bold mb-3">{itemCorrente?.titolo}</h2>
+            {tappaCorrente?.indicazioneLogistica && (
+              <div className="d-flex align-items-start gap-2 border rounded p-2 mb-3" style={{ background: 'var(--bs-tertiary-bg)' }}>
+                <i className="bi bi-signpost-2 flex-shrink-0" style={{ marginTop: '2px' }}></i>
+                <span className="small">{tappaCorrente.indicazioneLogistica}</span>
+              </div>
+            )}
+
+            <h2 className="fs-4 fw-bold mb-3">
+              {itemCorrente?.titolo}
+              {tappaCorrente?.opzionale && (
+                <span className="badge text-bg-secondary fw-normal fs-6 align-middle ms-2">Opzionale</span>
+              )}
+            </h2>
 
             {itemCorrente?.immagine ? (
               <img

@@ -87,12 +87,15 @@ async function caricaVisitaEsistente() {
             pubblicaCheckbox.checked = visita.pubblica || false;
         }
 
-        // Carica gli item selezionati
-        itemsSelezionati = visita.items.map(item => ({
-            _id: item.itemId._id,
-            titolo: item.itemId.titolo,
-            autoreId: item.itemId.autoreId,
-            ordine: item.ordine
+        // Carica le tappe del percorso: dell'item mi servono id e titolo, il resto
+        // (indicazione e opzionale) sta sulla tappa, non sull'item
+        itemsSelezionati = visita.items.map(tappa => ({
+            _id: tappa.itemId._id,
+            titolo: tappa.itemId.titolo,
+            autoreId: tappa.itemId.autoreId,
+            ordine: tappa.ordine,
+            indicazioneLogistica: tappa.indicazioneLogistica || '',
+            opzionale: tappa.opzionale || false
         })).sort((a, b) => a.ordine - b.ordine);
 
         renderItemsDisponibili();
@@ -151,7 +154,7 @@ function renderItemsDisponibili() {
 function aggiungiAVisita(itemId) {
     const item = itemsDisponibili.find(o => o._id === itemId);
     if (item && !itemsSelezionati.some(o => o._id === itemId)) {
-        itemsSelezionati.push(item);
+        itemsSelezionati.push({ ...item, indicazioneLogistica: '', opzionale: false });
         renderItemsDisponibili();
         renderCarrello();
     }
@@ -180,18 +183,46 @@ function renderCarrello() {
 
     itemsSelezionati.forEach((item, index) => {
         htmlCarrello += `
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span class="text-truncate" style="max-width: 200px;">
-                    <small><span class="fw-semibold">${index + 1}.</span> ${item.titolo}</small>
-                </span>
-                <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="rimuoviDaVisita('${item._id}')" aria-label="Rimuovi item">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-truncate" style="max-width: 200px;">
+                        <small><span class="fw-semibold">${index + 1}.</span> ${item.titolo}</small>
+                    </span>
+                    <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="rimuoviDaVisita('${item._id}')" aria-label="Rimuovi item">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <input type="text" class="form-control form-control-sm mt-2"
+                       placeholder="Come ci si arriva…"
+                       value="${escapeAttr(item.indicazioneLogistica)}"
+                       oninput="aggiornaIndicazione(${index}, this.value)">
+                <div class="form-check mt-1">
+                    <input class="form-check-input" type="checkbox" id="opzionale${index}"
+                           ${item.opzionale ? 'checked' : ''}
+                           onchange="aggiornaOpzionale(${index}, this.checked)">
+                    <label class="form-check-label small text-muted" for="opzionale${index}">
+                        Opzionale (se rimane tempo)
+                    </label>
+                </div>
             </li>
         `;
     });
 
     carrelloContainer.innerHTML = htmlCarrello;
+}
+
+// le virgolette dentro il testo romperebbero l'attributo value
+function escapeAttr(testo) {
+    return String(testo).replace(/"/g, '&quot;');
+}
+
+// NON ridisegno il carrello: perderei il focus del campo a ogni lettera
+function aggiornaIndicazione(indice, valore) {
+    itemsSelezionati[indice].indicazioneLogistica = valore;
+}
+
+function aggiornaOpzionale(indice, valore) {
+    itemsSelezionati[indice].opzionale = valore;
 }
 
 // --- SALVATAGGIO VISITA -------------------------------------------------------
@@ -215,7 +246,9 @@ async function salvaVisita() {
         museoId: museoIdAttuale,
         items: itemsSelezionati.map((item, index) => ({
             itemId: item._id,
-            ordine: index + 1
+            ordine: index + 1,
+            indicazioneLogistica: item.indicazioneLogistica,
+            opzionale: item.opzionale
         })),
         infoLogistiche,
         prezzo,
