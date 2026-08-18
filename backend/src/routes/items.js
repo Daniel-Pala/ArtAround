@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Item = require('../models/Item')
+const Visita = require('../models/Visita')
 const { richiediAutore } = require('../middleware/autorizzazione')
 
 router.get('/', async (req, res) => {
@@ -64,6 +65,9 @@ router.delete('/:id', richiediAutore, async (req, res) => {
       return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' })
     }
     await Item.findByIdAndDelete(req.params.id)
+    // lo tolgo anche dai percorsi che lo contenevano, altrimenti la populate
+    // restituirebbe null al posto dell'item e il carrello si romperebbe
+    await Visita.updateMany({}, { $pull: { items: { itemId: req.params.id } } })
     res.json({ messaggio: 'Item eliminato' })
   } catch (err) {
     res.status(500).json({ message: err.message })
