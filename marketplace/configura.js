@@ -93,10 +93,11 @@ async function caricaVisitaEsistente() {
             _id: tappa.itemId._id,
             titolo: tappa.itemId.titolo,
             autoreId: tappa.itemId.autoreId,
-            ordine: tappa.ordine,
+            // le visite salvate prima di questa funzione non hanno il campo:
+            // senza il fallback in pagina comparirebbe la scritta "undefined"
             indicazioneLogistica: tappa.indicazioneLogistica || '',
-            opzionale: tappa.opzionale || false
-        })).sort((a, b) => a.ordine - b.ordine);
+            opzionale: tappa.opzionale
+        }));
 
         renderItemsDisponibili();
         renderCarrello();

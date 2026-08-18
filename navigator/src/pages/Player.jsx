@@ -87,9 +87,7 @@ function Player() {
   // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
   // tengo tutte e due le liste. Se un item e' stato cancellato dal marketplace la populate
   // restituisce null e scarto la tappa intera.
-  const tappe = (visita?.items ?? [])
-    .filter(tappa => tappa.itemId)
-    .sort((a, b) => a.ordine - b.ordine);
+  const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
