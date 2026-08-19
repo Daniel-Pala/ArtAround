@@ -25,7 +25,7 @@ function Dashboard() {
       <div className="container mt-4">
         <div className="section-head mb-4">
           <h1 className="section-title">Le mie visite</h1>
-          <p className="section-sub mt-2 mb-0">Tocca una visita per avviarla.</p>
+          <p className="section-sub mt-2 mb-0">Premi Avvia quando sei al museo.</p>
         </div>
 
         {loading ? (
@@ -44,10 +44,12 @@ function Dashboard() {
                     <div className="eyebrow mb-2">{v.museoId?.nome || 'Museo'}</div>
                     <h5 className="card-title mb-2">{v.nome}</h5>
                     <p className="card-text text-muted small flex-grow-1">{v.infoLogistiche || 'Nessuna informazione logistica.'}</p>
+                    {/* niente prezzo: queste visite l'utente le ha gia' sbloccate.
+                        Il numero di tappe invece serve a capire quanto dura il giro */}
                     <div className="d-flex justify-content-between align-items-end pt-3 border-top">
-                      <div>
-                        <div className="price-label">Prezzo</div>
-                        <div className="price">{v.prezzo ? `${v.prezzo}€` : 'Gratis'}</div>
+                      <div className="text-muted small">
+                        <i className="bi bi-signpost-2 me-1"></i>
+                        {v.items.length} {v.items.length === 1 ? 'tappa' : 'tappe'}
                       </div>
                       <button className="btn btn-sm btn-success" onClick={() => navigate(`/player/${v._id}`)}>
                         <i className="bi bi-play-fill me-1"></i>Avvia
