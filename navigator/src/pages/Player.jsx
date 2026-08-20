@@ -30,7 +30,6 @@ function Player() {
   const [inPausa, setInPausa] = useState(false);
 
   const [voci, setVoci] = useState([]);
-  const [voceScelta, setVoceScelta] = useState('');
 
   const [ascoltando, setAscoltando] = useState(false);
   const [statoVoce, setStatoVoce] = useState('');
@@ -61,9 +60,7 @@ function Player() {
     const caricaVoci = () => {
       const tutte = window.speechSynthesis.getVoices();
       const italiane = tutte.filter(v => v.lang.toLowerCase().startsWith('it'));
-      const disponibili = italiane.length ? italiane : tutte;
-      setVoci(disponibili);
-      setVoceScelta(scelta => scelta || disponibili[0]?.voiceURI || '');
+      setVoci(italiane.length ? italiane : tutte);
     };
     caricaVoci();
     window.speechSynthesis.onvoiceschanged = caricaVoci;
@@ -101,13 +98,12 @@ function Player() {
     t => t.livello === livelloScelto && t.durata === durataScelta
   );
 
-  // pronuncia un testo con la voce scelta; onEnd opzionale
+  // pronuncia un testo con la prima voce italiana disponibile; onEnd opzionale
   const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
     const voce = new SpeechSynthesisUtterance(testo);
     voce.lang = 'it-IT';
-    const vocePreferita = voci.find(v => v.voiceURI === voceScelta);
-    if (vocePreferita) voce.voice = vocePreferita;
+    if (voci[0]) voce.voice = voci[0];
     if (onEnd) voce.onend = onEnd;
     window.speechSynthesis.speak(voce);
   };
@@ -164,7 +160,7 @@ function Player() {
     { nome: 'Meno dettagli', frasi: ['dimmi di meno', 'piu corto', 'piu breve'], azione: () => cambiaDurata(-1) },
     { nome: 'Piu semplice', frasi: ['non capisco', 'piu semplice', 'troppo difficile'], azione: () => cambiaLivello(-1) },
     { nome: 'Piu avanzato', frasi: ['troppo semplice', 'piu difficile', 'piu avanzato'], azione: () => cambiaLivello(1) },
-    { nome: 'Esci', frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate(-1) },
+    { nome: 'Esci', frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate('/') },
     ...(tappaCorrente?.indicazioneLogistica ? [
       { nome: 'Come ci arrivo', frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
     ] : []),
@@ -213,7 +209,7 @@ function Player() {
             <button
               className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
               style={{ width: '38px', height: '38px' }}
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               aria-label="Chiudi visita"
             >
               <i className="bi bi-x-lg"></i>
@@ -258,9 +254,8 @@ function Player() {
         </div>
 
         {(ascoltando || statoVoce) && (
-          <div className="border-bottom px-3 py-2 small d-flex align-items-center gap-2 flex-shrink-0" style={{ background: 'var(--bs-tertiary-bg)' }}>
-            <i className={`bi ${ascoltando ? 'bi-mic-fill text-danger' : 'bi-chat-left-text text-muted'}`}></i>
-            <span className={ascoltando ? 'fw-semibold' : 'text-muted'}>
+          <div className="border-bottom px-3 py-2 small text-center flex-shrink-0">
+            <span className={ascoltando ? 'fw-semibold' : 'text-muted fst-italic'}>
               {ascoltando ? 'Sto ascoltando...' : statoVoce}
             </span>
           </div>
@@ -286,10 +281,9 @@ function Player() {
         ) : (
           <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
             {tappaCorrente?.indicazioneLogistica && (
-              <div className="d-flex align-items-start gap-2 border rounded p-2 mb-3" style={{ background: 'var(--bs-tertiary-bg)' }}>
-                <i className="bi bi-signpost-2 flex-shrink-0" style={{ marginTop: '2px' }}></i>
-                <span className="small">{tappaCorrente.indicazioneLogistica}</span>
-              </div>
+              <p className="text-center fst-italic text-muted small mb-3">
+                {tappaCorrente.indicazioneLogistica}
+              </p>
             )}
 
             <h2 className="fs-4 fw-bold mb-3">
@@ -339,14 +333,6 @@ function Player() {
                   <option value="4min">4 min</option>
                 </select>
               </div>
-              {voci.length > 1 && (
-                <div className="col-12">
-                  <label className="form-label small text-muted mb-1">Voce</label>
-                  <select className="form-select form-select-sm" value={voceScelta} onChange={(e) => setVoceScelta(e.target.value)}>
-                    {voci.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
-                  </select>
-                </div>
-              )}
             </div>
           </div>
         )}
