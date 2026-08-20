@@ -2,12 +2,26 @@
   "nome": "Pinacoteca Nazionale di Bologna",
   "mappa": "/config/pinacoteca-bologna.svg",
   "posizioni": {
-    "Q126599960": { "x": 26, "y": 25 },
-    "Q1103801": { "x": 73, "y": 25 },
-    "Q3907499": { "x": 50, "y": 58 }
+    "Q3907499":   { "x": 13, "y": 20 },
+    "Q27345212":  { "x": 26, "y": 20 },
+    "Q3889219":   { "x": 39, "y": 20 },
+    "Q3947685":   { "x": 26, "y": 38 },
+
+    "Q16038421":  { "x": 60, "y": 20 },
+    "Q3213771":   { "x": 73, "y": 20 },
+    "Q1103801":   { "x": 86, "y": 20 },
+    "Q3842737":   { "x": 66, "y": 38 },
+    "Q126599960": { "x": 80, "y": 38 },
+
+    "Q3208041":   { "x": 15, "y": 62 },
+    "Q3685503":   { "x": 30, "y": 62 },
+    "Q2448678":   { "x": 45, "y": 62 },
+    "Q25217589":  { "x": 60, "y": 62 },
+    "Q23008334":  { "x": 75, "y": 62 },
+    "Q29997042":  { "x": 88, "y": 62 }
   },
   "logistica": {
-    "uscita": "In fondo alla sala Ingresso, sulla destra.",
+    "uscita": "In fondo alla Sala Ingresso, sulla destra.",
     "toilette": "Vicino all'ingresso, corridoio a sinistra.",
     "bar": "Al piano terra, oltre la biglietteria.",
     "shop": "Accanto all'uscita.",

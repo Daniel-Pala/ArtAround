@@ -271,8 +271,8 @@ function Player() {
                 const corrente = i === indiceAttuale;
                 return (
                   <g key={op?._id || i} style={{ cursor: 'pointer' }} onClick={() => setIndiceAttuale(i)}>
-                    <circle cx={pos.x} cy={pos.y} r={corrente ? 4.6 : 3.6} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />
-                    <text x={pos.x} y={pos.y + 1.5} textAnchor="middle" fontSize="4.2" fontWeight="600" fill={corrente ? '#fff' : '#1B1917'}>{i + 1}</text>
+                    <circle cx={pos.x} cy={pos.y} r={corrente ? 2.6 : 2} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />
+                    <text x={pos.x} y={pos.y + 0.9} textAnchor="middle" fontSize="2.5" fontWeight="600" fill={corrente ? '#fff' : '#1B1917'}>{i + 1}</text>
                   </g>
                 );
               })}
