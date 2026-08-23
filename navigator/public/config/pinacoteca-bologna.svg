@@ -6,7 +6,7 @@
     <rect x="5" y="48" width="90" height="21"/>
     <rect x="5" y="72" width="90" height="18"/>
   </g>
-  <g fill="#6F675C" font-family="sans-serif" font-size="4" text-anchor="middle">
+  <g fill="#8A7F70" font-family="sans-serif" font-size="2.8" letter-spacing=".15" text-anchor="middle">
     <text x="26.5" y="11">Sala 1</text>
     <text x="73.5" y="11">Sala 2</text>
     <text x="50" y="52.5">Sala 3</text>
