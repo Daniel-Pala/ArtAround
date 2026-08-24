@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchAuth } from '../auth';
+import { io } from 'socket.io-client';
 
-// scale ordinate: i comandi "dimmi di piu/meno" e "piu/troppo semplice" ci si muovono su
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
-// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X"
 const LOGISTICA = [
   ['uscita', 'Uscita'],
   ['toilette', 'Toilette'],
@@ -18,6 +17,8 @@ const LOGISTICA = [
 function Player() {
   const { visitaId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const codiceSessione = searchParams.get('sessione');
 
   const [visita, setVisita] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,7 @@ function Player() {
   const [ascoltando, setAscoltando] = useState(false);
   const [statoVoce, setStatoVoce] = useState('');
   const riconoscimentoRef = useRef(null);
+  const socketRef = useRef(null);
 
   const [config, setConfig] = useState(null);
   const [mostraMappa, setMostraMappa] = useState(false);
@@ -46,7 +48,30 @@ function Player() {
       .finally(() => setLoading(false));
   }, [visitaId]);
 
-  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica
+  // Gestione connessione Socket.io con i nomi attesi dal backend
+  useEffect(() => {
+    if (!codiceSessione) return;
+
+    const socket = io('http://localhost:3000');
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      // Il backend si aspetta 'studente:entra' e richiede un parametro 'nome'
+      socket.emit('studente:entra', { codice: codiceSessione, nome: 'Studente' });
+    });
+
+    // Il backend inoltra il cambio slide usando 'stato:item'
+    socket.on('stato:item', (dati) => {
+      if (dati && typeof dati.indice === 'number') {
+        setIndiceAttuale(dati.indice);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [codiceSessione]);
+
   useEffect(() => {
     const file = visita?.museoId?.configFile;
     if (!file) return;
@@ -55,7 +80,6 @@ function Player() {
       .then(setConfig);
   }, [visita]);
 
-  // le voci del browser arrivano in modo asincrono: tengo quelle italiane e ne scelgo una
   useEffect(() => {
     const caricaVoci = () => {
       const tutte = window.speechSynthesis.getVoices();
@@ -67,23 +91,17 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
-  // se cambia item o combinazione livello/durata, azzero l'audio in corso
   useEffect(() => {
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
   }, [indiceAttuale, livelloScelto, durataScelta]);
 
-  // esco dal player: fermo audio e microfono
   useEffect(() => () => {
     window.speechSynthesis.cancel();
     riconoscimentoRef.current?.abort();
   }, []);
 
-  // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
-  // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
-  // tengo tutte e due le liste. Se un item e' stato cancellato dal marketplace la populate
-  // restituisce null e scarto la tappa intera.
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
 
@@ -93,12 +111,10 @@ function Player() {
   const itemCorrente = items[indiceAttuale];
   const tappaCorrente = tappe[indiceAttuale];
 
-  // tra i testi dell'item cerco quello che combacia con livello e durata scelti
   const testoTrovato = itemCorrente?.testi?.find(
     t => t.livello === livelloScelto && t.durata === durataScelta
   );
 
-  // pronuncia un testo con la prima voce italiana disponibile; onEnd opzionale
   const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
     const voce = new SpeechSynthesisUtterance(testo);
@@ -108,10 +124,8 @@ function Player() {
     window.speechSynthesis.speak(voce);
   };
 
-  // azioni: le richiamano sia i bottoni sia i comandi vocali
   const leggi = () => {
     if (!testoTrovato) return;
-    // mentre cammini guardi il museo, non lo schermo: prima come arrivarci, poi l'opera
     const indicazione = tappaCorrente?.indicazioneLogistica;
     const daLeggere = indicazione ? `${indicazione}. ${testoTrovato.testo}` : testoTrovato.testo;
     parla(daLeggere, () => { setParlando(false); setInPausa(false); });
@@ -119,7 +133,6 @@ function Player() {
     setInPausa(false);
   };
 
-  // risposta a "dov'e X": apre il pannello info e pronuncia l'indicazione
   const rispondiLogistica = (chiave) => {
     if (!config?.logistica?.[chiave]) return;
     setMostraInfo(true);
@@ -134,7 +147,6 @@ function Player() {
     if (parlando && inPausa) { window.speechSynthesis.resume(); setInPausa(false); }
   };
 
-  // il bottone centrale e' un solo tasto, quindi alterna; i comandi vocali invece sono distinti
   const gestisciAudio = () => {
     if (!parlando) return leggi();
     inPausa ? riprendi() : pausa();
@@ -148,7 +160,6 @@ function Player() {
 
   const staLeggendo = parlando && !inPausa;
 
-  // vocabolario controllato: ogni comando ha piu' frasi accettate e l'azione del bottone corrispondente
   const comandi = [
     { nome: 'Prossimo', frasi: ['prossim', 'avanti', 'successiv'], azione: vaiAvanti },
     { nome: 'Precedente', frasi: ['precedent', 'indietro'], azione: vaiIndietro },
@@ -184,7 +195,6 @@ function Player() {
     }
   };
 
-  // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase
   const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
@@ -203,6 +213,13 @@ function Player() {
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-color)' }}>
       <div className="bg-light d-flex flex-column position-relative" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
+
+        {codiceSessione && (
+          <div className="bg-primary text-white py-1 px-3 text-center small fw-semibold flex-shrink-0 d-flex justify-content-between align-items-center">
+            <span><i className="bi bi-broadcast me-1"></i> Sessione Live: <strong>{codiceSessione}</strong></span>
+            <span className="badge text-bg-light text-primary">In Sincronizzazione</span>
+          </div>
+        )}
 
         <div className="bg-light border-bottom p-3 d-flex align-items-center flex-shrink-0">
           <div className="d-flex flex-shrink-0" style={{ width: '124px' }}>
@@ -403,4 +420,5 @@ function Player() {
     </div>
   );
 }
+
 export default Player;
