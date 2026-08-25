@@ -48,7 +48,6 @@ function Dashboard() {
                         Il numero di tappe invece serve a capire quanto dura il giro */}
                     <div className="d-flex justify-content-between align-items-end pt-3 border-top">
                       <div className="text-muted small">
-                        <i className="bi bi-signpost-2 me-1"></i>
                         {v.items.length} {v.items.length === 1 ? 'tappa' : 'tappe'}
                       </div>
                       <button className="btn btn-sm btn-success" onClick={() => navigate(`/player/${v._id}`)}>

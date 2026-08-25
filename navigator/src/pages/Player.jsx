@@ -3,9 +3,11 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchAuth } from '../auth';
 import { io } from 'socket.io-client';
 
+// scale ordinate: i comandi "dimmi di piu/meno" e "piu/troppo semplice" ci si muovono su
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
+// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X"
 const LOGISTICA = [
   ['uscita', 'Uscita'],
   ['toilette', 'Toilette'],
@@ -72,6 +74,7 @@ function Player() {
     };
   }, [codiceSessione]);
 
+  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica
   useEffect(() => {
     const file = visita?.museoId?.configFile;
     if (!file) return;
@@ -80,6 +83,7 @@ function Player() {
       .then(setConfig);
   }, [visita]);
 
+  // le voci del browser arrivano in modo asincrono: tengo quelle italiane e ne scelgo una
   useEffect(() => {
     const caricaVoci = () => {
       const tutte = window.speechSynthesis.getVoices();
@@ -91,17 +95,23 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
+  // se cambia item o combinazione livello/durata, azzero l'audio in corso
   useEffect(() => {
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
   }, [indiceAttuale, livelloScelto, durataScelta]);
 
+  // esco dal player: fermo audio e microfono
   useEffect(() => () => {
     window.speechSynthesis.cancel();
     riconoscimentoRef.current?.abort();
   }, []);
 
+  // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
+  // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
+  // tengo tutte e due le liste. Se un item e' stato cancellato dal marketplace la populate
+  // restituisce null e scarto la tappa intera.
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
 
@@ -111,10 +121,12 @@ function Player() {
   const itemCorrente = items[indiceAttuale];
   const tappaCorrente = tappe[indiceAttuale];
 
+  // tra i testi dell'item cerco quello che combacia con livello e durata scelti
   const testoTrovato = itemCorrente?.testi?.find(
     t => t.livello === livelloScelto && t.durata === durataScelta
   );
 
+  // pronuncia un testo con la prima voce italiana disponibile; onEnd opzionale
   const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
     const voce = new SpeechSynthesisUtterance(testo);
@@ -124,8 +136,10 @@ function Player() {
     window.speechSynthesis.speak(voce);
   };
 
+  // azioni: le richiamano sia i bottoni sia i comandi vocali
   const leggi = () => {
     if (!testoTrovato) return;
+    // mentre cammini guardi il museo, non lo schermo: prima come arrivarci, poi l'opera
     const indicazione = tappaCorrente?.indicazioneLogistica;
     const daLeggere = indicazione ? `${indicazione}. ${testoTrovato.testo}` : testoTrovato.testo;
     parla(daLeggere, () => { setParlando(false); setInPausa(false); });
@@ -133,6 +147,7 @@ function Player() {
     setInPausa(false);
   };
 
+  // risposta a "dov'e X": apre il pannello info e pronuncia l'indicazione
   const rispondiLogistica = (chiave) => {
     if (!config?.logistica?.[chiave]) return;
     setMostraInfo(true);
@@ -147,6 +162,7 @@ function Player() {
     if (parlando && inPausa) { window.speechSynthesis.resume(); setInPausa(false); }
   };
 
+  // il bottone centrale e' un solo tasto, quindi alterna; i comandi vocali invece sono distinti
   const gestisciAudio = () => {
     if (!parlando) return leggi();
     inPausa ? riprendi() : pausa();
@@ -160,6 +176,7 @@ function Player() {
 
   const staLeggendo = parlando && !inPausa;
 
+  // vocabolario controllato: ogni comando ha piu' frasi accettate e l'azione del bottone corrispondente
   const comandi = [
     { nome: 'Prossimo', frasi: ['prossim', 'avanti', 'successiv'], azione: vaiAvanti },
     { nome: 'Precedente', frasi: ['precedent', 'indietro'], azione: vaiIndietro },
@@ -195,6 +212,7 @@ function Player() {
     }
   };
 
+  // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase
   const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
@@ -309,6 +327,11 @@ function Player() {
                 <span className="badge text-bg-secondary fw-normal fs-6 align-middle ms-2">Opzionale</span>
               )}
             </h2>
+
+            {/* la didascalia da cartellino: autore, data, tecnica */}
+            {itemCorrente?.descrizione && (
+              <p className="text-muted small mb-3">{itemCorrente.descrizione}</p>
+            )}
 
             {itemCorrente?.immagine ? (
               <img
