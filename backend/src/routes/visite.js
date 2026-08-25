@@ -22,7 +22,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Ottiene solo le visite acquistate dall'utente loggato
+// Le visite che l'utente puo' avviare nel Navigator: quelle acquistate piu',
+// se e' un autore, quelle scritte da lui (i propri percorsi non si comprano).
 router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   try {
     const utente = await Utente.findById(req.user.userId);
@@ -33,7 +34,11 @@ router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
       populate: { path: 'museoId', select: 'nome' }
     });
 
-    res.json(utente.acquisti);
+    const proprie = await Visita.find({ autoreId: req.user.userId }).populate('museoId', 'nome');
+    // chi ha comprato una visita e poi l'ha ereditata come autore la vedrebbe due volte
+    const acquistate = utente.acquisti.filter(v => String(v.autoreId) !== req.user.userId);
+
+    res.json([...proprie, ...acquistate]);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
