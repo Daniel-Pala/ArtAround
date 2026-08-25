@@ -25,9 +25,16 @@
             <div class="col-lg-8">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="h4 mb-0">Item disponibili</h2>
-                    <div class="input-group" style="max-width: 280px;">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" id="cercaItem" class="form-control" placeholder="Cerca un item" oninput="renderItemsDisponibili()">
+                    <div class="d-flex gap-2">
+                        <select id="filtroTipo" class="form-select" style="max-width: 170px;" onchange="renderItemsDisponibili()">
+                            <option value="">Tutti i tipi</option>
+                            <option value="opera">Opere</option>
+                            <option value="approfondimento">Approfondimenti</option>
+                        </select>
+                        <div class="input-group" style="max-width: 280px;">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="cercaItem" class="form-control" placeholder="Cerca un item" oninput="renderItemsDisponibili()">
+                        </div>
                     </div>
                 </div>
 

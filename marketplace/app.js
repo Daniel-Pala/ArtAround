@@ -3,6 +3,9 @@
 // il Navigator e' l'altra applicazione, gira su un'altra porta: da sistemare col deploy
 const URL_NAVIGATOR = 'http://localhost:5173';
 
+// gli item del museo aperto nel modale: la fetch li scarica una volta, i filtri ridisegnano
+let itemsMuseo = [];
+
 richiediLogin();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -156,6 +159,7 @@ async function caricaMarketplaceVisitatore() {
                             <div class="eyebrow mb-2">${v.museoId?.nome || ''}</div>
                             <h5 class="card-title mb-2">${v.nome}</h5>
                             <p class="card-text text-muted small flex-grow-1">${v.infoLogistiche || 'Nessuna informazione logistica.'}</p>
+                            <div class="text-muted small mb-2">${v.items.length} ${v.items.length === 1 ? 'tappa' : 'tappe'}</div>
                             <div class="d-flex justify-content-between align-items-end pt-3 border-top">
                                 <div>
                                     <div class="price-label">Prezzo</div>
@@ -209,24 +213,39 @@ function passaANuovoItem() {
 }
 
 async function caricaItemsMuseo(museoId) {
-    const container = document.getElementById('listaItemsMuseo');
     const utente = getUtenteLoggato();
-
     const response = await fetch(`${API_URL}/items?museoId=${museoId}`);
-    const items = (await response.json()).filter(o => o.autoreId && o.autoreId._id === utente.userId);
+    itemsMuseo = (await response.json()).filter(o => o.autoreId && o.autoreId._id === utente.userId);
+    renderItemsMuseo();
+}
 
-    if (items.length === 0) {
+// separata dalla fetch: i filtri ridisegnano senza richiamare il server
+function renderItemsMuseo() {
+    const container = document.getElementById('listaItemsMuseo');
+
+    if (itemsMuseo.length === 0) {
         container.innerHTML = `<p class="text-muted text-center mb-0">Non hai ancora creato item in questo museo.</p>`;
         return;
     }
 
-    container.innerHTML = items.map(o => `
+    const ricerca = document.getElementById('ricercaItemsMuseo').value.toLowerCase();
+    const tipoScelto = document.getElementById('filtroTipoMuseo').value;
+    const filtrati = itemsMuseo.filter(o =>
+        o.titolo.toLowerCase().includes(ricerca) && (tipoScelto === '' || o.tipo === tipoScelto)
+    );
+
+    if (filtrati.length === 0) {
+        container.innerHTML = `<p class="text-muted text-center mb-0">Nessun item corrisponde ai filtri.</p>`;
+        return;
+    }
+
+    container.innerHTML = filtrati.map(o => `
         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
             <span class="text-truncate me-2">
                 <span class="fw-semibold">${o.titolo}</span>
-                <small class="text-muted d-block">${o.operaId} · ${o.testi.length} ${o.testi.length === 1 ? 'testo' : 'testi'}</small>
+                <small class="text-muted d-block">${o.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera'} · ${o.operaId} · ${o.testi.length} ${o.testi.length === 1 ? 'testo' : 'testi'}</small>
             </span>
-            <button class="btn btn-sm btn-outline-danger" onclick="eliminaItem('${o._id}', '${museoId}')" aria-label="Elimina item">
+            <button class="btn btn-sm btn-outline-danger" onclick="eliminaItem('${o._id}', '${window.currentMuseoId}')" aria-label="Elimina item">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
@@ -303,8 +322,11 @@ function setupFormItem() {
 
         const payload = {
             operaId: document.getElementById('itemWikidata').value.trim(),
+            tipo: document.getElementById('itemTipo').value,
             museoId: window.currentMuseoId,
             titolo: document.getElementById('itemTitolo').value.trim(),
+            descrizione: document.getElementById('itemDescrizione').value.trim(),
+            immagine: document.getElementById('itemImmagine').value.trim(),
             licenza: document.getElementById('itemLicenza').value,
             prezzo: parseFloat(document.getElementById('itemPrezzo').value) || 0,
             testi

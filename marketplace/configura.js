@@ -111,10 +111,11 @@ async function caricaVisitaEsistente() {
 function renderItemsDisponibili() {
     const containerItems = document.getElementById('listaItems');
     const termineRicerca = document.getElementById('cercaItem').value.toLowerCase();
+    const tipoScelto = document.getElementById('filtroTipo').value;
 
     const itemsFiltrati = itemsDisponibili.filter(item => {
         const titolo = item.titolo ? item.titolo.toLowerCase() : '';
-        return titolo.includes(termineRicerca);
+        return titolo.includes(termineRicerca) && (tipoScelto === '' || item.tipo === tipoScelto);
     });
 
     if (itemsDisponibili.length === 0) {
@@ -123,7 +124,7 @@ function renderItemsDisponibili() {
     }
 
     if (itemsFiltrati.length === 0) {
-        containerItems.innerHTML = `<div class="text-muted py-3">Nessun item corrisponde a "${termineRicerca}".</div>`;
+        containerItems.innerHTML = `<div class="text-muted py-3">Nessun item corrisponde ai filtri.</div>`;
         return;
     }
 
@@ -131,6 +132,7 @@ function renderItemsDisponibili() {
 
     itemsFiltrati.forEach(item => {
         const nomeAutore = item.autoreId ? item.autoreId.username : 'Autore sconosciuto';
+        const etichettaTipo = item.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera';
         const giaSelezionata = itemsSelezionati.some(sel => sel._id === item._id);
 
         const bottoneHtml = giaSelezionata
@@ -141,7 +143,7 @@ function renderItemsDisponibili() {
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <div>
                     <h6 class="mb-0">${item.titolo || 'Item senza titolo'}</h6>
-                    <small class="text-muted">di ${nomeAutore}</small>
+                    <small class="text-muted">${etichettaTipo} · di ${nomeAutore}</small>
                 </div>
                 ${bottoneHtml}
             </li>

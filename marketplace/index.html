@@ -105,8 +105,25 @@
                             <input type="text" id="itemTitolo" class="form-control" placeholder="es. Ritratto di Giulio II" required>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Tipo di item</label>
+                            <select id="itemTipo" class="form-select">
+                                <option value="opera">Opera esposta</option>
+                                <option value="approfondimento">Approfondimento (movimento, stile, artista…)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">ID Wikidata</label>
                             <input type="text" id="itemWikidata" class="form-control" placeholder="es. Q126599960" required>
+                            <div class="form-text">Il codice dell'opera, oppure del movimento o dell'artista se è un approfondimento.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Didascalia</label>
+                            <input type="text" id="itemDescrizione" class="form-control" placeholder="es. Giotto, 1333 circa. Tempera e oro su tavola.">
+                            <div class="form-text">Autore, data, tecnica: la riga che sta sotto al titolo nel Navigator.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Immagine (URL)</label>
+                            <input type="url" id="itemImmagine" class="form-control" placeholder="https://upload.wikimedia.org/...">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Licenza</label>
@@ -151,6 +168,14 @@
                     <button class="btn btn-success w-100 mb-3" onclick="passaANuovoItem()">
                         <i class="bi bi-plus-lg me-2"></i>Nuovo item
                     </button>
+                    <div class="d-flex gap-2 mb-3">
+                        <input type="text" id="ricercaItemsMuseo" class="form-control" placeholder="Cerca per titolo…" oninput="renderItemsMuseo()">
+                        <select id="filtroTipoMuseo" class="form-select" style="max-width: 170px;" onchange="renderItemsMuseo()">
+                            <option value="">Tutti i tipi</option>
+                            <option value="opera">Opere</option>
+                            <option value="approfondimento">Approfondimenti</option>
+                        </select>
+                    </div>
                     <div id="listaItemsMuseo"></div>
                 </div>
             </div>

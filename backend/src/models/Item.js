@@ -8,8 +8,11 @@ const testoSchema = new mongoose.Schema({
 
 const itemSchema = new mongoose.Schema({
   operaId: { type: String, required: true },
+  // un item puo' parlare di un oggetto esposto oppure di un contenuto associato
+  // (un movimento, uno stile, un artista): questi ultimi non stanno sulla mappa
+  tipo: { type: String, enum: ['opera', 'approfondimento'], default: 'opera' },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
-  descrizione: { type: String}, // Campo fondamentale
+  descrizione: { type: String }, // didascalia da cartellino: autore, data, tecnica
   titolo: { type: String, required: true },
   testi: [testoSchema],
   immagine: String,
