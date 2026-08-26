@@ -154,13 +154,13 @@ async function caricaMarketplaceVisitatore() {
 
             htmlCards += `
                 <div class="col-md-4">
-                    <article class="card card-interactive h-100">
+                    <article class="card card-interactive h-100" style="cursor: pointer;" onclick="mostraTappe('${v._id}')">
                         <div class="card-body d-flex flex-column">
                             <div class="eyebrow mb-2">${v.museoId?.nome || ''}</div>
                             <h5 class="card-title mb-2">${v.nome}</h5>
                             <p class="card-text text-muted small flex-grow-1">${v.infoLogistiche || 'Nessuna informazione logistica.'}</p>
                             <div class="text-muted small mb-2">${v.items.length} ${v.items.length === 1 ? 'tappa' : 'tappe'}</div>
-                            <div class="d-flex justify-content-between align-items-end pt-3 border-top">
+                            <div class="d-flex justify-content-between align-items-end pt-3 border-top" onclick="event.stopPropagation()">
                                 <div>
                                     <div class="price-label">Prezzo</div>
                                     <div class="price">${prezzoLabel}</div>
@@ -178,6 +178,25 @@ async function caricaMarketplaceVisitatore() {
     } catch (error) {
         listaVisite.innerHTML = `<div class="col-12 text-center text-danger">Impossibile caricare i percorsi.</div>`;
     }
+}
+
+// L'elenco delle tappe non arriva con la vetrina: la rotta ?pubblica=true tiene gli item
+// come riferimenti, quindi lo chiedo alla rotta della singola visita, che li popola.
+// Il nome lo leggo dalla risposta invece di passarlo nell'onclick: cosi' gli apostrofi
+// nei titoli non spezzano l'attributo.
+async function mostraTappe(visitaId) {
+    const elenco = document.getElementById('elencoTappe');
+    elenco.innerHTML = '';
+    new bootstrap.Modal(document.getElementById('modalTappe')).show();
+
+    const response = await fetch(`${API_URL}/visite/${visitaId}`);
+    const visita = await response.json();
+
+    document.getElementById('titoloTappe').textContent = visita.nome;
+    elenco.innerHTML = visita.items
+        .filter(tappa => tappa.itemId)
+        .map(tappa => `<li class="mb-1">${tappa.itemId.titolo}${tappa.opzionale ? ' <span class="badge text-bg-secondary fw-normal">Opzionale</span>' : ''}</li>`)
+        .join('');
 }
 
 async function acquistaVisita(visitaId) {
