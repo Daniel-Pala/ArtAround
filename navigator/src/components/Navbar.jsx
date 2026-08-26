@@ -21,7 +21,7 @@ function Navbar() {
       <div className="container">
         <div className="d-flex align-items-center gap-3">
           <Link className="navbar-brand fw-bold d-flex align-items-center m-0" to="/">
-            <i className="bi bi-palette me-2"></i> ArtAround Navigator
+            ArtAround Navigator
           </Link>
           {/* il marketplace e' l'altra applicazione, quindi link vero e non rotta React.
               Sta a sinistra perche' e' un "torna indietro", non un'azione sull'account */}
