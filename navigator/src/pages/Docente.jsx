@@ -62,7 +62,8 @@ export default function Docente() {
         <button
           className="btn btn-outline-danger btn-sm w-100"
           onClick={() => {
-            socketRef.current?.disconnect();
+            // il disconnect da solo lascia la stanza nella Map del server: va chiusa a mano
+            socketRef.current?.emit('docente:chiudi', { codice: codiceSessione });
             navigate('/');
           }}
         >

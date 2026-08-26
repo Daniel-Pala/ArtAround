@@ -23,9 +23,15 @@ function Dashboard() {
     <div>
       <Navbar />
       <div className="container mt-4">
-        <div className="section-head mb-4">
-          <h1 className="section-title">Le mie visite</h1>
-          <p className="section-sub mt-2 mb-0">Premi Avvia quando sei al museo.</p>
+        <div className="section-head mb-4 d-flex justify-content-between align-items-end gap-3">
+          <div>
+            <h1 className="section-title">Le mie visite</h1>
+            <p className="section-sub mt-2 mb-0">Premi Avvia quando sei al museo.</p>
+          </div>
+          {/* la lezione di un altro non e' fra le proprie visite: si entra col codice, non da una card */}
+          <button className="btn btn-outline-primary btn-sm text-nowrap" onClick={() => navigate('/studente')}>
+            Partecipa a una lezione
+          </button>
         </div>
 
         {loading ? (
@@ -50,9 +56,15 @@ function Dashboard() {
                       <div className="text-muted small">
                         {v.items.length} {v.items.length === 1 ? 'tappa' : 'tappe'}
                       </div>
-                      <button className="btn btn-sm btn-success" onClick={() => navigate(`/player/${v._id}`)}>
-                        <i className="bi bi-play-fill me-1"></i>Avvia
-                      </button>
+                      <div className="d-flex gap-2">
+                        {/* stessa visita, due modi di farla: da soli oppure guidando una classe */}
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => navigate(`/docente/${v._id}`)}>
+                          Guida una classe
+                        </button>
+                        <button className="btn btn-sm btn-success" onClick={() => navigate(`/player/${v._id}`)}>
+                          <i className="bi bi-play-fill me-1"></i>Avvia
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </article>
