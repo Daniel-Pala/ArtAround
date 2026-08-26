@@ -17,10 +17,15 @@ const LOGISTICA = [
 ];
 
 function Player() {
-  const { visitaId } = useParams();
+  const { visitaId: visitaIdParam } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codiceSessione = searchParams.get('sessione');
+
+  // Gestione ID visita dinamico (se è 'live', verrà inviato dal socket)
+  const [visitaIdAttiva, setVisitaIdAttiva] = useState(
+    visitaIdParam && visitaIdParam !== 'live' ? visitaIdParam : null
+  );
 
   const [visita, setVisita] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,11 +49,13 @@ function Player() {
   const [mostraInfo, setMostraInfo] = useState(false);
 
   useEffect(() => {
-    fetchAuth(`/api/visite/${visitaId}`)
+    if (!visitaIdAttiva) return; // Aspetta l'ID dal socket se siamo in modalità live
+    setLoading(true);
+    fetchAuth(`/api/visite/${visitaIdAttiva}`)
       .then(res => res.json())
       .then(data => setVisita(data))
       .finally(() => setLoading(false));
-  }, [visitaId]);
+  }, [visitaIdAttiva]);
 
   // Gestione connessione Socket.io con i nomi attesi dal backend
   useEffect(() => {
@@ -64,8 +71,14 @@ function Player() {
 
     // Il backend inoltra il cambio slide usando 'stato:item'
     socket.on('stato:item', (dati) => {
-      if (dati && typeof dati.indice === 'number') {
-        setIndiceAttuale(dati.indice);
+      if (dati) {
+        if (typeof dati.indice === 'number') {
+          setIndiceAttuale(dati.indice);
+        }
+        // Se il server manda l'ID della visita e differisce da quello corrente, lo aggiorniamo
+        if (dati.visitaId) {
+          setVisitaIdAttiva(prevId => prevId !== dati.visitaId ? dati.visitaId : prevId);
+        }
       }
     });
 

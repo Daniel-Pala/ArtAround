@@ -9,57 +9,42 @@ export default function Studente() {
   const gestisciInvio = (e) => {
     e.preventDefault();
     const codicePulito = codice.trim().toUpperCase();
-
-    if (codicePulito.length !== 6) {
-      setErrore('Il codice deve essere di 6 caratteri.');
+    if (!codicePulito || codicePulito.length < 5) {
+      setErrore('Inserisci un codice valido di 6 caratteri (es. X8K9A2)');
       return;
     }
-
-    setErrore('');
-    
-    // NIENTE PIÙ SOCKET QUI! Deleghiamo tutto al Player.
-    // Così la connessione non si aggancia e sgancia distruggendo la stanza.
-    const visitaId = '6a8c925b8c56fe2d5e2975f0';
-    navigate(`/player/${visitaId}?sessione=${codicePulito}`);
+    // Reindirizza al player live senza dover conoscere a priori il visitaId
+    navigate(`/player/live?sessione=${codicePulito}`);
   };
 
   return (
-    <div className="container mt-5 text-center" style={{ maxWidth: '450px' }}>
-      <h2 className="fw-bold mb-3">Unisciti alla Visita</h2>
-      <p className="text-muted mb-4">
-        Inserisci il codice a 6 cifre fornito dal docente per accedere alla sessione live.
-      </p>
-
-      <form onSubmit={gestisciInvio} className="card p-4 shadow-sm bg-light">
-        <div className="mb-3">
-          <input
-            type="text"
-            className="form-control form-control-lg text-center text-uppercase fw-bold fs-2"
-            placeholder="Es. RVU3GZ"
-            maxLength={6}
-            value={codice}
-            onChange={(e) => setCodice(e.target.value)}
-            autoFocus
-          />
-        </div>
-
-        {errore && <div className="alert alert-danger py-2 mb-3">{errore}</div>}
-
-        <button
-          type="submit"
-          className="btn btn-primary btn-lg w-100 fw-bold"
-          disabled={codice.trim().length !== 6}
-        >
-          Entra nella Stanza
-        </button>
-      </form>
-
-      <button
-        className="btn btn-link text-secondary mt-3 text-decoration-none"
-        onClick={() => navigate('/')}
-      >
-        ← Torna alla Dashboard
-      </button>
+    <div className="container mt-5 text-center" style={{ maxWidth: '420px' }}>
+      <div className="card p-4 shadow-sm border-0 bg-light">
+        <h3 className="fw-bold mb-3">Partecipa a Lezione Live</h3>
+        <p className="text-muted small mb-4">
+          Inserisci il codice di 6 caratteri mostrato sul pannello del tuo docente per iniziare la visita sincronizzata.
+        </p>
+        <form onSubmit={gestisciInvio}>
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control form-control-lg text-center fw-bold text-uppercase"
+              placeholder="Es. X8K9A2"
+              maxLength={6}
+              value={codice}
+              onChange={(e) => {
+                setCodice(e.target.value);
+                setErrore('');
+              }}
+              style={{ fontSize: '1.5rem', letterSpacing: '4px' }}
+            />
+            {errore && <div className="text-danger small mt-2">{errore}</div>}
+          </div>
+          <button type="submit" className="btn btn-danger btn-lg w-100 fw-bold">
+            Entra nella Lezione
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -47,7 +47,8 @@ io.on('connection', (socket) => {
     const sessione = sessioni.get(codice)
     if (sessione) {
       sessione.indiceCorrente = indice
-      io.to(codice).emit('stato:item', { indice }) // Broadcast solo alla stanza
+      // Invia sia l'indice sia l'ID della visita alla stanza
+      io.to(codice).emit('stato:item', { indice, visitaId: sessione.visitaId })
     }
   })
 
@@ -73,12 +74,14 @@ io.on('connection', (socket) => {
       // Aggiunge lo studente alla Map della sessione
       sessione.studenti.set(socket.id, { nome, livello: 'base', durata: 'corta', risposte: [] })
 
-      // Manda lo stato attuale dell'item allo studente appena entrato
-      socket.emit('stato:item', { indice: sessione.indiceCorrente })
+      // Manda sia la visitaId sia lo stato attuale dell'item allo studente appena entrato
+      socket.emit('stato:item', { indice: sessione.indiceCorrente, visitaId: sessione.visitaId })
       
       // Notifica il docente della lista studenti aggiornata
       const listaStudenti = Array.from(sessione.studenti.values())
       io.to(codice).emit('sessione:studenti', listaStudenti)
+    } else {
+      socket.emit('errore', { messaggio: 'Codice sessione non trovato' })
     }
   })
 
@@ -97,7 +100,6 @@ io.on('connection', (socket) => {
   // --- DISCONNESSIONE ---
   socket.on('disconnect', () => {
     console.log(`Socket disconnesso: ${socket.id}`)
-    // Rimuove lo studente dalle sessioni se cade la connessione e aggiorna il docente
     sessioni.forEach((sessione, codice) => {
       if (sessione.studenti.has(socket.id)) {
         sessione.studenti.delete(socket.id)
