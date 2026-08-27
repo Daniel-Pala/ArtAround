@@ -21,6 +21,7 @@ function Player() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codiceSessione = searchParams.get('sessione');
+  const nomeStudente = searchParams.get('nome');
 
   // Gestione ID visita dinamico (se è 'live', verrà inviato dal socket)
   const [visitaIdAttiva, setVisitaIdAttiva] = useState(
@@ -66,7 +67,7 @@ function Player() {
 
     socket.on('connect', () => {
       // Il backend si aspetta 'studente:entra' e richiede un parametro 'nome'
-      socket.emit('studente:entra', { codice: codiceSessione, nome: 'Studente' });
+      socket.emit('studente:entra', { codice: codiceSessione, nome: nomeStudente });
     });
 
     // Il backend inoltra il cambio slide usando 'stato:item'
@@ -85,7 +86,7 @@ function Player() {
     return () => {
       socket.disconnect();
     };
-  }, [codiceSessione]);
+  }, [codiceSessione, nomeStudente]);
 
   // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica
   useEffect(() => {
