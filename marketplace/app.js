@@ -345,6 +345,8 @@ function setupFormItem() {
             museoId: window.currentMuseoId,
             titolo: document.getElementById('itemTitolo').value.trim(),
             descrizione: document.getElementById('itemDescrizione').value.trim(),
+            autoreOpera: document.getElementById('itemAutoreOpera').value.trim(),
+            stile: document.getElementById('itemStile').value.trim(),
             immagine: document.getElementById('itemImmagine').value.trim(),
             licenza: document.getElementById('itemLicenza').value,
             prezzo: parseFloat(document.getElementById('itemPrezzo').value) || 0,

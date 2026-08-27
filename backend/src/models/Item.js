@@ -13,6 +13,12 @@ const itemSchema = new mongoose.Schema({
   tipo: { type: String, enum: ['opera', 'approfondimento'], default: 'opera' },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
   descrizione: { type: String }, // didascalia da cartellino: autore, data, tecnica
+  // chi ha dipinto l'opera e a che movimento appartiene. Sono gia' dentro la didascalia,
+  // ma qui stanno separati perche' i comandi "chi e' l'autore" e "qual e' lo stile"
+  // devono pronunciare solo quelli. Da non confondere con autoreId, che e' chi ha
+  // scritto l'item.
+  autoreOpera: { type: String },
+  stile: { type: String },
   titolo: { type: String, required: true },
   testi: [testoSchema],
   immagine: String,

@@ -9,11 +9,11 @@ const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
 // strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X"
 const LOGISTICA = [
-  ['uscita', 'Uscita'],
-  ['toilette', 'Toilette'],
-  ['bar', 'Bar'],
-  ['shop', 'Shop'],
-  ['ostacoli', 'Ostacoli e accessibilita'],
+  ['uscita', 'Uscita', ['uscita']],
+  ['toilette', 'Toilette', ['toilette', 'bagno']],
+  ['bar', 'Bar', ['bar']],
+  ['shop', 'Shop', ['shop', 'negozio']],
+  ['ostacoli', 'Ostacoli e accessibilita', ['ostacol']],
 ];
 
 function Player() {
@@ -161,12 +161,24 @@ function Player() {
     setInPausa(false);
   };
 
-  // risposta a "dov'e X": apre il pannello info e pronuncia l'indicazione
-  const rispondiLogistica = (chiave) => {
-    if (!config?.logistica?.[chiave]) return;
+  // risposta a un comando vocale: apre il pannello, cosi' il testo resta anche a schermo,
+  // e lo pronuncia.
+  const rispondi = (testo) => {
     setMostraInfo(true);
-    parla(config.logistica[chiave]);
+    parla(testo);
   };
+
+  // righe del pannello "Informazioni utili": etichetta, testo mostrato, frase pronunciata
+  // dal comando vocale corrispondente e frasi che lo attivano. Una sola fonte, cosi'
+  // aggiungere una voce qui la fa comparire sia a schermo sia fra i comandi.
+  const righeOpera = [
+    ['Autore', itemCorrente?.autoreOpera, `L'autore è ${itemCorrente?.autoreOpera}`, ['autore', 'dipinto']],
+    ['Stile', itemCorrente?.stile, `Lo stile è ${itemCorrente?.stile}`, ['stile', 'movimento']],
+  ].filter(([, testo]) => testo);
+
+  const righeMuseo = LOGISTICA
+    .map(([chiave, etichetta, frasi]) => [etichetta, config?.logistica?.[chiave], config?.logistica?.[chiave], frasi])
+    .filter(([, testo]) => testo);
 
   const pausa = () => {
     if (parlando && !inPausa) { window.speechSynthesis.pause(); setInPausa(true); }
@@ -207,13 +219,8 @@ function Player() {
     ...(tappaCorrente?.indicazioneLogistica ? [
       { nome: 'Come ci arrivo', frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
     ] : []),
-    ...(config?.logistica ? [
-      { nome: 'Uscita', frasi: ['uscita'], azione: () => rispondiLogistica('uscita') },
-      { nome: 'Toilette', frasi: ['toilette', 'bagno'], azione: () => rispondiLogistica('toilette') },
-      { nome: 'Bar', frasi: ['bar'], azione: () => rispondiLogistica('bar') },
-      { nome: 'Shop', frasi: ['shop', 'negozio'], azione: () => rispondiLogistica('shop') },
-      { nome: 'Ostacoli', frasi: ['ostacol'], azione: () => rispondiLogistica('ostacoli') },
-    ] : []),
+    // stessa fonte per bottoni e voce: ogni riga del pannello e' anche un comando vocale
+    ...[...righeOpera, ...righeMuseo].map(([nome, , dettato, frasi]) => ({ nome, frasi, azione: () => rispondi(dettato) })),
   ];
 
   const eseguiComando = (trascrizione) => {
@@ -441,13 +448,13 @@ function Player() {
                 </button>
               </div>
               {visita?.infoLogistiche && <p className="text-muted small mb-2">{visita.infoLogistiche}</p>}
-              {LOGISTICA.map(([chiave, etichetta]) => config?.logistica?.[chiave] && (
-                <div key={chiave} className="py-2 border-top">
+              {[...righeOpera, ...righeMuseo].map(([etichetta, testo]) => (
+                <div key={etichetta} className="py-2 border-top">
                   <div className="fw-semibold small">{etichetta}</div>
-                  <div className="text-muted small">{config.logistica[chiave]}</div>
+                  <div className="text-muted small">{testo}</div>
                 </div>
               ))}
-              {!visita?.infoLogistiche && !config?.logistica && (
+              {!visita?.infoLogistiche && righeOpera.length === 0 && righeMuseo.length === 0 && (
                 <p className="text-muted small fst-italic mb-0">Nessuna informazione disponibile.</p>
               )}
             </div>

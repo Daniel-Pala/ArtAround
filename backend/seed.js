@@ -23,6 +23,7 @@ const OPERE = [
     operaId: 'Q3907499', sala: 1, autore: 'autore1',
     titolo: 'Polittico di Bologna',
     descrizione: 'Giotto, 1333 circa. Tempera e oro su tavola, dalla chiesa di Santa Maria degli Angeli.',
+    autoreOpera: 'Giotto', stile: 'Gotico',
     immagine: img('Giotto.%20Polyptych.%201330-35.%2091x340cm.%20Pinacoteca%2C%20Bologna..jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'Un quadro tutto dorato, vecchio di settecento anni.' },
@@ -35,6 +36,7 @@ const OPERE = [
     operaId: 'Q27345212', sala: 1, autore: 'autore1',
     titolo: 'San Giorgio e il drago',
     descrizione: 'Vitale da Bologna, 1330-1335. Tempera su tavola.',
+    autoreOpera: 'Vitale da Bologna', stile: 'Gotico',
     immagine: img('Vitale%20da%20bologna%2C%20san%20giorgio%20libera%20la%20principessa%2C%201330-35%20ca.%2C%2001.jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'Un cavaliere a cavallo che combatte un drago.' },
@@ -47,6 +49,7 @@ const OPERE = [
     operaId: 'Q3889219', sala: 1, autore: 'autore1',
     titolo: 'Pala dei Mercanti',
     descrizione: 'Francesco del Cossa, 1474. Tempera su tavola, dal Foro dei Mercanti.',
+    autoreOpera: 'Francesco del Cossa', stile: 'Rinascimento',
     immagine: img('Francesco%20del%20Cossa%20025.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'Al centro la Madonna su un trono altissimo, di lato San Petronio che tiene in mano un modellino di Bologna: e\' il santo protettore della citta\'.' },
@@ -58,6 +61,7 @@ const OPERE = [
     operaId: 'Q3947685', sala: 1, autore: 'autore2',
     titolo: 'San Michele Arcangelo',
     descrizione: "Ercole de' Roberti, 1470 circa. Tempera su tavola.",
+    autoreOpera: "Ercole de' Roberti", stile: 'Rinascimento',
     immagine: img('Ercole%20de%27%20roberti%2C%20san%20michele%20arcangelo.jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'Un angelo con la spada e una bilancia in mano.' },
@@ -70,6 +74,7 @@ const OPERE = [
     operaId: 'Q16038421', sala: 2, autore: 'autore1',
     titolo: 'Pala Bentivoglio',
     descrizione: 'Francesco Francia, 1498-1499. Olio su tavola, dalla cappella Bentivoglio in San Giacomo Maggiore.',
+    autoreOpera: 'Francesco Francia', stile: 'Rinascimento',
     immagine: img('Francesco%20Francia%20-%20Adoration%20of%20the%20Child%20-%20WGA08169.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'Una scena calma e simmetrica: la Madonna al centro, i santi disposti a specchio, tutto in ordine. Era la pala della famiglia piu\' potente di Bologna.' },
@@ -81,6 +86,7 @@ const OPERE = [
     operaId: 'Q3213771', sala: 2, autore: 'autore2',
     titolo: 'Madonna in gloria e santi',
     descrizione: 'Pietro Perugino, 1500 circa. Olio su tavola, dalla chiesa di San Giovanni in Monte.',
+    autoreOpera: 'Pietro Perugino', stile: 'Rinascimento',
     immagine: img('Pietro%20Perugino%20cat59.jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'La Madonna sta in cielo, i santi la guardano da sotto.' },
@@ -93,6 +99,7 @@ const OPERE = [
     operaId: 'Q1103801', sala: 2, autore: 'autore1',
     titolo: 'Estasi di santa Cecilia',
     descrizione: 'Raffaello Sanzio, 1514-1516. Olio su tavola trasportato su tela, dalla chiesa di San Giovanni in Monte.',
+    autoreOpera: 'Raffaello Sanzio', stile: 'Rinascimento',
     immagine: img('Bologna%20Pinacoteca%20Nazionale%20-%20Rafa%C3%ABl%20Santi%20%281483-1520%29%20-%20Heilige%20Cecilia%20in%20extase%20met%20Paulus%2C%20Johannes%20%28evangelist%29%2C%20Augustinus%20en%20Maria%20Magdalena%20-%2026-04-2012%209-13-18.jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'La donna al centro ascolta una musica che noi non sentiamo.' },
@@ -105,6 +112,7 @@ const OPERE = [
     operaId: 'Q3842737', sala: 2, autore: 'autore2',
     titolo: 'Madonna di Santa Margherita',
     descrizione: 'Parmigianino, 1529. Olio su tavola.',
+    autoreOpera: 'Parmigianino', stile: 'Manierismo',
     immagine: img('Parmigianino%20-%20Madonna%20and%20Child%20with%20Saints%20Margaret%2C%20Jerome%2C%20Petronius%20and%20Michael.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'Le figure sono ammassate una sull\'altra e sembrano venirti addosso. Non e\' un errore: il pittore lo ha fatto apposta.' },
@@ -116,6 +124,7 @@ const OPERE = [
     operaId: 'Q126599960', sala: 2, autore: 'autore2',
     titolo: 'Ritratto di frate',
     descrizione: 'Girolamo Mazzola Bedoli, meta\' del XVI secolo. Olio su tela.',
+    autoreOpera: 'Girolamo Mazzola Bedoli', stile: 'Manierismo',
     immagine: img('Girolamo-Mazzola-Bedoli-San-Tommaso-dAquino.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'Un ritratto di frate. Non sappiamo con certezza chi fosse: il nome si e\' perso.' },
@@ -127,6 +136,7 @@ const OPERE = [
     operaId: 'Q3208041', sala: 3, autore: 'autore1',
     titolo: 'Ultima cena',
     descrizione: 'El Greco, 1568 circa. Olio su tavola.',
+    autoreOpera: 'El Greco', stile: 'Manierismo',
     immagine: img('El%20Greco%20020.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'La stessa scena dipinta da Leonardo, ma piccolissima e con i colori accesi. E\' un\'opera giovanile di un pittore che poi diventera\' famosissimo in Spagna.' },
@@ -138,6 +148,7 @@ const OPERE = [
     operaId: 'Q3685503', sala: 3, autore: 'autore2',
     titolo: 'Comunione di san Girolamo',
     descrizione: 'Agostino Carracci, 1592-1593. Olio su tela, dalla Certosa di Bologna.',
+    autoreOpera: 'Agostino Carracci', stile: 'Barocco',
     immagine: img('Agostino%20carracci%20ultima%20comunione%20san%20girolamo%20pinacoteca%20nazionale%20bologna.png'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'Un vecchio molto magro, sorretto dagli altri, riceve la comunione poco prima di morire.' },
@@ -149,6 +160,7 @@ const OPERE = [
     operaId: 'Q2448678', sala: 3, autore: 'autore1',
     titolo: 'Strage degli innocenti',
     descrizione: 'Guido Reni, 1611. Olio su tela, dalla chiesa di San Domenico.',
+    autoreOpera: 'Guido Reni', stile: 'Barocco',
     immagine: img('Guido%20Reni%20-%20Massacre%20of%20the%20Innocents%20-%20Pinacoteca%20Nazionale%20Bologna.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'E\' una scena terribile, il racconto biblico dei bambini uccisi per ordine di Erode. Il pittore la dipinge senza mostrare sangue.' },
@@ -160,6 +172,7 @@ const OPERE = [
     operaId: 'Q25217589', sala: 3, autore: 'autore1',
     titolo: 'Pala della Peste',
     descrizione: 'Guido Reni, 1630-1631. Olio su seta, dipinta per la peste che colpi\' Bologna.',
+    autoreOpera: 'Guido Reni', stile: 'Barocco',
     immagine: img('Guido%20Reni%20061.jpg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'Dipinta durante un\'epidemia di peste, per chiedere che finisse. Sotto ci sono le torri di Bologna.' },
@@ -171,6 +184,7 @@ const OPERE = [
     operaId: 'Q23008334', sala: 3, autore: 'autore2',
     titolo: "Il sogno di sant'Antonio",
     descrizione: 'Elisabetta Sirani, 1650 circa. Olio su tela.',
+    autoreOpera: 'Elisabetta Sirani', stile: 'Barocco',
     immagine: img('Elisabetta%20Sirani%20-%20The%20Dream%20of%20St.%20Anthony.jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'Questo quadro lo ha dipinto una ragazza giovanissima.' },
@@ -183,6 +197,7 @@ const OPERE = [
     operaId: 'Q29997042', sala: 3, autore: 'autore2',
     titolo: 'Ritratto di neonata nella culla',
     descrizione: 'Lavinia Fontana, 1583 circa. Olio su tela.',
+    autoreOpera: 'Lavinia Fontana', stile: 'Manierismo',
     immagine: img('Newborn%20Baby%20in%20a%20Crib%20%28c.%201583%2C%20PNB%29.jpg'),
     testi: [
       { durata: '3s', livello: 'infantile', testo: 'Una neonata nella culla, vestita a festa.' },
@@ -207,11 +222,11 @@ const VISITE = [
       { opera: 'Q3889219', indicazione: 'Sempre in Sala 1, ultima parete a destra prima del passaggio.' },
       { opera: 'Q16038421', indicazione: 'Attraversa il passaggio ed entra in Sala 2: la pala e\' subito a sinistra.' },
       { opera: 'Q3213771', indicazione: 'Prosegui lungo la stessa parete.' },
-      { opera: 'Q1103801', indicazione: 'Al centro della Sala 2, nella nicchia dedicata: e\' l\'opera piu\' nota della raccolta.' },
+      { opera: 'Q1103801', indicazione: 'Al centro della Sala 2, nella nicchia dedicata.' },
       { opera: 'Q3842737', indicazione: 'Sulla parete di destra della Sala 2.' },
       { opera: 'Q3208041', indicazione: 'Scendi in Sala 3 e gira a sinistra: e\' una tavola piccola, cercala ad altezza occhi.', opzionale: true },
       { opera: 'Q2448678', indicazione: 'Al centro della parete lunga della Sala 3.' },
-      { opera: 'Q25217589', indicazione: 'A fianco della precedente, sulla destra: chiude il percorso.' }
+      { opera: 'Q25217589', indicazione: 'A fianco della precedente, sulla destra.' }
     ]
   },
   {
@@ -221,9 +236,9 @@ const VISITE = [
     prezzo: 4.5,
     infoLogistiche: 'Percorso di approfondimento, circa un\'ora e mezza. Consigliato dopo aver visto le sale del Rinascimento. Sedute disponibili in Sala 3.',
     tappe: [
-      { opera: 'Q3213771', indicazione: 'Parti dalla Sala 2, parete sinistra: serve come termine di paragone per capire cosa cambia dopo.' },
+      { opera: 'Q3213771', indicazione: 'Parti dalla Sala 2, parete sinistra.' },
       { opera: 'Q1103801', indicazione: 'Al centro della Sala 2.' },
-      { opera: 'Q3842737', indicazione: 'Sulla parete di destra: qui comincia la rottura con l\'equilibrio classico.' },
+      { opera: 'Q3842737', indicazione: 'Sulla parete di destra.' },
       { opera: 'Q126599960', indicazione: 'A fianco della precedente, stessa parete.' },
       { opera: 'Q3208041', indicazione: 'Scendi in Sala 3, prima parete a sinistra.' },
       { opera: 'Q3685503', indicazione: 'Prosegui sulla stessa parete.' },
@@ -240,13 +255,13 @@ const VISITE = [
     prezzo: 0,
     infoLogistiche: 'Percorso per gruppi scolastici, circa quaranta minuti. Ritrovo nell\'atrio. Zaini in guardaroba, si entra in sala senza. Toilette vicino all\'ingresso, corridoio a sinistra.',
     tappe: [
-      { opera: 'Q27345212', indicazione: 'Sali la scala ed entra in Sala 1: il cavaliere col drago e\' sulla parete a sinistra. Partiamo da qui.' },
+      { opera: 'Q27345212', indicazione: 'Sali la scala ed entra in Sala 1: il cavaliere col drago e\' sulla parete a sinistra.' },
       { opera: 'Q3907499', indicazione: 'Girati verso la parete di fronte: e\' il quadro tutto dorato.' },
       { opera: 'Q3947685', indicazione: 'Stessa sala, verso il centro: l\'angelo con la bilancia.' },
       { opera: 'Q3889219', indicazione: 'Ultima parete della Sala 1, prima del passaggio.' },
       { opera: 'Q16038421', indicazione: 'Entra in Sala 2, subito a sinistra.', opzionale: true },
       { opera: 'Q3213771', indicazione: 'Prosegui sulla stessa parete.' },
-      { opera: 'Q1103801', indicazione: 'Al centro della Sala 2: ci fermiamo qui piu\' a lungo.' },
+      { opera: 'Q1103801', indicazione: 'Al centro della Sala 2.' },
       { opera: 'Q2448678', indicazione: 'Scendi in Sala 3, al centro della parete lunga.' },
       { opera: 'Q23008334', indicazione: 'Verso il fondo della stessa parete.' },
       { opera: 'Q29997042', indicazione: 'Ultima tappa, vicino all\'uscita della Sala 3.' }
@@ -282,6 +297,8 @@ async function seed() {
       museoId: museo._id,
       titolo: o.titolo,
       descrizione: o.descrizione,
+      autoreOpera: o.autoreOpera,
+      stile: o.stile,
       immagine: o.immagine,
       testi: o.testi,
       autoreId: utenti[o.autore]._id,
