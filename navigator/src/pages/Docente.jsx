@@ -10,6 +10,7 @@ export default function Docente() {
   const [visita, setVisita] = useState(null);
   const [codiceSessione, setCodiceSessione] = useState('CARICAMENTO...');
   const [indiceAttuale, setIndiceAttuale] = useState(0);
+  const [studenti, setStudenti] = useState([]); // Aggiunto stato per gli studenti
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -26,6 +27,11 @@ export default function Docente() {
 
     socket.on('sessione:creata', (dati) => {
       if (dati?.codice) setCodiceSessione(dati.codice);
+    });
+
+    // In ascolto per l'aggiornamento della lista studenti dal backend
+    socket.on('sessione:studenti', (listaStudenti) => {
+      setStudenti(listaStudenti || []);
     });
 
     return () => {
@@ -59,6 +65,27 @@ export default function Docente() {
             {codiceSessione}
           </span>
         </div>
+
+        {/* Nuova sezione: Lista Studenti Connessi */}
+        <div className="mb-4 text-start border rounded p-3 bg-light">
+          <h6 className="fw-bold text-muted mb-3 d-flex justify-content-between align-items-center">
+            <span><i className="bi bi-people-fill me-2"></i>Studenti Connessi</span>
+            <span className="badge bg-secondary rounded-pill">{studenti.length}</span>
+          </h6>
+          <div className="d-flex flex-wrap gap-2">
+            {studenti.length === 0 ? (
+              <span className="small text-muted fst-italic">In attesa di connessioni...</span>
+            ) : (
+              studenti.map((studente, idx) => (
+                <span key={idx} className="badge bg-secondary text-white rounded-pill fw-normal px-3 py-2 shadow-sm">
+                  <i className="bi bi-person me-1"></i>
+                  {studente.nome || 'Studente'}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+
         <button
           className="btn btn-outline-danger btn-sm w-100"
           onClick={() => {
