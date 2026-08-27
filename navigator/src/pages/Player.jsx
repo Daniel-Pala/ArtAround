@@ -447,14 +447,13 @@ function Player() {
                   <i className="bi bi-x-lg"></i>
                 </button>
               </div>
-              {visita?.infoLogistiche && <p className="text-muted small mb-2">{visita.infoLogistiche}</p>}
               {[...righeOpera, ...righeMuseo].map(([etichetta, testo]) => (
                 <div key={etichetta} className="py-2 border-top">
                   <div className="fw-semibold small">{etichetta}</div>
                   <div className="text-muted small">{testo}</div>
                 </div>
               ))}
-              {!visita?.infoLogistiche && righeOpera.length === 0 && righeMuseo.length === 0 && (
+              {righeOpera.length === 0 && righeMuseo.length === 0 && (
                 <p className="text-muted small fst-italic mb-0">Nessuna informazione disponibile.</p>
               )}
             </div>
