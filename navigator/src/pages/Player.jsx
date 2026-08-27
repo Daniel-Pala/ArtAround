@@ -3,9 +3,11 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchAuth } from '../auth';
 import { io } from 'socket.io-client';
 
+// scale ordinate: i comandi "dimmi di piu/meno" e "piu/troppo semplice" ci si muovono su
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
+// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X"
 const LOGISTICA = [
   ['uscita', 'Uscita'],
   ['toilette', 'Toilette'],
@@ -20,6 +22,7 @@ function Player() {
   const [searchParams] = useSearchParams();
   const codiceSessione = searchParams.get('sessione');
 
+  // Gestione ID visita dinamico (se è 'live', verrà inviato dal socket)
   const [visitaIdAttiva, setVisitaIdAttiva] = useState(
     visitaIdParam && visitaIdParam !== 'live' ? visitaIdParam : null
   );
@@ -46,7 +49,7 @@ function Player() {
   const [mostraInfo, setMostraInfo] = useState(false);
 
   useEffect(() => {
-    if (!visitaIdAttiva) return;
+    if (!visitaIdAttiva) return; // Aspetta l'ID dal socket se siamo in modalità live
     setLoading(true);
     fetchAuth(`/api/visite/${visitaIdAttiva}`)
       .then(res => res.json())
@@ -54,6 +57,7 @@ function Player() {
       .finally(() => setLoading(false));
   }, [visitaIdAttiva]);
 
+  // Gestione connessione Socket.io con i nomi attesi dal backend
   useEffect(() => {
     if (!codiceSessione) return;
 
@@ -61,14 +65,17 @@ function Player() {
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      // Il backend si aspetta 'studente:entra' e richiede un parametro 'nome'
       socket.emit('studente:entra', { codice: codiceSessione, nome: 'Studente' });
     });
 
+    // Il backend inoltra il cambio slide usando 'stato:item'
     socket.on('stato:item', (dati) => {
       if (dati) {
         if (typeof dati.indice === 'number') {
           setIndiceAttuale(dati.indice);
         }
+        // Se il server manda l'ID della visita e differisce da quello corrente, lo aggiorniamo
         if (dati.visitaId) {
           setVisitaIdAttiva(prevId => prevId !== dati.visitaId ? dati.visitaId : prevId);
         }
@@ -80,6 +87,7 @@ function Player() {
     };
   }, [codiceSessione]);
 
+  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica
   useEffect(() => {
     const file = visita?.museoId?.configFile;
     if (!file) return;
@@ -88,6 +96,7 @@ function Player() {
       .then(setConfig);
   }, [visita]);
 
+  // le voci del browser arrivano in modo asincrono: tengo quelle italiane e ne scelgo una
   useEffect(() => {
     const caricaVoci = () => {
       const tutte = window.speechSynthesis.getVoices();
@@ -99,17 +108,23 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
+  // se cambia item o combinazione livello/durata, azzero l'audio in corso
   useEffect(() => {
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
   }, [indiceAttuale, livelloScelto, durataScelta]);
 
+  // esco dal player: fermo audio e microfono
   useEffect(() => () => {
     window.speechSynthesis.cancel();
     riconoscimentoRef.current?.abort();
   }, []);
 
+  // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
+  // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
+  // tengo tutte e due le liste. Se un item e' stato cancellato dal marketplace la populate
+  // restituisce null e scarto la tappa intera.
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
 
@@ -119,10 +134,12 @@ function Player() {
   const itemCorrente = items[indiceAttuale];
   const tappaCorrente = tappe[indiceAttuale];
 
+  // tra i testi dell'item cerco quello che combacia con livello e durata scelti
   const testoTrovato = itemCorrente?.testi?.find(
     t => t.livello === livelloScelto && t.durata === durataScelta
   );
 
+  // pronuncia un testo con la prima voce italiana disponibile; onEnd opzionale
   const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
     const voce = new SpeechSynthesisUtterance(testo);
@@ -132,8 +149,10 @@ function Player() {
     window.speechSynthesis.speak(voce);
   };
 
+  // azioni: le richiamano sia i bottoni sia i comandi vocali
   const leggi = () => {
     if (!testoTrovato) return;
+    // mentre cammini guardi il museo, non lo schermo: prima come arrivarci, poi l'opera
     const indicazione = tappaCorrente?.indicazioneLogistica;
     const daLeggere = indicazione ? `${indicazione}. ${testoTrovato.testo}` : testoTrovato.testo;
     parla(daLeggere, () => { setParlando(false); setInPausa(false); });
@@ -141,6 +160,7 @@ function Player() {
     setInPausa(false);
   };
 
+  // risposta a "dov'e X": apre il pannello info e pronuncia l'indicazione
   const rispondiLogistica = (chiave) => {
     if (!config?.logistica?.[chiave]) return;
     setMostraInfo(true);
@@ -155,12 +175,13 @@ function Player() {
     if (parlando && inPausa) { window.speechSynthesis.resume(); setInPausa(false); }
   };
 
+  // il bottone centrale e' un solo tasto, quindi alterna; i comandi vocali invece sono distinti
   const gestisciAudio = () => {
     if (!parlando) return leggi();
     inPausa ? riprendi() : pausa();
   };
 
-  // Blocco navigazione se c'è codiceSessione
+  // durante una lezione la tappa la decide il docente: lo studente non si sposta da solo
   const vaiIndietro = () => { if (!codiceSessione && indiceAttuale > 0) setIndiceAttuale(indiceAttuale - 1); };
   const vaiAvanti = () => { if (!codiceSessione && indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); };
 
@@ -169,6 +190,7 @@ function Player() {
 
   const staLeggendo = parlando && !inPausa;
 
+  // vocabolario controllato: ogni comando ha piu' frasi accettate e l'azione del bottone corrispondente
   const comandi = [
     { nome: 'Prossimo', frasi: ['prossim', 'avanti', 'successiv'], azione: vaiAvanti },
     { nome: 'Precedente', frasi: ['precedent', 'indietro'], azione: vaiIndietro },
@@ -204,6 +226,7 @@ function Player() {
     }
   };
 
+  // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase
   const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
@@ -252,6 +275,7 @@ function Player() {
               className={`btn btn-sm ${mostraInfo ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
               style={{ width: '38px', height: '38px' }}
               onClick={() => setMostraInfo(m => !m)}
+              aria-label="Informazioni utili"
             >
               <i className="bi bi-info-lg"></i>
             </button>
@@ -260,6 +284,7 @@ function Player() {
                 className={`btn btn-sm ${mostraMappa ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
                 style={{ width: '38px', height: '38px' }}
                 onClick={() => setMostraMappa(m => !m)}
+                aria-label={mostraMappa ? 'Torna alla lettura' : 'Mappa'}
               >
                 <i className={`bi ${mostraMappa ? 'bi-arrow-left' : 'bi-map'}`}></i>
               </button>
@@ -269,6 +294,7 @@ function Player() {
                 className={`btn btn-sm ${ascoltando ? 'btn-danger' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
                 style={{ width: '38px', height: '38px' }}
                 onClick={ascolta}
+                aria-label={ascoltando ? 'Ferma ascolto' : 'Comando vocale'}
               >
                 <i className={`bi ${ascoltando ? 'bi-mic-fill' : 'bi-mic'}`}></i>
               </button>
@@ -316,6 +342,7 @@ function Player() {
               )}
             </h2>
 
+            {/* la didascalia da cartellino: autore, data, tecnica */}
             {itemCorrente?.descrizione && (
               <p className="text-muted small mb-3">{itemCorrente.descrizione}</p>
             )}
@@ -370,6 +397,7 @@ function Player() {
             style={{ width: '46px', height: '46px' }}
             disabled={indiceAttuale === 0 || !!codiceSessione}
             onClick={vaiIndietro}
+            aria-label="Item precedente"
           >
             <i className="bi bi-skip-start-fill fs-5"></i>
           </button>
@@ -378,6 +406,7 @@ function Player() {
             style={{ width: '62px', height: '62px' }}
             disabled={!testoTrovato}
             onClick={gestisciAudio}
+            aria-label={!testoTrovato ? 'Audio non disponibile' : staLeggendo ? 'Pausa' : 'Ascolta'}
           >
             <i className={`bi ${!testoTrovato ? 'bi-volume-mute' : staLeggendo ? 'bi-pause-fill' : 'bi-play-fill'} fs-3`}></i>
           </button>
@@ -386,6 +415,7 @@ function Player() {
             style={{ width: '46px', height: '46px' }}
             disabled={indiceAttuale === items.length - 1 || !!codiceSessione}
             onClick={vaiAvanti}
+            aria-label="Item successivo"
           >
             <i className="bi bi-skip-end-fill fs-5"></i>
           </button>
@@ -404,6 +434,7 @@ function Player() {
                   className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                   style={{ width: '34px', height: '34px' }}
                   onClick={() => setMostraInfo(false)}
+                  aria-label="Chiudi"
                 >
                   <i className="bi bi-x-lg"></i>
                 </button>
