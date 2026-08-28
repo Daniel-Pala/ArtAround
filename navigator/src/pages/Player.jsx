@@ -168,14 +168,16 @@ function Player() {
     parla(testo);
   };
 
-  // righe del pannello "Informazioni utili": etichetta, testo mostrato, frase pronunciata
-  // dal comando vocale corrispondente e frasi che lo attivano. Una sola fonte, cosi'
-  // aggiungere una voce qui la fa comparire sia a schermo sia fra i comandi.
+  // etichetta, testo, frase pronunciata dal comando vocale, frasi che lo attivano.
+  // righeOpera sta solo fra i comandi vocali: autore e data sono gia' nella didascalia
+  // sotto al titolo, ripeterli nel pannello era un doppione.
   const righeOpera = [
     ['Autore', itemCorrente?.autoreOpera, `L'autore è ${itemCorrente?.autoreOpera}`, ['autore', 'dipinto']],
     ['Stile', itemCorrente?.stile, `Lo stile è ${itemCorrente?.stile}`, ['stile', 'movimento']],
   ].filter(([, testo]) => testo);
 
+  // righeMuseo invece compare in tutti e due i posti: aggiungere una voce a LOGISTICA
+  // la fa apparire sia nel pannello sia fra i comandi.
   const righeMuseo = LOGISTICA
     .map(([chiave, etichetta, frasi]) => [etichetta, config?.logistica?.[chiave], config?.logistica?.[chiave], frasi])
     .filter(([, testo]) => testo);
@@ -447,13 +449,13 @@ function Player() {
                   <i className="bi bi-x-lg"></i>
                 </button>
               </div>
-              {[...righeOpera, ...righeMuseo].map(([etichetta, testo]) => (
+              {righeMuseo.map(([etichetta, testo]) => (
                 <div key={etichetta} className="py-2 border-top">
                   <div className="fw-semibold small">{etichetta}</div>
                   <div className="text-muted small">{testo}</div>
                 </div>
               ))}
-              {righeOpera.length === 0 && righeMuseo.length === 0 && (
+              {righeMuseo.length === 0 && (
                 <p className="text-muted small fst-italic mb-0">Nessuna informazione disponibile.</p>
               )}
             </div>
