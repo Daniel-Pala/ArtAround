@@ -1,5 +1,6 @@
 // backend/seed.js — riempie il database con dati di presentazione.
-// Si lancia a mano: `node backend/seed.js`. Cancella tutto e ricrea da zero.
+// Si lancia a mano da dentro backend/: `cd backend && node seed.js` (il .env sta li').
+// Cancella tutto e ricrea da zero.
 //
 // I codici delle opere sono i veri identificativi Wikidata (P195 = "collezione:
 // Pinacoteca Nazionale di Bologna", Q1103550) e le immagini arrivano da Wikimedia
@@ -302,7 +303,7 @@ async function seed() {
       immagine: o.immagine,
       testi: o.testi,
       autoreId: utenti[o.autore]._id,
-      licenza: 'CC BY-SA 4.0',
+      licenza: 'CC-BY-SA',
       prezzo: 0
     }).save();
     idPerOpera[o.operaId] = item._id;

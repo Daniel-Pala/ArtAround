@@ -6,6 +6,9 @@ const URL_NAVIGATOR = 'http://localhost:5173';
 // gli item del museo aperto nel modale: la fetch li scarica una volta, i filtri ridisegnano
 let itemsMuseo = [];
 
+// id dell'item aperto nel form: null quando si crea, valorizzato quando si modifica
+let itemInModifica = null;
+
 richiediLogin();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -231,6 +234,13 @@ function passaANuovoItem() {
     bootstrap.Modal.getInstance(modale).hide();
 }
 
+function passaAModificaItem(itemId) {
+    const item = itemsMuseo.find(o => o._id === itemId);
+    const modale = document.getElementById('modalItems');
+    modale.addEventListener('hidden.bs.modal', () => apriModalModificaItem(item), { once: true });
+    bootstrap.Modal.getInstance(modale).hide();
+}
+
 async function caricaItemsMuseo(museoId) {
     const utente = getUtenteLoggato();
     const response = await fetch(`${API_URL}/items?museoId=${museoId}`);
@@ -264,9 +274,14 @@ function renderItemsMuseo() {
                 <span class="fw-semibold">${o.titolo}</span>
                 <small class="text-muted d-block">${o.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera'} · ${o.operaId} · ${o.testi.length} ${o.testi.length === 1 ? 'testo' : 'testi'}</small>
             </span>
-            <button class="btn btn-sm btn-outline-danger" onclick="eliminaItem('${o._id}', '${window.currentMuseoId}')" aria-label="Elimina item">
-                <i class="bi bi-trash"></i>
-            </button>
+            <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-secondary" onclick="passaAModificaItem('${o._id}')" aria-label="Modifica item">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="eliminaItem('${o._id}', '${window.currentMuseoId}')" aria-label="Elimina item">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
         </div>
     `).join('');
 }
@@ -284,13 +299,38 @@ async function eliminaItem(itemId, museoId) {
 
 function apriModalNuovoItem(museoId) {
     window.currentMuseoId = museoId;
+    itemInModifica = null;
+    document.getElementById('titoloModalItem').textContent = 'Aggiungi item';
+    document.getElementById('formItem').reset();
     document.getElementById('testiContainer').innerHTML = '';
     aggiungiRigaTesto();
     new bootstrap.Modal(document.getElementById('modalNuovoItem')).show();
 }
 
+// stesso modale della creazione, con i campi riempiti con quello che c'e' gia' nel database
+function apriModalModificaItem(item) {
+    itemInModifica = item._id;
+    document.getElementById('titoloModalItem').textContent = 'Modifica item';
+
+    document.getElementById('itemTitolo').value = item.titolo;
+    document.getElementById('itemTipo').value = item.tipo;
+    document.getElementById('itemWikidata').value = item.operaId;
+    document.getElementById('itemDescrizione').value = item.descrizione || '';
+    document.getElementById('itemAutoreOpera').value = item.autoreOpera || '';
+    document.getElementById('itemStile').value = item.stile || '';
+    document.getElementById('itemImmagine').value = item.immagine || '';
+    document.getElementById('itemLicenza').value = item.licenza;
+    document.getElementById('itemPrezzo').value = item.prezzo;
+
+    document.getElementById('testiContainer').innerHTML = '';
+    item.testi.forEach(testo => aggiungiRigaTesto(testo));
+
+    new bootstrap.Modal(document.getElementById('modalNuovoItem')).show();
+}
+
 // Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal item.
-function aggiungiRigaTesto() {
+// In modifica riceve il testo gia' salvato e lo rimette nei tre campi.
+function aggiungiRigaTesto(testo) {
     const riga = document.createElement('div');
     riga.className = 'testo-riga border rounded p-2 mb-2';
     riga.innerHTML = `
@@ -320,6 +360,12 @@ function aggiungiRigaTesto() {
         <textarea class="form-control form-control-sm testo-contenuto" rows="2" placeholder="Testo della descrizione…"></textarea>
     `;
     document.getElementById('testiContainer').appendChild(riga);
+
+    if (testo) {
+        riga.querySelector('.testo-durata').value = testo.durata;
+        riga.querySelector('.testo-livello').value = testo.livello;
+        riga.querySelector('.testo-contenuto').value = testo.testo;
+    }
 }
 
 function setupFormItem() {
@@ -354,16 +400,19 @@ function setupFormItem() {
         };
 
         try {
-            const response = await fetchAuth(`${API_URL}/items`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const response = await fetchAuth(
+                itemInModifica ? `${API_URL}/items/${itemInModifica}` : `${API_URL}/items`,
+                {
+                    method: itemInModifica ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }
+            );
 
             if (response.ok) {
                 bootstrap.Modal.getInstance(document.getElementById('modalNuovoItem')).hide();
                 form.reset();
-                alert("Item creato.");
+                alert(itemInModifica ? "Item modificato." : "Item creato.");
             } else {
                 const data = await response.json();
                 alert(data.message || "Errore durante il salvataggio dell'item.");
