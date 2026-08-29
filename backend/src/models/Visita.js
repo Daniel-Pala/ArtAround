@@ -1,5 +1,14 @@
 const mongoose = require("mongoose")
 
+// Una domanda del test finale della lezione sincrona.
+// La forma e' quella che scrive il marketplace in configura.js: quattro opzioni
+// e l'indice di quella giusta.
+const domandaQuizSchema = new mongoose.Schema({
+  quesito: { type: String, required: true },
+  opzioni: [String],
+  rispostaCorretta: { type: Number, default: 0 }
+}, { _id: false })
+
 const visitaSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
