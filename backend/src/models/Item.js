@@ -25,7 +25,6 @@ const itemSchema = new mongoose.Schema({
   autoreId: { type: mongoose.Schema.Types.ObjectId, ref: 'Utente', required: true },
   licenza: { type: String, required: true },
   prezzo: { type: Number, default: 0 },
-  isPrivate: { type: Boolean, default: false }, // Flag per contenuti privati docente
   createdAt: { type: Date, default: Date.now }
 });
 

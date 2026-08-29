@@ -3,3 +3,6 @@ node_modules/
 .DS_Store
 **/.DS_Store
 .aider*
+
+# lock file di troppo: i veri lock stanno in backend/ e navigator/
+/package-lock.json
