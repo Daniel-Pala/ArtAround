@@ -9,16 +9,21 @@ export default function Studente() {
 
   const gestisciInvio = (e) => {
     e.preventDefault();
-    const codicePulito = codice.trim().toUpperCase();
-    if (!codicePulito || codicePulito.length < 5) {
-      setErrore('Inserisci un codice valido di 6 caratteri (es. X8K9A2)');
+    
+    // Normalizzazione: rimuove tutti gli spazi e trasforma in maiuscolo
+    const codicePulito = codice.trim().replace(/\s+/g, '').toUpperCase();
+    
+    if (!codicePulito) {
+      setErrore('Inserisci il codice sessione fornito dal docente.');
       return;
     }
+    
     const nomePulito = nome.trim();
     if (!nomePulito) {
-      setErrore('Scrivi il tuo nome, serve al docente per riconoscerti');
+      setErrore('Scrivi il tuo nome, serve al docente per riconoscerti.');
       return;
     }
+    
     // Reindirizza al player live senza dover conoscere a priori il visitaId
     navigate(`/player/live?sessione=${codicePulito}&nome=${encodeURIComponent(nomePulito)}`);
   };
@@ -28,21 +33,20 @@ export default function Studente() {
       <div className="card p-4 shadow-sm border-0 bg-light">
         <h3 className="fw-bold mb-3">Partecipa a Lezione Live</h3>
         <p className="text-muted small mb-4">
-          Inserisci il codice di 6 caratteri mostrato sul pannello del tuo docente per iniziare la visita sincronizzata.
+          Inserisci il codice mnemonico mostrato sul pannello del tuo docente (es. FENICE ROSSA) per iniziare la visita sincronizzata.
         </p>
         <form onSubmit={gestisciInvio}>
           <div className="mb-3">
             <input
               type="text"
               className="form-control form-control-lg text-center fw-bold text-uppercase"
-              placeholder="Es. X8K9A2"
-              maxLength={6}
+              placeholder="Codice mnemonico"
               value={codice}
               onChange={(e) => {
                 setCodice(e.target.value);
                 setErrore('');
               }}
-              style={{ fontSize: '1.5rem', letterSpacing: '4px' }}
+              style={{ fontSize: '1.5rem', letterSpacing: '2px' }}
             />
           </div>
           <div className="mb-3">

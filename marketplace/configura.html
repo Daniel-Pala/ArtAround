@@ -21,7 +21,6 @@
         </div>
 
         <div class="row g-4">
-            <!-- Colonna item disponibili -->
             <div class="col-lg-8">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="h4 mb-0">Item disponibili</h2>
@@ -43,7 +42,6 @@
                 </div>
             </div>
 
-            <!-- Colonna itinerario (carrello) -->
             <div class="col-lg-4">
                 <div class="card sticky-top" style="top: 1.5rem;">
                     <div class="card-header bg-transparent border-bottom">
@@ -51,11 +49,16 @@
                         <h3 class="h5 mb-0">Il tuo itinerario</h3>
                     </div>
                     <div class="card-body" style="max-height: 78vh; overflow-y: auto;">
-                        <!-- Sezione visibile solo agli autori -->
                         <div id="saveSection" style="display: none;">
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">Nome del percorso</label>
                                 <input type="text" id="nomeVisita" class="form-control form-control-sm" placeholder="es. Tour del Rinascimento">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Codice Mnemonico (Opzionale)</label>
+                                <input type="text" id="codiceMnemonico" class="form-control form-control-sm" placeholder="es. Fenice rossa">
+                                <div class="form-text" style="font-size: 0.75rem;">Usato dagli studenti per accedere alla visita live.</div>
                             </div>
 
                             <div class="mb-3">
@@ -75,6 +78,17 @@
 
                             <hr>
 
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label small fw-semibold mb-0">Quiz di fine visita (Opzionale)</label>
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="aggiungiDomanda()">+ Domanda</button>
+                                </div>
+                                <div id="quizContainer" class="d-flex flex-column gap-2">
+                                    </div>
+                            </div>
+
+                            <hr>
+
                             <ul id="carrelloVisita" class="list-group mb-3">
                                 <li class="list-group-item text-muted text-center">Nessun item selezionato.</li>
                             </ul>
@@ -83,7 +97,6 @@
                             </button>
                         </div>
 
-                        <!-- Sezione visibile solo ai visitatori -->
                         <div id="readOnlySection" class="text-center py-3" style="display: none;">
                             <p class="text-muted small">Solo gli autori possono creare percorsi.</p>
                             <a href="index.html" class="btn btn-sm btn-outline-secondary">Torna alla dashboard</a>

@@ -5,6 +5,7 @@
 
 let itemsDisponibili = [];
 let itemsSelezionati = [];
+let quizDomande = []; // Vettore per mantenere lo stato del quiz
 let museoIdAttuale = null;
 let visitaIdAttuale = null; // Per modifiche di visite esistenti
 
@@ -46,6 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderItemsDisponibili();
         }
 
+        renderQuiz(); // Inizializza il box quiz vuoto
+
         // Se siamo in modalità modifica, carica la visita esistente
         if (visitaIdAttuale) {
             await caricaVisitaEsistente();
@@ -69,6 +72,12 @@ async function caricaVisitaEsistente() {
         // Popola il nome della visita
         document.getElementById('nomeVisita').value = visita.nome;
         
+        // Popola il codice mnemonico se presente
+        const codiceField = document.getElementById('codiceMnemonico');
+        if (codiceField) {
+            codiceField.value = visita.codiceMnemonico || '';
+        }
+
         // Popola le informazioni logistiche se presenti
         const infoLogisticheField = document.getElementById('infoLogistiche');
         if (infoLogisticheField) {
@@ -87,6 +96,12 @@ async function caricaVisitaEsistente() {
             pubblicaCheckbox.checked = visita.pubblica || false;
         }
 
+        // Popola il quiz se presente
+        if (visita.quiz && Array.isArray(visita.quiz)) {
+            quizDomande = visita.quiz;
+            renderQuiz();
+        }
+
         // Carica le tappe del percorso: dell'item mi servono id e titolo, il resto
         // (indicazione e opzionale) sta sulla tappa, non sull'item
         itemsSelezionati = visita.items.map(tappa => ({
@@ -103,6 +118,64 @@ async function caricaVisitaEsistente() {
         renderCarrello();
     } catch (error) {
         console.error("Errore nel caricamento della visita:", error);
+    }
+}
+
+// --- GESTIONE QUIZ -----------------------------------------------------------
+
+function renderQuiz() {
+    const container = document.getElementById('quizContainer');
+    if (quizDomande.length === 0) {
+        container.innerHTML = '<div class="text-muted small fst-italic text-center">Nessuna domanda aggiunta.</div>';
+        return;
+    }
+
+    let html = '';
+    quizDomande.forEach((domanda, qIndex) => {
+        html += `
+        <div class="card card-body p-2 position-relative shadow-sm" style="background: #fdfdfd;">
+            <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-1" onclick="rimuoviDomanda(${qIndex})" aria-label="Rimuovi domanda">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="mb-2 pe-3">
+                <input type="text" class="form-control form-control-sm fw-semibold" placeholder="Quesito della domanda..." value="${escapeAttr(domanda.quesito)}" oninput="aggiornaDomanda(${qIndex}, 'quesito', this.value)">
+            </div>
+            ${domanda.opzioni.map((opz, oIndex) => `
+                <div class="input-group input-group-sm mb-1">
+                    <div class="input-group-text bg-white" title="Segna come risposta corretta">
+                        <input class="form-check-input mt-0" type="radio" name="corretta_${qIndex}" ${domanda.rispostaCorretta === oIndex ? 'checked' : ''} onchange="aggiornaDomanda(${qIndex}, 'rispostaCorretta', ${oIndex})">
+                    </div>
+                    <input type="text" class="form-control" placeholder="Opzione ${oIndex + 1}" value="${escapeAttr(opz)}" oninput="aggiornaDomanda(${qIndex}, 'opzione_${oIndex}', this.value)">
+                </div>
+            `).join('')}
+        </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function aggiungiDomanda() {
+    quizDomande.push({
+        quesito: '',
+        opzioni: ['', '', '', ''],
+        rispostaCorretta: 0
+    });
+    renderQuiz();
+}
+
+function rimuoviDomanda(index) {
+    quizDomande.splice(index, 1);
+    renderQuiz();
+}
+
+function aggiornaDomanda(index, field, value) {
+    if (field === 'quesito') {
+        quizDomande[index].quesito = value;
+    } else if (field === 'rispostaCorretta') {
+        quizDomande[index].rispostaCorretta = parseInt(value, 10);
+    } else if (field.startsWith('opzione_')) {
+        const opzIndex = parseInt(field.split('_')[1], 10);
+        quizDomande[index].opzioni[opzIndex] = value;
     }
 }
 
@@ -216,6 +289,7 @@ function renderCarrello() {
 
 // le virgolette dentro il testo romperebbero l'attributo value
 function escapeAttr(testo) {
+    if (testo == null) return '';
     return String(testo).replace(/"/g, '&quot;');
 }
 
@@ -239,6 +313,15 @@ async function salvaVisita() {
         return;
     }
 
+    const codiceMnemonico = document.getElementById('codiceMnemonico')?.value.trim() || '';
+    
+    // Controllo validità form Quiz
+    const quizValido = quizDomande.every(q => q.quesito.trim() !== '' && q.opzioni.every(o => o.trim() !== ''));
+    if (quizDomande.length > 0 && !quizValido) {
+        alert("Per favore, completa tutti i campi del quiz (il quesito e le 4 opzioni di risposta per ogni domanda) prima di salvare.");
+        return;
+    }
+
     // autoreId lo mette il backend dal token, non lo mandiamo dal client
     const infoLogistiche = document.getElementById('infoLogistiche')?.value || '';
     const prezzo = parseFloat(document.getElementById('prezzoVisita')?.value) || 0;
@@ -246,6 +329,8 @@ async function salvaVisita() {
 
     const payload = {
         nome: nomeVisita,
+        codiceMnemonico: codiceMnemonico, // Inviato al backend per la sessione live
+        quiz: quizDomande, // Inviato al backend
         museoId: museoIdAttuale,
         items: itemsSelezionati.map((item, index) => ({
             itemId: item._id,

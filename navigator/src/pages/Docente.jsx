@@ -8,7 +8,7 @@ export default function Docente() {
   const navigate = useNavigate();
 
   const [visita, setVisita] = useState(null);
-  const [codiceInput, setCodiceInput] = useState('FENICE-ROSSA');
+  const [codiceInput, setCodiceInput] = useState('');
   const [codiceAttivo, setCodiceAttivo] = useState(null);
   const [indiceAttuale, setIndiceAttuale] = useState(0);
   const [studenti, setStudenti] = useState([]);
@@ -21,7 +21,15 @@ export default function Docente() {
   useEffect(() => {
     fetchAuth(`/api/visite/${visitaId}`)
       .then(res => res.json())
-      .then(data => setVisita(data));
+      .then(data => {
+        setVisita(data);
+        // Pre-imposta il codice mnemonico se è stato configurato nel marketplace
+        if (data.codiceMnemonico) {
+          setCodiceInput(data.codiceMnemonico.toUpperCase());
+        } else {
+          setCodiceInput('FENICE-ROSSA'); // Fallback
+        }
+      });
 
     const socket = io('http://localhost:3000');
     socketRef.current = socket;
@@ -50,15 +58,23 @@ export default function Docente() {
   };
 
   const avviaQuizGenerico = () => {
-    // Domande di default basate sulle tappe per la verifica finale
-    const domandeDefault = tappe.map((t, idx) => ({
-      id: idx,
-      quesito: `Qual è il tema principale dell'opera "${t.itemId?.titolo}"?`,
-      opzioni: [t.itemId?.stile || 'Arte Moderna', 'Tecnica Classica', 'Contesto Storico', 'Nessuna delle precedenti'],
-      esatta: 0
-    }));
+    // Utilizza il quiz configurato nel marketplace se presente,
+    // altrimenti usa le domande di default basate sulle tappe per la verifica finale
+    const domandeQuiz = (visita?.quiz && visita.quiz.length > 0)
+      ? visita.quiz.map((q, idx) => ({
+          id: idx,
+          quesito: q.quesito,
+          opzioni: q.opzioni,
+          esatta: q.rispostaCorretta
+        }))
+      : tappe.map((t, idx) => ({
+          id: idx,
+          quesito: `Qual è il tema principale dell'opera "${t.itemId?.titolo}"?`,
+          opzioni: [t.itemId?.stile || 'Arte Moderna', 'Tecnica Classica', 'Contesto Storico', 'Nessuna delle precedenti'],
+          esatta: 0
+        }));
 
-    socketRef.current?.emit('docente:avviaQuiz', { codice: codiceAttivo, domande: domandeDefault });
+    socketRef.current?.emit('docente:avviaQuiz', { codice: codiceAttivo, domande: domandeQuiz });
     setQuizInCorso(true);
   };
 
