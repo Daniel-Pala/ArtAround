@@ -13,6 +13,8 @@ const visitaSchema = new mongoose.Schema({
   infoLogistiche: String,
   pubblica: { type: Boolean, default: false },
   prezzo: { type: Number, default: 0 },
+  nomeMnemonico: { type: String }, // es. "Fenice rossa"
+  quiz: [domandaQuizSchema],      // Array delle domande a risposta multipla create dal docente
   createdAt: { type: Date, default: Date.now }
 })
 

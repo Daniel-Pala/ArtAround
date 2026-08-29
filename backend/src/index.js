@@ -24,87 +24,126 @@ const sessioni = new Map()
 // Funzione helper per generare un codice stanza univoco di 6 caratteri (es. X8K9A2)
 const generaCodice = () => Math.random().toString(36).substring(2, 8).toUpperCase()
 
+// --- AGGIUNTA PER ESTENSIONE 18-27 ---
+// Normalizza le stringhe dei codici per evitare errori (es. "Fenice Rossa" -> "FENICEROSSA")
+const normalizzaCodice = (str) => str ? str.trim().toUpperCase().replace(/\s+/g, '') : ''
+// ------------------------------------
+
 io.on('connection', (socket) => {
   console.log(`Socket connesso: ${socket.id}`)
 
   // --- EVENTI DOCENTE ---
-  socket.on('docente:crea', ({ visitaId }) => {
-    const codice = generaCodice()
+  socket.on('docente:crea', ({ visitaId, codiceMnemonico }) => {
+    // Se la docente fornisce un nome mnemonico, usiamo quello, altrimenti codice casuale
+    const codiceRaw = codiceMnemonico || generaCodice()
+    const codiceChiave = normalizzaCodice(codiceRaw)
     
-    sessioni.set(codice, {
+    sessioni.set(codiceChiave, {
       visitaId,
+      codiceOriginale: codiceRaw,
       indiceCorrente: 0,
       fase: 'visita',
       studenti: new Map() // Map interna per gli studenti connessi a questa stanza
     })
 
-    socket.join(codice) // Il docente entra nella stanza Socket.io
-    socket.emit('sessione:creata', { codice })
-    console.log(`Sessione creata: ${codice} per visita ${visitaId}`)
+    socket.join(codiceChiave) // Il docente entra nella stanza Socket.io
+    socket.emit('sessione:creata', { codice: codiceRaw })
+    console.log(`Sessione creata: ${codiceRaw} (${codiceChiave}) per visita ${visitaId}`)
   })
 
   socket.on('docente:vaiA', ({ codice, indice }) => {
-    const sessione = sessioni.get(codice)
+    const key = normalizzaCodice(codice)
+    const sessione = sessioni.get(key)
     if (sessione) {
       sessione.indiceCorrente = indice
       // Invia sia l'indice sia l'ID della visita alla stanza
-      io.to(codice).emit('stato:item', { indice, visitaId: sessione.visitaId })
+      io.to(key).emit('stato:item', { indice, visitaId: sessione.visitaId })
     }
   })
 
-  socket.on('docente:avviaQuiz', ({ codice, domande }) => {
-    const sessione = sessioni.get(codice)
+  socket.on('docente:avviaQuiz', ({ codice, quiz }) => {
+    const key = normalizzaCodice(codice)
+    const sessione = sessioni.get(key)
     if (sessione) {
       sessione.fase = 'quiz'
-      io.to(codice).emit('quiz:inizio')
+      io.to(key).emit('quiz:inizio', { quiz })
     }
   })
 
   socket.on('docente:chiudi', ({ codice }) => {
-    io.to(codice).emit('sessione:fine')
-    sessioni.delete(codice)
+    const key = normalizzaCodice(codice)
+    io.to(key).emit('sessione:fine')
+    sessioni.delete(key)
   })
 
   // --- EVENTI STUDENTE ---
   socket.on('studente:entra', ({ codice, nome }) => {
-    const sessione = sessioni.get(codice)
+    const key = normalizzaCodice(codice)
+    const sessione = sessioni.get(key)
     if (sessione) {
-      socket.join(codice)
+      socket.join(key)
       
-      // Aggiunge lo studente alla Map della sessione
-      sessione.studenti.set(socket.id, { nome, livello: 'base', durata: 'corta', risposte: [] })
+      // Aggiunge lo studente alla Map della sessione (aggiunti voto e risposte per il quiz)
+      sessione.studenti.set(socket.id, { socketId: socket.id, nome, livello: 'base', durata: 'corta', voto: null, risposte: [] })
 
       // Manda sia la visitaId sia lo stato attuale dell'item allo studente appena entrato
       socket.emit('stato:item', { indice: sessione.indiceCorrente, visitaId: sessione.visitaId })
       
       // Notifica il docente della lista studenti aggiornata
       const listaStudenti = Array.from(sessione.studenti.values())
-      io.to(codice).emit('sessione:studenti', listaStudenti)
+      io.to(key).emit('sessione:studenti', listaStudenti)
     } else {
       socket.emit('errore', { messaggio: 'Codice sessione non trovato' })
     }
   })
 
   socket.on('studente:cambiaLivello', ({ codice, livello, durata }) => {
-    const sessione = sessioni.get(codice)
+    const key = normalizzaCodice(codice)
+    const sessione = sessioni.get(key)
     if (sessione && sessione.studenti.has(socket.id)) {
       const studente = sessione.studenti.get(socket.id)
       studente.livello = livello
       studente.durata = durata
       
       const listaStudenti = Array.from(sessione.studenti.values())
-      io.to(codice).emit('sessione:studenti', listaStudenti)
+      io.to(key).emit('sessione:studenti', listaStudenti)
+
+      // --- AGGIUNTA PER ESTENSIONE 18-27 ---
+      // Notifica in tempo reale per il pannello di monitoraggio del docente
+      io.to(key).emit('docente:logAttivita', {
+        messaggio: `${studente.nome} ha richiesto livello '${livello}' e durata '${durata}'`
+      })
+      // ------------------------------------
     }
   })
+
+  // --- AGGIUNTA PER ESTENSIONE 18-27: QUIZ ---
+  socket.on('studente:invioQuiz', ({ codice, risposte, totaleDomande, corrette }) => {
+    const key = normalizzaCodice(codice)
+    const sessione = sessioni.get(key)
+    if (sessione && sessione.studenti.has(socket.id)) {
+      const studente = sessione.studenti.get(socket.id)
+      
+      // Calcolo del voto in decimi
+      const voto = Math.round((corrette / totaleDomande) * 10)
+      studente.voto = voto
+      studente.risposte = risposte
+
+      // Aggiorna la dashboard del docente con i risultati
+      const listaStudenti = Array.from(sessione.studenti.values())
+      io.to(key).emit('sessione:studenti', listaStudenti)
+    }
+  })
+  // -----------------------------------------
 
   // --- DISCONNESSIONE ---
   socket.on('disconnect', () => {
     console.log(`Socket disconnesso: ${socket.id}`)
-    sessioni.forEach((sessione, codice) => {
+    sessioni.forEach((sessione, key) => {
       if (sessione.studenti.has(socket.id)) {
         sessione.studenti.delete(socket.id)
         const listaStudenti = Array.from(sessione.studenti.values())
-        io.to(codice).emit('sessione:studenti', listaStudenti)
+        io.to(key).emit('sessione:studenti', listaStudenti)
       }
     })
   })

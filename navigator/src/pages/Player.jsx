@@ -49,6 +49,24 @@ function Player() {
   const [mostraMappa, setMostraMappa] = useState(false);
   const [mostraInfo, setMostraInfo] = useState(false);
 
+  // --- INIZIO AGGIUNTE LIVE/QUIZ ---
+  const [faseQuiz, setFaseQuiz] = useState(false);
+  const [quizDati, setQuizDati] = useState(null);
+  const [risposteStudente, setRisposteStudente] = useState({});
+  const [votoCalcolato, setVotoCalcolato] = useState(null);
+
+  // Modifica per notificare il docente quando lo studente cambia livello/durata (Obiettivo 3)
+  useEffect(() => {
+    if (codiceSessione && socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('studente:cambiaLivello', {
+        codice: codiceSessione,
+        livello: livelloScelto,
+        durata: durataScelta
+      });
+    }
+  }, [livelloScelto, durataScelta, codiceSessione]);
+  // --- FINE AGGIUNTE ---
+
   useEffect(() => {
     if (!visitaIdAttiva) return; // Aspetta l'ID dal socket se siamo in modalità live
     setLoading(true);
@@ -82,6 +100,19 @@ function Player() {
         }
       }
     });
+
+    // --- INIZIO AGGIUNTE LIVE/QUIZ (nel socket) ---
+    socket.on('quiz:inizio', (dati) => {
+      // Accetta sia dati.domande (struttura inviata da Docente) che dati.quiz
+      const domandeRicevute = dati?.domande || dati?.quiz;
+      if (domandeRicevute) {
+        setQuizDati(domandeRicevute);
+        setFaseQuiz(true);
+        window.speechSynthesis.cancel();
+        riconoscimentoRef.current?.abort();
+      }
+    });
+    // --- FINE AGGIUNTE ---
 
     return () => {
       socket.disconnect();
@@ -251,6 +282,76 @@ function Player() {
     setAscoltando(true);
     rec.start();
   };
+
+  // --- INIZIO AGGIUNTE LIVE/QUIZ (Funzioni) ---
+  const inviaQuiz = () => {
+    if (!quizDati) return;
+    let corrette = 0;
+    const arrayRisposte = quizDati.map((domanda, index) => {
+      // Correzione: Docente.jsx invia la risposta corretta nella chiave "esatta"
+      const isCorretta = risposteStudente[index] === domanda.esatta;
+      if (isCorretta) corrette++;
+      return { indiceDomanda: index, rispostaData: risposteStudente[index], corretta: isCorretta };
+    });
+
+    const votoInDecimi = Math.round((corrette / quizDati.length) * 10);
+    setVotoCalcolato(votoInDecimi);
+
+    if (socketRef.current) {
+      socketRef.current.emit('studente:invioQuiz', {
+        codice: codiceSessione,
+        risposte: arrayRisposte,
+        totaleDomande: quizDati.length,
+        corrette: corrette
+      });
+    }
+  };
+
+  if (faseQuiz) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-color)' }}>
+        <div className="bg-light d-flex flex-column p-4" style={{ width: '100%', maxWidth: '480px', height: '100%', overflowY: 'auto' }}>
+          <h2 className="fs-3 fw-bold mb-4 text-center text-primary">Test Finale</h2>
+          
+          {votoCalcolato !== null ? (
+            <div className="text-center mt-5">
+              <i className="bi bi-check-circle-fill text-success" style={{ fontSize: '4rem' }}></i>
+              <h3 className="mt-3">Test Completato!</h3>
+              <p className="fs-4">Il tuo voto è: <strong>{votoCalcolato} / 10</strong></p>
+              <button className="btn btn-primary mt-4" onClick={() => navigate('/')}>Torna alla Home</button>
+            </div>
+          ) : (
+            <>
+              {quizDati?.map((domanda, index) => (
+                <div key={index} className="mb-4 bg-white p-3 rounded border shadow-sm">
+                  <p className="fw-semibold mb-3">{index + 1}. {domanda.quesito}</p>
+                  <div className="d-flex flex-column gap-2">
+                    {domanda.opzioni.map((opzione, opzIndex) => (
+                      <button
+                        key={opzIndex}
+                        className={`btn text-start ${risposteStudente[index] === opzIndex ? 'btn-primary' : 'btn-outline-secondary'}`}
+                        onClick={() => setRisposteStudente(prev => ({ ...prev, [index]: opzIndex }))}
+                      >
+                        {opzione}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button 
+                className="btn btn-success btn-lg mt-3 w-100 fw-bold" 
+                disabled={Object.keys(risposteStudente).length !== quizDati?.length}
+                onClick={inviaQuiz}
+              >
+                Consegna Test
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+  // --- FINE AGGIUNTE ---
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-color)' }}>
