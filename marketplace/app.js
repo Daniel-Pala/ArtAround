@@ -80,9 +80,12 @@ async function caricaDashboardAutore() {
                         <button class="btn btn-sm btn-outline-success me-1" onclick="apriModalItems('${museo._id}')">
                             <i class="bi bi-images me-1"></i>Item
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="apriModalVisite('${museo._id}')">
+                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="apriModalVisite('${museo._id}')">
                             <i class="bi bi-collection me-1"></i>Percorsi
                         </button>
+                        <a href="qr.html?id=${museo._id}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-qr-code me-1"></i>QR
+                        </a>
                     </td>
                 </tr>`;
         });

@@ -2,23 +2,38 @@ const express = require('express')
 const router = express.Router()
 const Item = require('../models/Item')
 const Visita = require('../models/Visita')
+const QRCode = require('qrcode')
 const { richiediAutore } = require('../middleware/autorizzazione')
 
 router.get('/', async (req, res) => {
   try {
     //cerca in url se è presente un museoId, se sì filtra gli item per quel museo, altrimenti ritorna tutti gli item
     //es . /api/items?museoId=1234
-    const { museoId, livello } = req.query;
+    const { museoId, livello, operaId } = req.query;
     const filtro = {};
 
     if (museoId) filtro.museoId = museoId;
     if (livello) filtro['testi.livello'] = livello;
+    // operaId e' il codice Wikidata: e' quello che sta dentro il QR code
+    // appeso di fianco all'opera, quindi da una scansione si arriva agli item.
+    if (operaId) filtro.operaId = operaId;
     // items viene arricchito dal nome dell'autore e dal nome del museo, grazie a populate
     const items = await Item.find(filtro).populate('autoreId', 'username').populate('museoId', 'nome')
     res.json(items)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
+})
+
+// PNG del QR code di un'opera, da appendere di fianco al quadro.
+// Dentro al QR ci sta solo il codice Wikidata: un QR non e' un identificatore
+// registrato da qualche parte, e' solo un modo di disegnare una stringa, quindi
+// ci mettiamo quella che usiamo gia' come chiave delle opere.
+// La pagina di stampa (marketplace/qr.html) lo mostra con un semplice <img src>.
+// Va dichiarata prima di GET /:id per non farsi leggere "qr" come un id.
+router.get('/qr/:operaId', async (req, res) => {
+  const png = await QRCode.toBuffer(req.params.operaId, { width: 400, margin: 1 })
+  res.type('png').send(png)
 })
 
 //ritorna un item specifico per id, con i dati dell'autore e del museo
