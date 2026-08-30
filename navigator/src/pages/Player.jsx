@@ -60,6 +60,7 @@ function Player() {
   const [quizDati, setQuizDati] = useState(null);
   const [risposteStudente, setRisposteStudente] = useState({});
   const [votoCalcolato, setVotoCalcolato] = useState(null);
+  const [forzaAudioStamp, setForzaAudioStamp] = useState(0); // Trigger per forzare l'audio
 
   // Modifica per notificare il docente quando lo studente cambia livello/durata (Obiettivo 3)
   useEffect(() => {
@@ -117,6 +118,11 @@ function Player() {
         window.speechSynthesis.cancel();
         riconoscimentoRef.current?.abort();
       }
+    });
+
+    // Ascolto del trigger forzato per l'audio inviato dalla docente
+    socket.on('studente:playAudio', () => {
+      setForzaAudioStamp(Date.now());
     });
     // --- FINE AGGIUNTE ---
 
@@ -198,9 +204,6 @@ function Player() {
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
 
-  if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
-  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">Nessun item presente in questo percorso.</div>;
-
   const itemCorrente = items[indiceAttuale];
   const tappaCorrente = tappe[indiceAttuale];
 
@@ -227,7 +230,20 @@ function Player() {
     parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
     setParlando(true);
     setInPausa(false);
+
+    // --- AGGIUNTA LOG AZIONI ---
+    if (socketRef.current && codiceSessione) {
+      socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: 'ha avviato la riproduzione audio' });
+    }
   };
+
+  // Attiva automaticamente la lettura se la docente invia il trigger
+  useEffect(() => {
+    if (forzaAudioStamp > 0 && testoTrovato) {
+      leggi();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forzaAudioStamp]);
 
   // risposta a un comando vocale: apre il pannello, cosi' il testo resta anche a schermo,
   // e lo pronuncia.
@@ -251,11 +267,25 @@ function Player() {
     .filter(([, testo]) => testo);
 
   const pausa = () => {
-    if (parlando && !inPausa) { window.speechSynthesis.pause(); setInPausa(true); }
+    if (parlando && !inPausa) { 
+      window.speechSynthesis.pause(); 
+      setInPausa(true); 
+      // --- AGGIUNTA LOG AZIONI ---
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
+      }
+    }
   };
 
   const riprendi = () => {
-    if (parlando && inPausa) { window.speechSynthesis.resume(); setInPausa(false); }
+    if (parlando && inPausa) { 
+      window.speechSynthesis.resume(); 
+      setInPausa(false); 
+      // --- AGGIUNTA LOG AZIONI ---
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
+      }
+    }
   };
 
   // il bottone centrale e' un solo tasto, quindi alterna; i comandi vocali invece sono distinti
@@ -296,6 +326,16 @@ function Player() {
   const eseguiComando = (trascrizione) => {
     const frase = trascrizione.toLowerCase().replace(/[''`]/g, '').trim();
     const comando = comandi.find(c => c.frasi.some(f => frase.includes(f)));
+    
+    // --- AGGIUNTA LOG AZIONI ---
+    if (socketRef.current && codiceSessione) {
+      socketRef.current.emit('studente:azione', { 
+        codice: codiceSessione, 
+        azione: 'ha usato un comando vocale', 
+        dettaglio: frase 
+      });
+    }
+
     if (comando) {
       setStatoVoce(`Ho capito: ${comando.nome}`);
       comando.azione();
@@ -345,6 +385,9 @@ function Player() {
       });
     }
   };
+
+  if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
+  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">Nessun item presente in questo percorso.</div>;
 
   if (faseQuiz) {
     return (
