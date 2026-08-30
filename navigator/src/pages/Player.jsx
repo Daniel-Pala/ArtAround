@@ -181,7 +181,11 @@ function Player() {
   // La fotocamera vuole un contesto sicuro: funziona su https e su localhost, non su un IP di rete.
   useEffect(() => {
     if (!mostraScanner || !videoRef.current) return;
-    const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data));
+    // senza returnDetailedScanResult la libreria usa la firma vecchia e passa alla
+    // callback una stringa invece dell'oggetto: esito.data sarebbe undefined
+    const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data), {
+      returnDetailedScanResult: true
+    });
     scanner.start().catch(() => setEsitoScansione('Non riesco ad aprire la fotocamera.'));
     scannerRef.current = scanner;
     return () => { scanner.destroy(); scannerRef.current = null; };
@@ -218,10 +222,9 @@ function Player() {
   // azioni: le richiamano sia i bottoni sia i comandi vocali
   const leggi = () => {
     if (!testoTrovato) return;
-    // mentre cammini guardi il museo, non lo schermo: prima come arrivarci, poi l'opera
-    const indicazione = tappaCorrente?.indicazioneLogistica;
-    const daLeggere = indicazione ? `${indicazione}. ${testoTrovato.testo}` : testoTrovato.testo;
-    parla(daLeggere, () => { setParlando(false); setInPausa(false); });
+    // solo il testo dell'opera: dove si trova sta scritto a schermo e lo pronuncia
+    // il comando "come ci arrivo", che esiste apposta
+    parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
     setParlando(true);
     setInPausa(false);
   };
