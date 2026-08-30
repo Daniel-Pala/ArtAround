@@ -36,12 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function disegna(elenco) {
     document.getElementById('listaQr').innerHTML = elenco.map(([operaId, titolo]) => `
-        <div class="col-6 col-md-4 col-lg-3 position-relative col-cartellino" id="col-${operaId}">
-            <button class="btn btn-sm btn-light border btn-stampa"
-                    onclick="stampaUno('${operaId}')" aria-label="Stampa il cartellino di ${titolo}">
-                <i class="bi bi-printer"></i>
-            </button>
+        <div class="col-6 col-md-4 col-lg-3 col-cartellino" id="col-${operaId}">
             <div class="cartellino">
+                <button class="btn btn-sm btn-light border btn-stampa"
+                        onclick="stampaUno('${operaId}')" aria-label="Stampa il cartellino di ${titolo}">
+                    <i class="bi bi-printer"></i>
+                </button>
                 <img src="${API_URL}/items/qr/${operaId}" alt="Codice QR di ${titolo}">
                 <div class="titolo">${titolo}</div>
                 <div class="codice">${operaId}</div>

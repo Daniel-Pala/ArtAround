@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="stile.css">
     <style>
         .cartellino {
+            position: relative;
             aspect-ratio: 1;
             border: 1px solid #212529;
             background: #fff;
@@ -24,9 +25,8 @@
         .cartellino .titolo { font-size: .8rem; font-weight: 600; text-align: center; margin-top: .5rem; }
         .cartellino .codice { font-size: .7rem; color: #6c757d; }
 
-        /* il bottone di stampa compare passando sopra al cartellino */
-        .cartellino .btn-stampa { position: absolute; top: .5rem; right: 1.25rem; opacity: 0; transition: opacity .15s; }
-        .col-cartellino:hover .btn-stampa, .btn-stampa:focus { opacity: 1; }
+        /* stampa del singolo cartellino: sta nell'angolo del riquadro, e in stampa sparisce */
+        .cartellino .btn-stampa { position: absolute; top: .35rem; right: .35rem; color: #6c757d; }
 
         @media print {
             .navbar, .no-stampa, .btn-stampa { display: none; }
