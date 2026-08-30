@@ -295,8 +295,20 @@ function Player() {
   };
 
   // durante una lezione la tappa la decide il docente: lo studente non si sposta da solo
-  const vaiIndietro = () => { if (!codiceSessione && indiceAttuale > 0) setIndiceAttuale(indiceAttuale - 1); };
-  const vaiAvanti = () => { if (!codiceSessione && indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); };
+  const vaiIndietro = () => { 
+    if (codiceSessione) {
+      setStatoVoce('Navigazione gestita dal docente');
+      return;
+    }
+    if (indiceAttuale > 0) setIndiceAttuale(indiceAttuale - 1); 
+  };
+  const vaiAvanti = () => { 
+    if (codiceSessione) {
+      setStatoVoce('Navigazione gestita dal docente');
+      return;
+    }
+    if (indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); 
+  };
 
   const cambiaDurata = (verso) => setDurataScelta(d => DURATE[Math.min(Math.max(DURATE.indexOf(d) + verso, 0), DURATE.length - 1)]);
   const cambiaLivello = (verso) => setLivelloScelto(l => LIVELLI[Math.min(Math.max(LIVELLI.indexOf(l) + verso, 0), LIVELLI.length - 1)]);
@@ -509,7 +521,17 @@ function Player() {
                 if (!pos) return null;
                 const corrente = i === indiceAttuale;
                 return (
-                  <g key={op?._id || i} style={{ cursor: codiceSessione ? 'default' : 'pointer' }} onClick={() => !codiceSessione && setIndiceAttuale(i)}>
+                  <g 
+                    key={op?._id || i} 
+                    style={{ cursor: codiceSessione ? 'not-allowed' : 'pointer' }} 
+                    onClick={() => {
+                      if (codiceSessione) {
+                        setStatoVoce('Navigazione gestita dal docente');
+                        return;
+                      }
+                      setIndiceAttuale(i);
+                    }}
+                  >
                     {/* il browser lo mostra passandoci sopra, e i lettori di schermo lo leggono */}
                     <title>{op?.titolo}</title>
                     <circle cx={pos.x} cy={pos.y} r={corrente ? 2.6 : 2} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />
