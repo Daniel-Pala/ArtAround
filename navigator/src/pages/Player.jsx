@@ -458,8 +458,8 @@ function Player() {
             )}
           </div>
         ) : mostraMappa ? (
-          <div className="flex-grow-1" style={{ minHeight: 0, background: '#F4F1E9' }}>
-            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }}>
+          <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: '#F4F1E9' }}>
+            <svg viewBox="0 0 100 100" className="flex-grow-1" style={{ width: '100%', minHeight: 0, display: 'block' }}>
               <image href={config.mappa} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
               {items.map((op, i) => {
                 const pos = config.posizioni?.[op?.operaId];
@@ -467,12 +467,18 @@ function Player() {
                 const corrente = i === indiceAttuale;
                 return (
                   <g key={op?._id || i} style={{ cursor: codiceSessione ? 'default' : 'pointer' }} onClick={() => !codiceSessione && setIndiceAttuale(i)}>
+                    {/* il browser lo mostra passandoci sopra, e i lettori di schermo lo leggono */}
+                    <title>{op?.titolo}</title>
                     <circle cx={pos.x} cy={pos.y} r={corrente ? 2.6 : 2} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />
                     <text x={pos.x} y={pos.y + 0.9} textAnchor="middle" fontSize="2.5" fontWeight="600" fill={corrente ? '#fff' : '#1B1917'}>{i + 1}</text>
                   </g>
                 );
               })}
             </svg>
+            {/* i tondini portano alla tappa: qui sotto si legge su quale si e' finiti */}
+            <p className="text-center small mb-0 px-3 py-2 border-top">
+              <span className="text-muted">Tappa {indiceAttuale + 1}</span> · {itemCorrente?.titolo}
+            </p>
           </div>
         ) : (
           <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
