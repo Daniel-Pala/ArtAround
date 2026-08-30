@@ -181,9 +181,7 @@ function Player() {
   // La fotocamera vuole un contesto sicuro: funziona su https e su localhost, non su un IP di rete.
   useEffect(() => {
     if (!mostraScanner || !videoRef.current) return;
-    const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data), {
-      highlightScanRegion: true,
-    });
+    const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data));
     scanner.start().catch(() => setEsitoScansione('Non riesco ad aprire la fotocamera.'));
     scannerRef.current = scanner;
     return () => { scanner.destroy(); scannerRef.current = null; };
@@ -304,15 +302,12 @@ function Player() {
   };
 
   // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase.
-  // Il tasto c'e' sempre: su Firefox, che non ha SpeechRecognition, dice perche' non funziona
-  // invece di sparire (un tasto che manca sembra un guasto, uno che si spiega no).
+  // Su Firefox SpeechRecognition non esiste: il tasto resta al suo posto ma spento, cosi' si
+  // vede che la funzione c'e' senza far credere che sia rotta.
+  const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
-    const Riconoscimento = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Riconoscimento) {
-      setStatoVoce('I comandi vocali funzionano su Chrome: questo browser non li supporta.');
-      return;
-    }
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
+    const Riconoscimento = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new Riconoscimento();
     rec.lang = 'it-IT';
     rec.onresult = (e) => eseguiComando(e.results[0][0].transcript);
@@ -406,7 +401,7 @@ function Player() {
         )}
 
         <div className="bg-light border-bottom p-3 d-flex align-items-center flex-shrink-0">
-          <div className="d-flex flex-shrink-0" style={{ width: '124px' }}>
+          <div className="d-flex flex-shrink-0" style={{ width: '84px' }}>
             <button
               className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
               style={{ width: '38px', height: '38px' }}
@@ -422,7 +417,7 @@ function Player() {
             <div className="small text-muted">{indiceAttuale + 1} / {items.length}</div>
           </div>
 
-          <div className="d-flex align-items-center justify-content-end gap-1 flex-shrink-0" style={{ width: '124px' }}>
+          <div className="d-flex align-items-center justify-content-end gap-1 flex-shrink-0" style={{ width: '84px' }}>
             <button
               className={`btn btn-sm ${mostraInfo ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
               style={{ width: '38px', height: '38px' }}
@@ -441,22 +436,6 @@ function Player() {
                 <i className={`bi ${mostraMappa ? 'bi-arrow-left' : 'bi-map'}`}></i>
               </button>
             )}
-            <button
-              className={`btn btn-sm ${ascoltando ? 'btn-danger' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
-              style={{ width: '38px', height: '38px' }}
-              onClick={ascolta}
-              aria-label={ascoltando ? 'Ferma ascolto' : 'Comando vocale'}
-            >
-              <i className={`bi ${ascoltando ? 'bi-mic-fill' : 'bi-mic'}`}></i>
-            </button>
-            <button
-              className={`btn btn-sm ${mostraScanner ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
-              style={{ width: '38px', height: '38px' }}
-              onClick={() => { setEsitoScansione(''); setMostraMappa(false); setMostraScanner(v => !v); }}
-              aria-label={mostraScanner ? 'Chiudi la fotocamera' : "Inquadra il QR di un'opera"}
-            >
-              <i className={`bi ${mostraScanner ? 'bi-x-lg' : 'bi-qr-code-scan'}`}></i>
-            </button>
           </div>
         </div>
 
@@ -471,9 +450,9 @@ function Player() {
         {mostraScanner ? (
           <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: '#1B1917' }}>
             <video ref={videoRef} className="flex-grow-1" style={{ minHeight: 0, width: '100%', objectFit: 'cover' }} />
-            <p className="text-center text-white-50 small mb-0 px-3 py-2">
-              {esitoScansione || "Inquadra il codice QR appeso di fianco all'opera."}
-            </p>
+            {esitoScansione && (
+              <p className="text-center text-white small mb-0 px-3 py-2">{esitoScansione}</p>
+            )}
           </div>
         ) : mostraMappa ? (
           <div className="flex-grow-1" style={{ minHeight: 0, background: '#F4F1E9' }}>
@@ -558,6 +537,15 @@ function Player() {
 
         <div className="bg-light border-top py-2 px-4 d-flex justify-content-between align-items-center flex-shrink-0">
           <button
+            className={`btn ${mostraScanner ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
+            style={{ width: '46px', height: '46px' }}
+            disabled={!!codiceSessione}
+            onClick={() => { setEsitoScansione(''); setMostraMappa(false); setMostraScanner(v => !v); }}
+            aria-label={mostraScanner ? 'Chiudi la fotocamera' : "Inquadra il QR di un'opera"}
+          >
+            <i className={`bi ${mostraScanner ? 'bi-x-lg' : 'bi-qr-code-scan'} fs-5`}></i>
+          </button>
+          <button
             className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
             style={{ width: '46px', height: '46px' }}
             disabled={indiceAttuale === 0 || !!codiceSessione}
@@ -583,6 +571,15 @@ function Player() {
             aria-label="Item successivo"
           >
             <i className="bi bi-skip-end-fill fs-5"></i>
+          </button>
+          <button
+            className={`btn ${ascoltando ? 'btn-danger' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
+            style={{ width: '46px', height: '46px' }}
+            disabled={!riconoscimentoSupportato}
+            onClick={ascolta}
+            aria-label={ascoltando ? 'Ferma ascolto' : 'Comando vocale'}
+          >
+            <i className={`bi ${ascoltando ? 'bi-mic-fill' : 'bi-mic'} fs-5`}></i>
           </button>
         </div>
 
