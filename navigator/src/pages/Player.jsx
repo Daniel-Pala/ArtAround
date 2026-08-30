@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchAuth } from '../auth';
 import { io } from 'socket.io-client';
+import QrScanner from 'qr-scanner';
 
 // scale ordinate: i comandi "dimmi di piu/meno" e "piu/troppo semplice" ci si muovono su
 const DURATE = ['3s', '15s', '1min', '4min'];
@@ -48,6 +49,11 @@ function Player() {
   const [config, setConfig] = useState(null);
   const [mostraMappa, setMostraMappa] = useState(false);
   const [mostraInfo, setMostraInfo] = useState(false);
+
+  const [mostraScanner, setMostraScanner] = useState(false);
+  const [esitoScansione, setEsitoScansione] = useState('');
+  const videoRef = useRef(null);
+  const scannerRef = useRef(null);
 
   // --- INIZIO AGGIUNTE LIVE/QUIZ ---
   const [faseQuiz, setFaseQuiz] = useState(false);
@@ -152,6 +158,36 @@ function Player() {
     window.speechSynthesis.cancel();
     riconoscimentoRef.current?.abort();
   }, []);
+
+  // Il QR appeso di fianco all'opera contiene il codice Wikidata (operaId), niente altro.
+  // Se quell'opera e' una tappa di questa visita ci salto sopra; se e' del museo ma non del
+  // percorso lo dico e basta: gli item si comprano con la visita che li contiene, mostrarli
+  // qui vorrebbe dire regalarli.
+  const gestisciCodice = async (codice) => {
+    const tappeVisita = (visita?.items ?? []).filter(tappa => tappa.itemId);
+    const indice = tappeVisita.findIndex(tappa => tappa.itemId.operaId === codice);
+    if (indice !== -1) {
+      setMostraScanner(false);
+      setIndiceAttuale(indice);
+      return;
+    }
+    const risposta = await fetchAuth(`/api/items?operaId=${codice}`);
+    const trovati = await risposta.json();
+    setEsitoScansione(trovati.length > 0
+      ? `"${trovati[0].titolo}" non fa parte di questa visita.`
+      : 'Questo codice non corrisponde a nessuna opera.');
+  };
+
+  // La fotocamera vuole un contesto sicuro: funziona su https e su localhost, non su un IP di rete.
+  useEffect(() => {
+    if (!mostraScanner || !videoRef.current) return;
+    const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data), {
+      highlightScanRegion: true,
+    });
+    scanner.start().catch(() => setEsitoScansione('Non riesco ad aprire la fotocamera.'));
+    scannerRef.current = scanner;
+    return () => { scanner.destroy(); scannerRef.current = null; };
+  }, [mostraScanner]);
 
   // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
   // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
@@ -267,11 +303,16 @@ function Player() {
     }
   };
 
-  // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase
-  const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase.
+  // Il tasto c'e' sempre: su Firefox, che non ha SpeechRecognition, dice perche' non funziona
+  // invece di sparire (un tasto che manca sembra un guasto, uno che si spiega no).
   const ascolta = () => {
-    if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
     const Riconoscimento = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Riconoscimento) {
+      setStatoVoce('I comandi vocali funzionano su Chrome: questo browser non li supporta.');
+      return;
+    }
+    if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
     const rec = new Riconoscimento();
     rec.lang = 'it-IT';
     rec.onresult = (e) => eseguiComando(e.results[0][0].transcript);
@@ -400,16 +441,22 @@ function Player() {
                 <i className={`bi ${mostraMappa ? 'bi-arrow-left' : 'bi-map'}`}></i>
               </button>
             )}
-            {riconoscimentoSupportato && (
-              <button
-                className={`btn btn-sm ${ascoltando ? 'btn-danger' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
-                style={{ width: '38px', height: '38px' }}
-                onClick={ascolta}
-                aria-label={ascoltando ? 'Ferma ascolto' : 'Comando vocale'}
-              >
-                <i className={`bi ${ascoltando ? 'bi-mic-fill' : 'bi-mic'}`}></i>
-              </button>
-            )}
+            <button
+              className={`btn btn-sm ${ascoltando ? 'btn-danger' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
+              style={{ width: '38px', height: '38px' }}
+              onClick={ascolta}
+              aria-label={ascoltando ? 'Ferma ascolto' : 'Comando vocale'}
+            >
+              <i className={`bi ${ascoltando ? 'bi-mic-fill' : 'bi-mic'}`}></i>
+            </button>
+            <button
+              className={`btn btn-sm ${mostraScanner ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
+              style={{ width: '38px', height: '38px' }}
+              onClick={() => { setEsitoScansione(''); setMostraMappa(false); setMostraScanner(v => !v); }}
+              aria-label={mostraScanner ? 'Chiudi la fotocamera' : "Inquadra il QR di un'opera"}
+            >
+              <i className={`bi ${mostraScanner ? 'bi-x-lg' : 'bi-qr-code-scan'}`}></i>
+            </button>
           </div>
         </div>
 
@@ -421,7 +468,14 @@ function Player() {
           </div>
         )}
 
-        {mostraMappa ? (
+        {mostraScanner ? (
+          <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: '#1B1917' }}>
+            <video ref={videoRef} className="flex-grow-1" style={{ minHeight: 0, width: '100%', objectFit: 'cover' }} />
+            <p className="text-center text-white-50 small mb-0 px-3 py-2">
+              {esitoScansione || "Inquadra il codice QR appeso di fianco all'opera."}
+            </p>
+          </div>
+        ) : mostraMappa ? (
           <div className="flex-grow-1" style={{ minHeight: 0, background: '#F4F1E9' }}>
             <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }}>
               <image href={config.mappa} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
