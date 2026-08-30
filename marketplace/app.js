@@ -1,7 +1,9 @@
 // app.js — dashboard autore e vetrina visitatore
 
-// il Navigator e' l'altra applicazione, gira su un'altra porta: da sistemare col deploy
-const URL_NAVIGATOR = 'http://localhost:5173';
+// il Navigator e' l'altra applicazione e gira su un'altra porta, ma sempre sulla
+// stessa macchina: prendendo l'host dalla pagina il link regge anche quando il
+// marketplace lo si apre dal telefono via IP di rete. La porta resta da sistemare col deploy.
+const URL_NAVIGATOR = `http://${location.hostname}:5173`;
 
 // gli item del museo aperto nel modale: la fetch li scarica una volta, i filtri ridisegnano
 let itemsMuseo = [];
@@ -195,7 +197,7 @@ async function mostraTappe(visitaId) {
     elenco.innerHTML = '';
     new bootstrap.Modal(document.getElementById('modalTappe')).show();
 
-    const response = await fetch(`${API_URL}/visite/${visitaId}`);
+    const response = await fetchAuth(`${API_URL}/visite/${visitaId}`);
     const visita = await response.json();
 
     document.getElementById('titoloTappe').textContent = visita.nome;

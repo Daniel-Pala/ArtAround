@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function caricaVisitaEsistente() {
     try {
-        const response = await fetch(`${API_URL}/visite/${visitaIdAttuale}`);
+        const response = await fetchAuth(`${API_URL}/visite/${visitaIdAttuale}`);
         if (!response.ok) return;
 
         const visita = await response.json();

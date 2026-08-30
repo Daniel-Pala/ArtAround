@@ -9,9 +9,11 @@
 
 
 // -----------------------------------------------------------------------------
-// COSTANTI: l'URL del backend in un punto solo, così se cambia lo cambi qui.
+// COSTANTI: l'API sta sulla stessa origine che serve queste pagine (le serve
+// Express), quindi basta il percorso relativo: cosi' vale su localhost, sull'IP
+// di rete quando si prova dal telefono e sul server del dipartimento.
 // -----------------------------------------------------------------------------
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 
 // -----------------------------------------------------------------------------

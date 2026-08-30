@@ -26,8 +26,12 @@ router.get('/', async (req, res) => {
 // se e' un autore, quelle scritte da lui (i propri percorsi non si comprano).
 router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   try {
+    // Il token non scade mai e il seed ricrea gli utenti da zero: un token di un
+    // seed precedente ha la firma valida ma indica un utente che non esiste piu'.
+    // E' una credenziale non valida, non una richiesta su una risorsa mancante:
+    // col 401 il client svuota la sessione e rimanda al login da solo.
     const utente = await Utente.findById(req.user.userId);
-    if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
+    if (!utente) return res.status(401).json({ message: 'Sessione non piu\' valida' });
 
     await utente.populate({
       path: 'acquisti',
@@ -44,14 +48,20 @@ router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   }
 });
 
-// Ottiene i dettagli di una singola visita
-router.get('/:id', async (req, res) => {
+// Il dettaglio di una visita lo chiedono in due: il negozio, che mostra l'elenco
+// delle tappe prima dell'acquisto, e il Player, che invece ha bisogno dei testi.
+// Chi non l'ha comprata (e non e' l'autore) riceve solo i titoli delle tappe.
+router.get('/:id', richiediAutenticazione, async (req, res) => {
   try {
     const visita = await Visita.findById(req.params.id)
       .populate('autoreId', 'username')
-      .populate('museoId', 'nome configFile')
-      .populate('items.itemId');
+      .populate('museoId', 'nome configFile');
     if (!visita) return res.status(404).json({ message: 'Visita non trovata' });
+
+    const acquistata = await Utente.exists({ _id: req.user.userId, acquisti: visita._id });
+    const sua = String(visita.autoreId?._id) === req.user.userId;
+
+    await visita.populate({ path: 'items.itemId', select: acquistata || sua ? undefined : 'titolo' });
     res.json(visita);
   } catch (err) {
     res.status(500).json({ message: err.message });
