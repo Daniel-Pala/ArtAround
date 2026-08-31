@@ -273,11 +273,13 @@ function renderItemsMuseo() {
         return;
     }
 
-    container.innerHTML = filtrati.map(o => `
+    container.innerHTML = filtrati.map(o => {
+        const generati = o.testi.filter(t => t.generatoDa).length;
+        return `
         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
             <span class="text-truncate me-2">
                 <span class="fw-semibold">${o.titolo}</span>
-                <small class="text-muted d-block">${o.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera'} · ${o.operaId} · ${o.testi.length} ${o.testi.length === 1 ? 'testo' : 'testi'}</small>
+                <small class="text-muted d-block">${o.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera'} · ${o.operaId} · ${o.testi.length} ${o.testi.length === 1 ? 'testo' : 'testi'}${generati ? `, di cui ${generati} generati` : ''}</small>
             </span>
             <div class="d-flex gap-1">
                 <button class="btn btn-sm btn-outline-secondary" onclick="passaAModificaItem('${o._id}')" aria-label="Modifica item">
@@ -288,7 +290,8 @@ function renderItemsMuseo() {
                 </button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 async function eliminaItem(itemId, museoId) {
@@ -309,6 +312,9 @@ function apriModalNuovoItem(museoId) {
     document.getElementById('formItem').reset();
     document.getElementById('testiContainer').innerHTML = '';
     aggiungiRigaTesto();
+    // su un item che non esiste ancora non c'e' niente da cui partire, e la rotta
+    // lavora su un id: la scrittura si offre solo in modifica
+    document.getElementById('bloccoScrittura').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('modalNuovoItem')).show();
 }
 
@@ -330,14 +336,22 @@ function apriModalModificaItem(item) {
     document.getElementById('testiContainer').innerHTML = '';
     item.testi.forEach(testo => aggiungiRigaTesto(testo));
 
+    document.getElementById('bloccoScrittura').classList.remove('d-none');
+    document.getElementById('esitoScrittura').textContent = "Parte dai testi qui sopra e la salva subito nell'item.";
+
     new bootstrap.Modal(document.getElementById('modalNuovoItem')).show();
 }
 
 // Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal item.
 // In modifica riceve il testo gia' salvato e lo rimette nei tre campi.
+// I testi che ha scritto il modello portano il suo nome: il curatore deve sapere da
+// dove viene quello che sta pubblicando. Al visitatore invece non si dice, perche' la
+// specifica chiede che i contenuti generati non siano distinguibili dagli altri.
 function aggiungiRigaTesto(testo) {
     const riga = document.createElement('div');
     riga.className = 'testo-riga border rounded p-2 mb-2';
+    riga.dataset.generatoDa = testo?.generatoDa || '';
+    riga.dataset.testoOriginale = testo?.testo || '';
     riga.innerHTML = `
         <div class="row g-2 mb-2 align-items-center">
             <div class="col">
@@ -362,6 +376,7 @@ function aggiungiRigaTesto(testo) {
                 </button>
             </div>
         </div>
+        ${testo?.generatoDa ? `<div class="small text-muted mb-1">Testo generato da ${testo.generatoDa}</div>` : ''}
         <textarea class="form-control form-control-sm testo-contenuto" rows="2" placeholder="Testo della descrizione…"></textarea>
     `;
     document.getElementById('testiContainer').appendChild(riga);
@@ -373,17 +388,64 @@ function aggiungiRigaTesto(testo) {
     }
 }
 
+// Scrive la versione che manca (livello + durata) partendo da quello che il curatore ha
+// gia' scritto su quest'opera, e la salva. E' il caso dell'opera esposta di cui nessuno ha
+// ancora preparato tutte le descrizioni: la didascalia c'e', le versioni no.
+// Il testo torna nell'elenco qui sopra come tutti gli altri, con scritto chi l'ha scritto.
+async function scriviTestoMancante() {
+    const bottone = document.getElementById('bottoneScrittura');
+    const esito = document.getElementById('esitoScrittura');
+    const livello = document.getElementById('scritturaLivello').value;
+    const durata = document.getElementById('scritturaDurata').value;
+
+    const giaInPagina = [...document.querySelectorAll('#testiContainer .testo-riga')].some(riga =>
+        riga.querySelector('.testo-livello').value === livello && riga.querySelector('.testo-durata').value === durata
+    );
+    if (giaInPagina) {
+        esito.textContent = 'Questa versione c\'e\' gia\' nell\'elenco.';
+        return;
+    }
+
+    bottone.disabled = true;
+    esito.textContent = 'Sto scrivendo...';
+
+    const risposta = await fetchAuth(`${API_URL}/ai/testo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: itemInModifica, livello, durata })
+    });
+    const item = await risposta.json();
+    bottone.disabled = false;
+
+    if (!risposta.ok) {
+        esito.textContent = item.message || 'Non sono riuscito a scrivere il testo.';
+        return;
+    }
+
+    // aggiungo solo la riga nuova: ridisegnare l'elenco butterebbe via le modifiche
+    // che il curatore ha in corso sulle altre
+    aggiungiRigaTesto(item.testi.find(t => t.livello === livello && t.durata === durata && (t.lingua || 'it') === 'it'));
+    esito.textContent = '';
+}
+
 function setupFormItem() {
     const form = document.getElementById('formItem');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const testi = [...document.querySelectorAll('#testiContainer .testo-riga')].map(riga => ({
-            durata: riga.querySelector('.testo-durata').value,
-            livello: riga.querySelector('.testo-livello').value,
-            testo: riga.querySelector('.testo-contenuto').value.trim()
-        })).filter(t => t.testo);
+        const testi = [...document.querySelectorAll('#testiContainer .testo-riga')].map(riga => {
+            const testo = riga.querySelector('.testo-contenuto').value.trim();
+            return {
+                durata: riga.querySelector('.testo-durata').value,
+                livello: riga.querySelector('.testo-livello').value,
+                testo,
+                // il form ricostruisce i testi dal DOM, quindi senza questa riga una
+                // qualsiasi modifica all'item cancellerebbe la provenienza. Se pero' il
+                // curatore ha riscritto il testo, quel testo e' suo e la provenienza cade.
+                generatoDa: testo === riga.dataset.testoOriginale ? riga.dataset.generatoDa : ''
+            };
+        }).filter(t => t.testo);
 
         if (testi.length === 0) {
             alert("Aggiungi almeno un testo all'item.");
