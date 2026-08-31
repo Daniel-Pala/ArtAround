@@ -71,6 +71,7 @@ function Player() {
   const [quizDati, setQuizDati] = useState(null);
   const [risposteStudente, setRisposteStudente] = useState({});
   const [votoCalcolato, setVotoCalcolato] = useState(null);
+  const [forzaAudioStamp, setForzaAudioStamp] = useState(0); // Trigger per forzare l'audio
 
   // Modifica per notificare il docente quando lo studente cambia livello/durata (Obiettivo 3)
   useEffect(() => {
@@ -128,6 +129,11 @@ function Player() {
         window.speechSynthesis.cancel();
         riconoscimentoRef.current?.abort();
       }
+    });
+
+    // Ascolto del trigger forzato per l'audio inviato dalla docente
+    socket.on('studente:playAudio', () => {
+      setForzaAudioStamp(Date.now());
     });
     // --- FINE AGGIUNTE ---
 
@@ -241,9 +247,6 @@ function Player() {
     return () => { annullato = true; };
   }, [itemCorrente?._id, livelloScelto, durataScelta, linguaScelta]);
 
-  if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
-  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">{t.nessunItem}</div>;
-
   // pronuncia un testo con una voce della lingua scelta; onEnd opzionale.
   // Se il sistema non ha una voce per quella lingua ci pensa il browser con la sua.
   const parla = (testo, onEnd) => {
@@ -264,7 +267,26 @@ function Player() {
     parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
     setParlando(true);
     setInPausa(false);
+
+    // --- AGGIUNTA LOG AZIONI ---
+    if (socketRef.current && codiceSessione) {
+      socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: 'ha avviato la riproduzione audio' });
+    }
   };
+
+  // Attiva automaticamente la lettura se la docente invia il trigger
+  useEffect(() => {
+    if (forzaAudioStamp > 0 && testoTrovato) {
+      leggi();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forzaAudioStamp]);
+
+  // Qui finiscono gli hook, e solo qui si puo' uscire: React riconosce useState e useEffect
+  // dall'ordine in cui vengono chiamati, quindi un return piu' in alto ne salterebbe qualcuno
+  // e al ridisegno successivo l'ordine non tornerebbe.
+  if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
+  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">{t.nessunItem}</div>;
 
   // risposta a un comando vocale: apre il pannello, cosi' il testo resta anche a schermo,
   // e lo pronuncia.
@@ -288,11 +310,25 @@ function Player() {
     .filter(([, testo]) => testo);
 
   const pausa = () => {
-    if (parlando && !inPausa) { window.speechSynthesis.pause(); setInPausa(true); }
+    if (parlando && !inPausa) { 
+      window.speechSynthesis.pause(); 
+      setInPausa(true); 
+      // --- AGGIUNTA LOG AZIONI ---
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
+      }
+    }
   };
 
   const riprendi = () => {
-    if (parlando && inPausa) { window.speechSynthesis.resume(); setInPausa(false); }
+    if (parlando && inPausa) { 
+      window.speechSynthesis.resume(); 
+      setInPausa(false); 
+      // --- AGGIUNTA LOG AZIONI ---
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
+      }
+    }
   };
 
   // il bottone centrale e' un solo tasto, quindi alterna; i comandi vocali invece sono distinti
@@ -302,8 +338,20 @@ function Player() {
   };
 
   // durante una lezione la tappa la decide il docente: lo studente non si sposta da solo
-  const vaiIndietro = () => { if (!codiceSessione && indiceAttuale > 0) setIndiceAttuale(indiceAttuale - 1); };
-  const vaiAvanti = () => { if (!codiceSessione && indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); };
+  const vaiIndietro = () => { 
+    if (codiceSessione) {
+      setStatoVoce('Navigazione gestita dal docente');
+      return;
+    }
+    if (indiceAttuale > 0) setIndiceAttuale(indiceAttuale - 1); 
+  };
+  const vaiAvanti = () => { 
+    if (codiceSessione) {
+      setStatoVoce('Navigazione gestita dal docente');
+      return;
+    }
+    if (indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); 
+  };
 
   const cambiaDurata = (verso) => setDurataScelta(d => DURATE[Math.min(Math.max(DURATE.indexOf(d) + verso, 0), DURATE.length - 1)]);
   const cambiaLivello = (verso) => setLivelloScelto(l => LIVELLI[Math.min(Math.max(LIVELLI.indexOf(l) + verso, 0), LIVELLI.length - 1)]);
@@ -336,6 +384,16 @@ function Player() {
   const eseguiComando = async (trascrizione) => {
     const frase = trascrizione.toLowerCase().replace(/[''`]/g, '').trim();
     const comando = comandi.find(c => c.frasi.some(f => frase.includes(f)));
+    
+    // --- AGGIUNTA LOG AZIONI ---
+    if (socketRef.current && codiceSessione) {
+      socketRef.current.emit('studente:azione', { 
+        codice: codiceSessione, 
+        azione: 'ha usato un comando vocale', 
+        dettaglio: frase 
+      });
+    }
+
     if (comando) {
       setStatoVoce(`${t.hoCapito}: ${comando.nome}`);
       comando.azione();
@@ -523,7 +581,17 @@ function Player() {
                 if (!pos) return null;
                 const corrente = i === indiceAttuale;
                 return (
-                  <g key={op?._id || i} style={{ cursor: codiceSessione ? 'default' : 'pointer' }} onClick={() => !codiceSessione && setIndiceAttuale(i)}>
+                  <g 
+                    key={op?._id || i} 
+                    style={{ cursor: codiceSessione ? 'not-allowed' : 'pointer' }} 
+                    onClick={() => {
+                      if (codiceSessione) {
+                        setStatoVoce('Navigazione gestita dal docente');
+                        return;
+                      }
+                      setIndiceAttuale(i);
+                    }}
+                  >
                     {/* il browser lo mostra passandoci sopra, e i lettori di schermo lo leggono */}
                     <title>{op?.titolo}</title>
                     <circle cx={pos.x} cy={pos.y} r={corrente ? 2.6 : 2} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />

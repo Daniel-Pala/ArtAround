@@ -17,24 +17,18 @@ const io = new Server(server, {
   }
 })
 
-// Stato globale delle sessioni in RAM (KISS: niente database per i dati live)
-// Struttura: sessioni = Map<codice, { visitaId, indiceCorrente, fase, studenti: Map }>
+// Stato globale delle sessioni in RAM
 const sessioni = new Map()
 
-// Funzione helper per generare un codice stanza univoco di 6 caratteri (es. X8K9A2)
+// Funzione helper per generare un codice stanza
 const generaCodice = () => Math.random().toString(36).substring(2, 8).toUpperCase()
-
-// --- AGGIUNTA PER ESTENSIONE 18-27 ---
-// Normalizza le stringhe dei codici per evitare errori (es. "Fenice Rossa" -> "FENICEROSSA")
 const normalizzaCodice = (str) => str ? str.trim().toUpperCase().replace(/\s+/g, '') : ''
-// ------------------------------------
 
 io.on('connection', (socket) => {
   console.log(`Socket connesso: ${socket.id}`)
 
   // --- EVENTI DOCENTE ---
   socket.on('docente:crea', ({ visitaId, codiceMnemonico }) => {
-    // Se la docente fornisce un nome mnemonico, usiamo quello, altrimenti codice casuale
     const codiceRaw = codiceMnemonico || generaCodice()
     const codiceChiave = normalizzaCodice(codiceRaw)
     
@@ -43,12 +37,12 @@ io.on('connection', (socket) => {
       codiceOriginale: codiceRaw,
       indiceCorrente: 0,
       fase: 'visita',
-      studenti: new Map() // Map interna per gli studenti connessi a questa stanza
+      quizDati: null, // Aggiunto per persistenza in caso di riconnessione
+      studenti: new Map()
     })
 
-    socket.join(codiceChiave) // Il docente entra nella stanza Socket.io
+    socket.join(codiceChiave)
     socket.emit('sessione:creata', { codice: codiceRaw })
-    console.log(`Sessione creata: ${codiceRaw} (${codiceChiave}) per visita ${visitaId}`)
   })
 
   socket.on('docente:vaiA', ({ codice, indice }) => {
@@ -56,17 +50,26 @@ io.on('connection', (socket) => {
     const sessione = sessioni.get(key)
     if (sessione) {
       sessione.indiceCorrente = indice
-      // Invia sia l'indice sia l'ID della visita alla stanza
       io.to(key).emit('stato:item', { indice, visitaId: sessione.visitaId })
     }
   })
 
-  socket.on('docente:avviaQuiz', ({ codice, quiz }) => {
+  // NUOVO: La docente forza la riproduzione dell'audio
+  socket.on('docente:forzaAudio', ({ codice }) => {
+    const key = normalizzaCodice(codice)
+    if (sessioni.has(key)) {
+      io.to(key).emit('studente:playAudio')
+    }
+  })
+
+  socket.on('docente:avviaQuiz', ({ codice, domande }) => {
     const key = normalizzaCodice(codice)
     const sessione = sessioni.get(key)
     if (sessione) {
       sessione.fase = 'quiz'
-      io.to(key).emit('quiz:inizio', { quiz })
+      sessione.quizDati = domande // Salviamo in RAM per chi perde la connessione
+      // Passiamo anche l'array di domande al client
+      io.to(key).emit('quiz:inizio', { quiz: domande })
     }
   })
 
@@ -83,13 +86,42 @@ io.on('connection', (socket) => {
     if (sessione) {
       socket.join(key)
       
-      // Aggiunge lo studente alla Map della sessione (aggiunti voto e risposte per il quiz)
-      sessione.studenti.set(socket.id, { socketId: socket.id, nome, livello: 'base', durata: 'corta', voto: null, risposte: [] })
+      // Logica per non perdere i dati se uno studente aggiorna la pagina (match per nome)
+      let studenteEsistente = null;
+      for (let [sId, dati] of sessione.studenti.entries()) {
+        if (dati.nome === nome) {
+          studenteEsistente = dati;
+          sessione.studenti.delete(sId); // Rimuoviamo il vecchio socket id
+          break;
+        }
+      }
 
-      // Manda sia la visitaId sia lo stato attuale dell'item allo studente appena entrato
+      if (studenteEsistente) {
+        // Aggiorniamo il socket id ma manteniamo voti e stato
+        studenteEsistente.socketId = socket.id;
+        studenteEsistente.online = true;
+        sessione.studenti.set(socket.id, studenteEsistente);
+      } else {
+        // Studente nuovo
+        sessione.studenti.set(socket.id, { 
+          socketId: socket.id, 
+          nome, 
+          livello: 'base', 
+          durata: 'corta', 
+          voto: null,
+          punteggio: 0,
+          totale: 0,
+          online: true 
+        })
+      }
+
       socket.emit('stato:item', { indice: sessione.indiceCorrente, visitaId: sessione.visitaId })
       
-      // Notifica il docente della lista studenti aggiornata
+      // Se il quiz è già iniziato e uno studente si riconnette, glielo rimandiamo subito
+      if (sessione.fase === 'quiz' && sessione.quizDati) {
+        socket.emit('quiz:inizio', { quiz: sessione.quizDati })
+      }
+      
       const listaStudenti = Array.from(sessione.studenti.values())
       io.to(key).emit('sessione:studenti', listaStudenti)
     } else {
@@ -108,40 +140,51 @@ io.on('connection', (socket) => {
       const listaStudenti = Array.from(sessione.studenti.values())
       io.to(key).emit('sessione:studenti', listaStudenti)
 
-      // --- AGGIUNTA PER ESTENSIONE 18-27 ---
-      // Notifica in tempo reale per il pannello di monitoraggio del docente
-      io.to(key).emit('docente:logAttivita', {
-        messaggio: `${studente.nome} ha richiesto livello '${livello}' e durata '${durata}'`
+      // AGGIORNATO: Struttura log allineata a Docente.jsx
+      io.to(key).emit('docente:nuovaAttivita', {
+        nome: studente.nome,
+        tipo: 'Cambio Modalità',
+        dettaglio: `Livello: ${livello} - ${durata}`,
+        orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       })
-      // ------------------------------------
     }
   })
 
-  // --- AGGIUNTA PER ESTENSIONE 18-27: QUIZ ---
   socket.on('studente:invioQuiz', ({ codice, risposte, totaleDomande, corrette }) => {
     const key = normalizzaCodice(codice)
     const sessione = sessioni.get(key)
     if (sessione && sessione.studenti.has(socket.id)) {
       const studente = sessione.studenti.get(socket.id)
       
-      // Calcolo del voto in decimi
       const voto = Math.round((corrette / totaleDomande) * 10)
       studente.voto = voto
-      studente.risposte = risposte
-
-      // Aggiorna la dashboard del docente con i risultati
+      studente.punteggio = corrette
+      studente.totale = totaleDomande
+      
+      // Manda la lista aggiornata per i log base
       const listaStudenti = Array.from(sessione.studenti.values())
       io.to(key).emit('sessione:studenti', listaStudenti)
+
+      // Invia la classifica specifica per la tabella dei voti del docente
+      const risultati = listaStudenti.filter(s => s.voto !== null).map(s => ({
+        nome: s.nome,
+        punteggio: s.punteggio,
+        totale: s.totale,
+        voto: s.voto
+      }))
+      io.to(key).emit('docente:risultatiQuiz', risultati)
     }
   })
-  // -----------------------------------------
 
   // --- DISCONNESSIONE ---
   socket.on('disconnect', () => {
     console.log(`Socket disconnesso: ${socket.id}`)
     sessioni.forEach((sessione, key) => {
       if (sessione.studenti.has(socket.id)) {
-        sessione.studenti.delete(socket.id)
+        // Non eliminiamo più lo studente per non perdere il voto, lo mettiamo solo offline
+        const studente = sessione.studenti.get(socket.id)
+        studente.online = false
+        
         const listaStudenti = Array.from(sessione.studenti.values())
         io.to(key).emit('sessione:studenti', listaStudenti)
       }
@@ -152,6 +195,41 @@ io.on('connection', (socket) => {
 // --- MIDDLEWARE E ROTTE EXPRESS ---
 app.use(cors())
 app.use(express.json())
+
+// NUOVO: Endpoint per salvare i voti. Inserito prima delle altre rotte visite
+app.post('/api/visite/:visitaId/voti', async (req, res) => {
+  const { visitaId } = req.params;
+  const { codiceSessione, risultati } = req.body;
+  
+  console.log(`Salvando i voti nel DB per la visita ${visitaId} (Sessione: ${codiceSessione})`);
+  
+  try {
+    const Visita = require('./models/Visita');
+    
+    // Aggiorniamo il documento Visita inserendo lo storico della sessione
+    // Usiamo strict: false per garantire che il push avvenga anche se lo schema 
+    // non è stato esplicitamente aggiornato con il campo "storicoLive"
+    await Visita.findByIdAndUpdate(
+      visitaId,
+      {
+        $push: {
+          storicoLive: {
+            codiceSessione,
+            data: new Date(),
+            risultati
+          }
+        }
+      },
+      { new: true, strict: false }
+    );
+    
+    // Ritorna status 200 per confermare il salvataggio alla dashboard del docente
+    res.status(200).json({ success: true, message: 'Voti salvati con successo.' });
+  } catch (error) {
+    console.error('Errore durante il salvataggio su MongoDB:', error);
+    res.status(500).json({ success: false, message: 'Errore interno del server' });
+  }
+})
 
 app.use('/api/auth', require('./routes/autenticazione'))
 app.use('/api/musei', require('./routes/musei'))
