@@ -10,7 +10,9 @@ const { richiediAutore, richiediAutenticazione } = require('../middleware/autori
 router.get('/', async (req, res) => {
   try {
     const { museoId, pubblica } = req.query;
-    const filtro = {};
+    // i percorsi su misura non stanno in nessuna delle due liste: non sono in vendita e non
+    // sono del museo, li vede solo chi se li e' fatti fare, da mie-visite
+    const filtro = { suMisura: { $ne: true } };
     if (museoId) filtro.museoId = museoId;
     if (pubblica === 'true') filtro.pubblica = true;
     const visite = await Visita.find(filtro)

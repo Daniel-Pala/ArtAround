@@ -238,11 +238,16 @@ router.post('/visita', richiediAutenticazione, async (req, res) => {
       return res.status(502).json({ message: 'Non sono riuscito a comporre un percorso' })
     }
 
+    // di percorsi su misura se ne tiene uno alla volta: sono usa e getta, e senza questo
+    // "Le mie visite" si riempirebbe di un percorso per ogni volta che si preme il bottone
+    await Visita.deleteMany({ autoreId: utente._id, suMisura: true })
+
     const visita = await Visita.create({
       nome: scelta.nome || `Visita di ${tempi[minuti]}`,
       museoId,
       autoreId: utente._id,
       pubblica: false,
+      suMisura: true,
       prezzo: 0,
       infoLogistiche,
       // l'indicazione per arrivare a una tappa se la porta dietro dalla visita da cui viene

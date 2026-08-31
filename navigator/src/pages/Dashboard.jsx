@@ -145,7 +145,7 @@ function Dashboard() {
           <div className="row g-3">
             {visite.map(v => (
               <div key={v._id} className="col-md-6 col-lg-4">
-                <article className="card card-interactive h-100">
+                <article className="card h-100">
                   <div className="card-body d-flex flex-column">
                     <div className="eyebrow mb-2">{v.museoId?.nome || 'Museo'}</div>
                     <h5 className="card-title mb-2">{v.nome}</h5>

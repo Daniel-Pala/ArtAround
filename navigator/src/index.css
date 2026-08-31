@@ -127,9 +127,6 @@ h1, h2, h3, h4, h5, h6,
 .uppercase { text-transform: uppercase; letter-spacing: .05em; }
 
 /* ---- card catalogo (musei / percorsi) ---- */
-.card-interactive { transition: transform .18s ease, border-color .18s ease; }
-.card-interactive:hover { transform: translateY(-3px); border-color: var(--bs-primary); }
-
 .price-label {
   font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
   color: var(--ink-faint); margin-bottom: .15rem;

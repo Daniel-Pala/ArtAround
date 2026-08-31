@@ -21,6 +21,9 @@ const visitaSchema = new mongoose.Schema({
   }],
   infoLogistiche: String,
   pubblica: { type: Boolean, default: false },
+  // un percorso composto su richiesta di un visitatore: e' suo e basta, non e' merce del
+  // negozio, quindi non compare negli elenchi del museo
+  suMisura: { type: Boolean, default: false },
   prezzo: { type: Number, default: 0 },
   nomeMnemonico: { type: String }, // es. "Fenice rossa"
   quiz: [domandaQuizSchema],      // Array delle domande a risposta multipla create dal docente
