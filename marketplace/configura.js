@@ -1,7 +1,5 @@
-// =============================================================================
 // configura.js — configuratore di visite per autori
 // Permette di selezionare items e creare/modificare percorsi
-// =============================================================================
 
 let itemsDisponibili = [];
 let itemsSelezionati = [];

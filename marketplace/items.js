@@ -1,6 +1,4 @@
-// =============================================================================
 // items.js — la pagina degli item di un museo
-// =============================================================================
 // Elenco a sinistra, form a destra. Prima erano due finestrelle dentro la
 // dashboard: con qualche centinaio di contenuti una finestrella non si sfoglia, e
 // la specifica chiede che sia facile "analizzarli, sceglierli, aggiungerli,
@@ -8,7 +6,6 @@
 // L'elenco mostra gli item di TUTTI gli autori del museo, perche' e' li' che si
 // vede cosa e' gia' stato scritto su un'opera e a che prezzo; la matita e il
 // cestino compaiono solo sui propri.
-// =============================================================================
 
 richiediLogin();
 

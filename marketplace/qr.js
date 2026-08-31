@@ -1,11 +1,8 @@
-// =============================================================================
 // qr.js — codici QR delle opere di un museo, da stampare e appendere ai quadri
-// =============================================================================
 // Dentro ogni QR c'e' solo il codice Wikidata dell'opera (es. Q3907499): il QR non
 // e' un codice registrato da nessuna parte, e' il disegno di una stringa, quindi ci
 // mettiamo quella che il progetto usa gia' per identificare le opere.
 // Il PNG lo genera il backend (GET /api/items/qr/:operaId), qui basta un <img>.
-// =============================================================================
 
 richiediLogin();
 
