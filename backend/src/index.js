@@ -157,6 +157,7 @@ app.use('/api/auth', require('./routes/autenticazione'))
 app.use('/api/musei', require('./routes/musei'))
 app.use('/api/items', require('./routes/items'))
 app.use('/api/visite', require('./routes/visite'))
+app.use('/api/ai', require('./routes/ai'))
 
 app.get('/api-status', (req, res) => {
   res.json({ messaggio: 'ArtAround backend funziona' })

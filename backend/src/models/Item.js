@@ -3,7 +3,14 @@ const mongoose = require("mongoose");
 const testoSchema = new mongoose.Schema({
   durata: { type: String, enum: ['3s', '15s', '1min', '4min'], required: true },
   livello: { type: String, enum: ['infantile', 'elementare', 'medio', 'specialistico'], required: true },
-  testo: { type: String, required: true }
+  testo: { type: String, required: true },
+  // la lingua del testo. I testi scritti prima che esistesse questo campo non ce l'hanno:
+  // valgono come italiano, quindi ovunque si legge (t.lingua || 'it')
+  lingua: { type: String, enum: ['it', 'en', 'fr', 'es', 'de'], default: 'it' },
+  // il nome del modello che l'ha scritto, vuoto se l'ha scritto una persona.
+  // Sta qui e non su Item perche' lo stesso item puo' avere un testo del curatore
+  // e uno generato: la provenienza e' del singolo testo, non dell'opera.
+  generatoDa: { type: String }
 });
 
 const itemSchema = new mongoose.Schema({
