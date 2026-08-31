@@ -463,7 +463,7 @@ function Player() {
 
   if (faseQuiz) {
     return (
-      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-color)' }}>
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-light)' }}>
         <div className="bg-light d-flex flex-column p-4" style={{ width: '100%', maxWidth: '480px', height: '100%', overflowY: 'auto' }}>
           <h2 className="fs-3 fw-bold mb-4 text-center text-primary">Test Finale</h2>
           
@@ -508,7 +508,7 @@ function Player() {
   // --- FINE AGGIUNTE ---
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-color)' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-light)' }}>
       <div className="bg-light d-flex flex-column position-relative" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
 
         {codiceSessione && (
