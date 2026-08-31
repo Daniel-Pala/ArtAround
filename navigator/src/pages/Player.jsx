@@ -3,18 +3,21 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchAuth } from '../auth';
 import { io } from 'socket.io-client';
 import QrScanner from 'qr-scanner';
+import { LINGUE, TRADUZIONI } from '../traduzioni';
 
 // scale ordinate: i comandi "dimmi di piu/meno" e "piu/troppo semplice" ci si muovono su
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
-// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X"
+// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X".
+// La stessa chiave nomina l'etichetta dentro traduzioni.js, quindi aggiungerne una qui la fa
+// comparire nel pannello, fra i comandi vocali e in tutte le lingue.
 const LOGISTICA = [
-  ['uscita', 'Uscita', ['uscita']],
-  ['toilette', 'Toilette', ['toilette', 'bagno']],
-  ['bar', 'Bar', ['bar']],
-  ['shop', 'Shop', ['shop', 'negozio']],
-  ['ostacoli', 'Ostacoli e accessibilita', ['ostacol']],
+  ['uscita', ['uscita']],
+  ['toilette', ['toilette', 'bagno']],
+  ['bar', ['bar']],
+  ['shop', ['shop', 'negozio']],
+  ['ostacoli', ['ostacol']],
 ];
 
 function Player() {
@@ -35,9 +38,17 @@ function Player() {
   const [indiceAttuale, setIndiceAttuale] = useState(0);
   const [livelloScelto, setLivelloScelto] = useState('medio');
   const [durataScelta, setDurataScelta] = useState('15s');
+  const [linguaScelta, setLinguaScelta] = useState('it');
+
+  // etichette dell'interfaccia e codice lingua per la voce e per il microfono
+  const t = TRADUZIONI[linguaScelta];
+  const tagLingua = LINGUE.find(l => l.codice === linguaScelta).tag;
 
   const [parlando, setParlando] = useState(false);
   const [inPausa, setInPausa] = useState(false);
+
+  const [generando, setGenerando] = useState(false);
+  const [erroreTesto, setErroreTesto] = useState('');
 
   const [voci, setVoci] = useState([]);
 
@@ -134,13 +145,10 @@ function Player() {
       .then(setConfig);
   }, [visita]);
 
-  // le voci del browser arrivano in modo asincrono: tengo quelle italiane e ne scelgo una
+  // le voci del browser arrivano in modo asincrono, e le tengo tutte: quale usare dipende
+  // dalla lingua scelta, che cambia mentre la visita e' in corso
   useEffect(() => {
-    const caricaVoci = () => {
-      const tutte = window.speechSynthesis.getVoices();
-      const italiane = tutte.filter(v => v.lang.toLowerCase().startsWith('it'));
-      setVoci(italiane.length ? italiane : tutte);
-    };
+    const caricaVoci = () => setVoci(window.speechSynthesis.getVoices());
     caricaVoci();
     window.speechSynthesis.onvoiceschanged = caricaVoci;
     return () => { window.speechSynthesis.onvoiceschanged = null; };
@@ -151,7 +159,7 @@ function Player() {
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
-  }, [indiceAttuale, livelloScelto, durataScelta]);
+  }, [indiceAttuale, livelloScelto, durataScelta, linguaScelta]);
 
   // esco dal player: fermo audio e microfono
   useEffect(() => () => {
@@ -173,9 +181,7 @@ function Player() {
     }
     const risposta = await fetchAuth(`/api/items?operaId=${codice}`);
     const trovati = await risposta.json();
-    setEsitoScansione(trovati.length > 0
-      ? `"${trovati[0].titolo}" non fa parte di questa visita.`
-      : 'Questo codice non corrisponde a nessuna opera.');
+    setEsitoScansione(trovati.length > 0 ? t.fuoriVisita(trovati[0].titolo) : t.codiceIgnoto);
   };
 
   // La fotocamera vuole un contesto sicuro: funziona su https e su localhost, non su un IP di rete.
@@ -186,7 +192,7 @@ function Player() {
     const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data), {
       returnDetailedScanResult: true
     });
-    scanner.start().catch(() => setEsitoScansione('Non riesco ad aprire la fotocamera.'));
+    scanner.start().catch(() => setEsitoScansione(t.fotocameraKo));
     scannerRef.current = scanner;
     return () => { scanner.destroy(); scannerRef.current = null; };
   }, [mostraScanner]);
@@ -197,24 +203,55 @@ function Player() {
   // restituisce null e scarto la tappa intera.
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
-
-  if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
-  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">Nessun item presente in questo percorso.</div>;
-
   const itemCorrente = items[indiceAttuale];
   const tappaCorrente = tappe[indiceAttuale];
 
   // tra i testi dell'item cerco quello che combacia con livello e durata scelti
+  // i testi scritti prima che esistesse il campo lingua non ce l'hanno: sono in italiano
   const testoTrovato = itemCorrente?.testi?.find(
-    t => t.livello === livelloScelto && t.durata === durataScelta
+    testo => testo.livello === livelloScelto && testo.durata === durataScelta && (testo.lingua || 'it') === linguaScelta
   );
 
-  // pronuncia un testo con la prima voce italiana disponibile; onEnd opzionale
+  // Nessuno scrive tutte e sedici le combinazioni di livello e durata per ogni opera:
+  // quella che manca la chiediamo al backend, che la fa scrivere e la salva dentro
+  // l'item. Non c'e' nessun bottone da premere, il testo compare e basta.
+  // Se testi non c'e' proprio vuol dire che la visita non e' nostra e il server ci ha
+  // mandato i soli titoli: li' non manca un testo, manca il permesso.
+  useEffect(() => {
+    if (!itemCorrente?.testi || testoTrovato) return;
+    let annullato = false;
+    setGenerando(true);
+    setErroreTesto('');
+    fetchAuth('/api/ai/testo', {
+      method: 'POST',
+      body: JSON.stringify({ itemId: itemCorrente._id, livello: livelloScelto, durata: durataScelta, lingua: linguaScelta })
+    })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(aggiornato => {
+        if (annullato) return;
+        // rimpiazzo l'item dentro la visita: testoTrovato lo rilegge da li'
+        setVisita(v => ({
+          ...v,
+          items: v.items.map(tappa => (tappa.itemId?._id === aggiornato._id ? { ...tappa, itemId: aggiornato } : tappa))
+        }));
+      })
+      .catch(() => { if (!annullato) setErroreTesto(t.testoNonDisponibile); })
+      .finally(() => { if (!annullato) setGenerando(false); });
+    // chi cambia tappa mentre il testo e' in preparazione non deve vederselo arrivare addosso
+    return () => { annullato = true; };
+  }, [itemCorrente?._id, livelloScelto, durataScelta, linguaScelta]);
+
+  if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
+  if (items.length === 0) return <div className="alert alert-warning m-3 text-center">{t.nessunItem}</div>;
+
+  // pronuncia un testo con una voce della lingua scelta; onEnd opzionale.
+  // Se il sistema non ha una voce per quella lingua ci pensa il browser con la sua.
   const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
     const voce = new SpeechSynthesisUtterance(testo);
-    voce.lang = 'it-IT';
-    if (voci[0]) voce.voice = voci[0];
+    voce.lang = tagLingua;
+    const adatta = voci.find(v => v.lang.toLowerCase().startsWith(linguaScelta));
+    if (adatta) voce.voice = adatta;
     if (onEnd) voce.onend = onEnd;
     window.speechSynthesis.speak(voce);
   };
@@ -240,14 +277,14 @@ function Player() {
   // righeOpera sta solo fra i comandi vocali: autore e data sono gia' nella didascalia
   // sotto al titolo, ripeterli nel pannello era un doppione.
   const righeOpera = [
-    ['Autore', itemCorrente?.autoreOpera, `L'autore è ${itemCorrente?.autoreOpera}`, ['autore', 'dipinto']],
-    ['Stile', itemCorrente?.stile, `Lo stile è ${itemCorrente?.stile}`, ['stile', 'movimento']],
+    [t.comandi.autore, itemCorrente?.autoreOpera, t.frase.autore(itemCorrente?.autoreOpera), ['autore', 'dipinto']],
+    [t.comandi.stile, itemCorrente?.stile, t.frase.stile(itemCorrente?.stile), ['stile', 'movimento']],
   ].filter(([, testo]) => testo);
 
   // righeMuseo invece compare in tutti e due i posti: aggiungere una voce a LOGISTICA
   // la fa apparire sia nel pannello sia fra i comandi.
   const righeMuseo = LOGISTICA
-    .map(([chiave, etichetta, frasi]) => [etichetta, config?.logistica?.[chiave], config?.logistica?.[chiave], frasi])
+    .map(([chiave, frasi]) => [t.comandi[chiave], config?.logistica?.[chiave], config?.logistica?.[chiave], frasi])
     .filter(([, testo]) => testo);
 
   const pausa = () => {
@@ -274,33 +311,53 @@ function Player() {
   const staLeggendo = parlando && !inPausa;
 
   // vocabolario controllato: ogni comando ha piu' frasi accettate e l'azione del bottone corrispondente
+  // Le frasi restano in italiano: sono la scorciatoia per chi visita in italiano, che cosi'
+  // viene servito senza rete. In un'altra lingua non combaciano e la frase passa al backend,
+  // che la riconduce lo stesso a uno di questi comandi.
   const comandi = [
-    { nome: 'Prossimo', frasi: ['prossim', 'avanti', 'successiv'], azione: vaiAvanti },
-    { nome: 'Precedente', frasi: ['precedent', 'indietro'], azione: vaiIndietro },
-    { nome: 'Pausa', frasi: ['pausa', 'ferma', 'stop'], azione: pausa },
-    { nome: 'Riprendi', frasi: ['riprendi', 'continua'], azione: riprendi },
-    { nome: 'Ripeti', frasi: ['ripeti', 'rileggi', 'ancora'], azione: leggi },
-    { nome: 'Leggi', frasi: ['leggi', "cos'e questo", 'cosa e questo', 'ascolta'], azione: leggi },
-    { nome: 'Piu dettagli', frasi: ['dimmi di piu', 'piu lungo', 'piu dettagli'], azione: () => cambiaDurata(1) },
-    { nome: 'Meno dettagli', frasi: ['dimmi di meno', 'piu corto', 'piu breve'], azione: () => cambiaDurata(-1) },
-    { nome: 'Piu semplice', frasi: ['non capisco', 'piu semplice', 'troppo difficile'], azione: () => cambiaLivello(-1) },
-    { nome: 'Piu avanzato', frasi: ['troppo semplice', 'piu difficile', 'piu avanzato'], azione: () => cambiaLivello(1) },
-    { nome: 'Esci', frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate('/') },
+    { nome: t.comandi.prossimo, frasi: ['prossim', 'avanti', 'successiv'], azione: vaiAvanti },
+    { nome: t.comandi.precedente, frasi: ['precedent', 'indietro'], azione: vaiIndietro },
+    { nome: t.comandi.pausa, frasi: ['pausa', 'ferma', 'stop'], azione: pausa },
+    { nome: t.comandi.riprendi, frasi: ['riprendi', 'continua'], azione: riprendi },
+    { nome: t.comandi.ripeti, frasi: ['ripeti', 'rileggi', 'ancora'], azione: leggi },
+    { nome: t.comandi.leggi, frasi: ['leggi', "cos'e questo", 'cosa e questo', 'ascolta'], azione: leggi },
+    { nome: t.comandi.piuDettagli, frasi: ['dimmi di piu', 'piu lungo', 'piu dettagli'], azione: () => cambiaDurata(1) },
+    { nome: t.comandi.menoDettagli, frasi: ['dimmi di meno', 'piu corto', 'piu breve'], azione: () => cambiaDurata(-1) },
+    { nome: t.comandi.piuSemplice, frasi: ['non capisco', 'piu semplice', 'troppo difficile'], azione: () => cambiaLivello(-1) },
+    { nome: t.comandi.piuAvanzato, frasi: ['troppo semplice', 'piu difficile', 'piu avanzato'], azione: () => cambiaLivello(1) },
+    { nome: t.comandi.esci, frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate('/') },
     ...(tappaCorrente?.indicazioneLogistica ? [
-      { nome: 'Come ci arrivo', frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
+      { nome: t.comandi.comeCiArrivo, frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
     ] : []),
     // stessa fonte per bottoni e voce: ogni riga del pannello e' anche un comando vocale
     ...[...righeOpera, ...righeMuseo].map(([nome, , dettato, frasi]) => ({ nome, frasi, azione: () => rispondi(dettato) })),
   ];
 
-  const eseguiComando = (trascrizione) => {
+  const eseguiComando = async (trascrizione) => {
     const frase = trascrizione.toLowerCase().replace(/[''`]/g, '').trim();
     const comando = comandi.find(c => c.frasi.some(f => frase.includes(f)));
     if (comando) {
-      setStatoVoce(`Ho capito: ${comando.nome}`);
+      setStatoVoce(`${t.hoCapito}: ${comando.nome}`);
       comando.azione();
+      return;
+    }
+
+    // Le frasi previste le riconosce il vocabolario qui sopra, subito e senza rete.
+    // Quello che resta fuori ("e adesso?", "mi scappa la pipi") lo mando al backend
+    // insieme all'elenco dei comandi di questa schermata: torna il nome di uno di
+    // quelli, oppure niente, e allora resta il messaggio di sempre.
+    setStatoVoce(t.unMomento);
+    const risposta = await fetchAuth('/api/ai/comando', {
+      method: 'POST',
+      body: JSON.stringify({ frase: trascrizione, comandi: comandi.map(c => c.nome) })
+    }).catch(() => null);
+    const scelto = risposta?.ok ? (await risposta.json()).comando : null;
+    const riconosciuto = comandi.find(c => c.nome === scelto);
+    if (riconosciuto) {
+      setStatoVoce(`${t.hoCapito}: ${riconosciuto.nome}`);
+      riconosciuto.azione();
     } else {
-      setStatoVoce(`Non ho capito: "${trascrizione}"`);
+      setStatoVoce(`${t.nonHoCapito}: "${trascrizione}"`);
     }
   };
 
@@ -312,9 +369,9 @@ function Player() {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
     const Riconoscimento = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new Riconoscimento();
-    rec.lang = 'it-IT';
+    rec.lang = tagLingua;
     rec.onresult = (e) => eseguiComando(e.results[0][0].transcript);
-    rec.onerror = () => setStatoVoce('Non ho sentito, riprova');
+    rec.onerror = () => setStatoVoce(t.nonHoSentito);
     rec.onend = () => setAscoltando(false);
     riconoscimentoRef.current = rec;
     setStatoVoce('');
@@ -409,7 +466,7 @@ function Player() {
               className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
               style={{ width: '38px', height: '38px' }}
               onClick={() => navigate('/')}
-              aria-label="Chiudi visita"
+              aria-label={t.ariaChiudiVisita}
             >
               <i className="bi bi-x-lg"></i>
             </button>
@@ -425,7 +482,7 @@ function Player() {
               className={`btn btn-sm ${mostraInfo ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
               style={{ width: '38px', height: '38px' }}
               onClick={() => setMostraInfo(m => !m)}
-              aria-label="Informazioni utili"
+              aria-label={t.ariaInfo}
             >
               <i className="bi bi-info-lg"></i>
             </button>
@@ -434,7 +491,7 @@ function Player() {
                 className={`btn btn-sm ${mostraMappa ? 'btn-primary' : 'btn-outline-secondary'} rounded-circle d-flex align-items-center justify-content-center`}
                 style={{ width: '38px', height: '38px' }}
                 onClick={() => setMostraMappa(m => !m)}
-                aria-label={mostraMappa ? 'Torna alla lettura' : 'Mappa'}
+                aria-label={mostraMappa ? t.ariaTornaLettura : t.ariaMappa}
               >
                 <i className={`bi ${mostraMappa ? 'bi-arrow-left' : 'bi-map'}`}></i>
               </button>
@@ -445,7 +502,7 @@ function Player() {
         {(ascoltando || statoVoce) && (
           <div className="border-bottom px-3 py-2 small text-center flex-shrink-0">
             <span className={ascoltando ? 'fw-semibold' : 'text-muted fst-italic'}>
-              {ascoltando ? 'Sto ascoltando...' : statoVoce}
+              {ascoltando ? t.ascoltando : statoVoce}
             </span>
           </div>
         )}
@@ -477,7 +534,7 @@ function Player() {
             </svg>
             {/* i tondini portano alla tappa: qui sotto si legge su quale si e' finiti */}
             <p className="text-center small mb-0 px-3 py-2 border-top">
-              <span className="text-muted">Tappa {indiceAttuale + 1}</span> · {itemCorrente?.titolo}
+              <span className="text-muted">{t.tappa} {indiceAttuale + 1}</span> · {itemCorrente?.titolo}
             </p>
           </div>
         ) : (
@@ -517,27 +574,33 @@ function Player() {
               <div className="mb-3" style={{ lineHeight: '1.6' }}>
                 {testoTrovato.testo}
               </div>
+            ) : generando ? (
+              // solo la rotella: chi guarda vede che sta arrivando, e chi usa un lettore di
+              // schermo lo sente dall'etichetta, senza una riga di testo che poi sparisce
+              <div className="mb-3">
+                <span className="spinner-border spinner-border-sm text-muted" role="status" aria-label={t.ariaPreparando}></span>
+              </div>
             ) : (
-              <div className="text-muted fst-italic mb-3">Nessun testo disponibile.</div>
+              <div className="text-muted fst-italic mb-3">{erroreTesto || t.nessunTesto}</div>
             )}
 
             <div className="row g-2">
-              <div className="col-6">
-                <label className="form-label small text-muted mb-1">Livello</label>
-                <select className="form-select form-select-sm" value={livelloScelto} onChange={(e) => setLivelloScelto(e.target.value)}>
-                  <option value="infantile">Bambino</option>
-                  <option value="elementare">Studente</option>
-                  <option value="medio">Generale</option>
-                  <option value="specialistico">Esperto</option>
+              <div className="col-4">
+                <label className="form-label small text-muted mb-1">{t.lingua}</label>
+                <select className="form-select form-select-sm" value={linguaScelta} onChange={(e) => setLinguaScelta(e.target.value)}>
+                  {LINGUE.map(l => <option key={l.codice} value={l.codice}>{l.nome}</option>)}
                 </select>
               </div>
-              <div className="col-6">
-                <label className="form-label small text-muted mb-1">Durata</label>
+              <div className="col-4">
+                <label className="form-label small text-muted mb-1">{t.livello}</label>
+                <select className="form-select form-select-sm" value={livelloScelto} onChange={(e) => setLivelloScelto(e.target.value)}>
+                  {LIVELLI.map(l => <option key={l} value={l}>{t.livelli[l]}</option>)}
+                </select>
+              </div>
+              <div className="col-4">
+                <label className="form-label small text-muted mb-1">{t.durata}</label>
                 <select className="form-select form-select-sm" value={durataScelta} onChange={(e) => setDurataScelta(e.target.value)}>
-                  <option value="3s">3 sec</option>
-                  <option value="15s">15 sec</option>
-                  <option value="1min">1 min</option>
-                  <option value="4min">4 min</option>
+                  {DURATE.map(d => <option key={d} value={d}>{t.durate[d]}</option>)}
                 </select>
               </div>
             </div>
@@ -550,7 +613,7 @@ function Player() {
             style={{ width: '46px', height: '46px' }}
             disabled={!!codiceSessione}
             onClick={() => { setEsitoScansione(''); setMostraMappa(false); setMostraScanner(v => !v); }}
-            aria-label={mostraScanner ? 'Chiudi la fotocamera' : "Inquadra il QR di un'opera"}
+            aria-label={mostraScanner ? t.ariaChiudiQr : t.ariaQr}
           >
             <i className={`bi ${mostraScanner ? 'bi-x-lg' : 'bi-qr-code-scan'} fs-5`}></i>
           </button>
@@ -559,7 +622,7 @@ function Player() {
             style={{ width: '46px', height: '46px' }}
             disabled={indiceAttuale === 0 || !!codiceSessione}
             onClick={vaiIndietro}
-            aria-label="Item precedente"
+            aria-label={t.ariaPrecedente}
           >
             <i className="bi bi-skip-start-fill fs-5"></i>
           </button>
@@ -568,16 +631,18 @@ function Player() {
             style={{ width: '62px', height: '62px' }}
             disabled={!testoTrovato}
             onClick={gestisciAudio}
-            aria-label={!testoTrovato ? 'Audio non disponibile' : staLeggendo ? 'Pausa' : 'Ascolta'}
+            aria-label={generando ? t.ariaPreparando : !testoTrovato ? t.ariaAudioNo : staLeggendo ? t.ariaPausa : t.ariaAscolta}
           >
-            <i className={`bi ${!testoTrovato ? 'bi-volume-mute' : staLeggendo ? 'bi-pause-fill' : 'bi-play-fill'} fs-3`}></i>
+            {generando
+              ? <span className="spinner-border spinner-border-sm"></span>
+              : <i className={`bi ${!testoTrovato ? 'bi-volume-mute' : staLeggendo ? 'bi-pause-fill' : 'bi-play-fill'} fs-3`}></i>}
           </button>
           <button
             className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
             style={{ width: '46px', height: '46px' }}
             disabled={indiceAttuale === items.length - 1 || !!codiceSessione}
             onClick={vaiAvanti}
-            aria-label="Item successivo"
+            aria-label={t.ariaSuccessivo}
           >
             <i className="bi bi-skip-end-fill fs-5"></i>
           </button>
@@ -586,7 +651,7 @@ function Player() {
             style={{ width: '46px', height: '46px' }}
             disabled={!riconoscimentoSupportato}
             onClick={ascolta}
-            aria-label={ascoltando ? 'Ferma ascolto' : 'Comando vocale'}
+            aria-label={ascoltando ? t.ariaFermaMicrofono : t.ariaMicrofono}
           >
             <i className={`bi ${ascoltando ? 'bi-mic-fill' : 'bi-mic'} fs-5`}></i>
           </button>
@@ -600,12 +665,12 @@ function Player() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <h3 className="fs-5 fw-bold mb-0">Informazioni utili</h3>
+                <h3 className="fs-5 fw-bold mb-0">{t.infoTitolo}</h3>
                 <button
                   className="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                   style={{ width: '34px', height: '34px' }}
                   onClick={() => setMostraInfo(false)}
-                  aria-label="Chiudi"
+                  aria-label={t.chiudi}
                 >
                   <i className="bi bi-x-lg"></i>
                 </button>
@@ -617,7 +682,7 @@ function Player() {
                 </div>
               ))}
               {righeMuseo.length === 0 && (
-                <p className="text-muted small fst-italic mb-0">Nessuna informazione disponibile.</p>
+                <p className="text-muted small fst-italic mb-0">{t.infoVuoto}</p>
               )}
             </div>
           </div>
