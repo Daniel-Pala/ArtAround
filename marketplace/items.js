@@ -41,7 +41,6 @@ async function caricaItems() {
 // separata dalla fetch: i filtri ridisegnano senza richiamare il server
 function renderLista() {
     const contenitore = document.getElementById('lista');
-    const conteggio = document.getElementById('conteggio');
     const utente = getUtenteLoggato();
 
     const ricerca = document.getElementById('ricerca').value.toLowerCase();
@@ -53,8 +52,6 @@ function renderLista() {
         && (tipoScelto === '' || i.tipo === tipoScelto)
         && (!soloMiei || i.autoreId?._id === utente.userId)
     );
-
-    conteggio.textContent = `${filtrati.length} item su ${items.length}`;
 
     if (filtrati.length === 0) {
         contenitore.innerHTML = `<p class="text-muted">Nessun item corrisponde ai filtri.</p>`;
@@ -72,7 +69,7 @@ function renderLista() {
                     <div class="fw-semibold">${i.titolo}</div>
                     <div class="small text-muted">
                         ${i.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera'} ·
-                        <span class="dato">Opera:</span> ${i.operaId} ·
+                        <span class="dato">ID:</span> ${i.operaId} ·
                         <span class="dato">Testi:</span> ${i.testi.length}${generati ? ` (${generati} generati)` : ''} ·
                         <span class="dato">Lingue:</span> ${lingue.join(', ')}
                     </div>
@@ -85,7 +82,7 @@ function renderLista() {
                 </div>
                 ${mio ? `
                 <div class="d-flex gap-1 flex-shrink-0">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="modificaItem('${i._id}')" aria-label="Modifica item">
+                    <button class="btn btn-sm btn-outline-dark" onclick="modificaItem('${i._id}')" aria-label="Modifica item">
                         <i class="bi bi-pencil"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="eliminaItem('${i._id}')" aria-label="Elimina item">
@@ -104,9 +101,7 @@ function svuotaForm() {
     document.getElementById('formItem').reset();
     document.getElementById('testiContainer').innerHTML = '';
     aggiungiRigaTesto();
-    // su un item che non esiste ancora non c'e' niente da cui partire, e la rotta
-    // lavora su un id: la scrittura si offre solo in modifica
-    document.getElementById('bloccoScrittura').classList.add('d-none');
+    mostraAnteprima();
     renderLista();
 }
 
@@ -129,11 +124,18 @@ function modificaItem(itemId) {
     document.getElementById('testiContainer').innerHTML = '';
     item.testi.forEach(testo => aggiungiRigaTesto(testo));
 
-    document.getElementById('bloccoScrittura').classList.remove('d-none');
-    document.getElementById('esitoScrittura').textContent = "Parte dai testi qui sopra e la salva subito nell'item.";
-
+    mostraAnteprima();
     renderLista();
     document.getElementById('itemTitolo').scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+// L'indirizzo dell'immagine si controlla qui: senza anteprima ci si accorge di un link
+// sbagliato solo aprendo la visita nel Navigator.
+function mostraAnteprima() {
+    const indirizzo = document.getElementById('itemImmagine').value.trim();
+    const anteprima = document.getElementById('anteprimaImmagine');
+    anteprima.classList.toggle('d-none', !indirizzo);
+    if (indirizzo) anteprima.src = indirizzo;
 }
 
 async function eliminaItem(itemId) {
@@ -192,47 +194,6 @@ function aggiungiRigaTesto(testo) {
         riga.querySelector('.testo-livello').value = testo.livello;
         riga.querySelector('.testo-contenuto').value = testo.testo;
     }
-}
-
-// Scrive la versione che manca (livello + durata) partendo da quello che il curatore ha
-// gia' scritto su quest'opera, e la salva. E' il caso dell'opera esposta di cui nessuno ha
-// ancora preparato tutte le descrizioni: la didascalia c'e', le versioni no.
-// Il testo torna nell'elenco qui sopra come tutti gli altri, con scritto chi l'ha scritto.
-async function scriviTestoMancante() {
-    const bottone = document.getElementById('bottoneScrittura');
-    const esito = document.getElementById('esitoScrittura');
-    const livello = document.getElementById('scritturaLivello').value;
-    const durata = document.getElementById('scritturaDurata').value;
-
-    const giaInPagina = [...document.querySelectorAll('#testiContainer .testo-riga')].some(riga =>
-        riga.querySelector('.testo-livello').value === livello && riga.querySelector('.testo-durata').value === durata
-    );
-    if (giaInPagina) {
-        esito.textContent = 'Questa versione c\'e\' gia\' nell\'elenco.';
-        return;
-    }
-
-    bottone.disabled = true;
-    esito.textContent = 'Sto scrivendo...';
-
-    const risposta = await fetchAuth(`${API_URL}/ai/testo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: itemInModifica, livello, durata })
-    });
-    const item = await risposta.json();
-    bottone.disabled = false;
-
-    if (!risposta.ok) {
-        esito.textContent = item.message || 'Non sono riuscito a scrivere il testo.';
-        return;
-    }
-
-    // aggiungo solo la riga nuova: ridisegnare l'elenco butterebbe via le modifiche
-    // che il curatore ha in corso sulle altre
-    aggiungiRigaTesto(item.testi.find(t => t.livello === livello && t.durata === durata && (t.lingua || 'it') === 'it'));
-    esito.textContent = '';
-    caricaItems();
 }
 
 function setupFormItem() {

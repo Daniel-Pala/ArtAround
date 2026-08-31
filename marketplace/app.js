@@ -52,13 +52,9 @@ async function caricaDashboardAutore() {
                     <td class="ps-4 fw-semibold">${museo.nome}</td>
                     <td class="text-muted">${museo.citta || '—'}</td>
                     <td class="text-end pe-4">
-                        <a href="items.html?id=${museo._id}" class="btn btn-sm btn-outline-success me-1">
-                            <i class="bi bi-images me-1"></i>Item
-                        </a>
-                        <button class="btn btn-sm btn-outline-secondary me-1" onclick="apriModalVisite('${museo._id}')">
-                            <i class="bi bi-collection me-1"></i>Percorsi
-                        </button>
-                        <a href="qr.html?id=${museo._id}" class="btn btn-sm btn-outline-secondary">
+                        <a href="items.html?id=${museo._id}" class="btn btn-sm btn-outline-dark me-1">Item</a>
+                        <button class="btn btn-sm btn-outline-dark me-1" onclick="apriModalVisite('${museo._id}')">Percorsi</button>
+                        <a href="qr.html?id=${museo._id}" class="btn btn-sm btn-outline-dark">
                             <i class="bi bi-qr-code me-1"></i>QR
                         </a>
                     </td>

@@ -8,10 +8,7 @@
 :root {
   /* palette */
   --bs-body-bg: #F4F1E9;        /* carta */
-  --bs-light: #F4F1E9;
-  /* .bg-light non legge --bs-light ma --bs-light-rgb: senza questa riga
-     resta il quasi-bianco di Bootstrap invece della nostra carta */
-  --bs-light-rgb: 244, 241, 233;
+  --bs-surface: #FFFFFF;        /* i fogli appoggiati sulla carta: card, tabelle, pannelli */
   --bs-body-color: #1B1917;     /* inchiostro */
   --bs-border-color: #E4DDD0;
   --bs-secondary-color: #6F675C;   /* muted caldo per .text-muted */
@@ -55,8 +52,9 @@ h1, h2, h3, h4, h5, h6,
   background-color: #1B1917 !important;
 }
 
-/* superfici piatte: bordo sottile al posto delle ombre morbide */
+/* superfici piatte: fogli bianchi sulla carta, bordo sottile al posto delle ombre */
 .card {
+  --bs-card-bg: var(--bs-surface);
   border: 1px solid var(--bs-border-color);
 }
 .shadow-sm, .shadow, .shadow-lg {

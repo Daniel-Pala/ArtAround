@@ -463,8 +463,8 @@ function Player() {
 
   if (faseQuiz) {
     return (
-      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-light)' }}>
-        <div className="bg-light d-flex flex-column p-4" style={{ width: '100%', maxWidth: '480px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-bg)' }}>
+        <div className="bg-light d-flex flex-column p-4" style={{ width: '100%', maxWidth: '480px', height: '100%', overflowY: 'auto', borderLeft: '1px solid var(--bs-border-color)', borderRight: '1px solid var(--bs-border-color)' }}>
           <h2 className="fs-3 fw-bold mb-4 text-center text-primary">Test Finale</h2>
           
           {votoCalcolato !== null ? (
@@ -508,8 +508,8 @@ function Player() {
   // --- FINE AGGIUNTE ---
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-light)' }}>
-      <div className="bg-light d-flex flex-column position-relative" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-bg)' }}>
+      <div className="bg-light d-flex flex-column position-relative" style={{ width: '100%', maxWidth: '480px', height: '100%', borderLeft: '1px solid var(--bs-border-color)', borderRight: '1px solid var(--bs-border-color)' }}>
 
         {codiceSessione && (
           <div className="bg-primary text-white py-1 px-3 text-center small fw-semibold flex-shrink-0 d-flex justify-content-between align-items-center">
