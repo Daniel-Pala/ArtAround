@@ -1,184 +1,194 @@
-# ArtAround API
+# ArtAround — le rotte
 
-Base URL: `http://localhost:3000`
+Tutte sotto `/api`, servite dallo stesso processo che serve le due applicazioni.
 
-Le rotte protette vogliono l'header `Authorization: Bearer <token>`.
-Chi non lo manda prende `401`; chi lo manda ma non è `autore` prende `403`.
-Sulle modifiche di item e visite c'è anche il controllo di proprietà: se `autoreId` non
-coincide con l'utente del token → `403`.
+Legenda della colonna accesso:
+- **libera** — nessun token
+- **loggato** — serve `Authorization: Bearer <token>`, qualsiasi ruolo
+- **autore** — serve il token e il ruolo `autore`
+- **proprietario** — serve il token e l'`autoreId` della risorsa deve essere l'utente del token
+
+Senza token → `401`. Con token ma ruolo sbagliato → `403`. Risorsa di un altro → `403`.
 
 ---
 
-## Auth
+## Autenticazione
 
-**Registrazione** — pubblica. Non restituisce il token: dopo il register bisogna fare login.
-```
-POST /api/auth/register
-{ "username": "autore1", "password": "12345678", "ruolo": "autore" }
-→ 201 { "message": "Utente creato con successo" }
-```
+| | rotta | accesso |
+|---|---|---|
+| POST | `/api/auth/register` | libera |
+| POST | `/api/auth/login` | libera |
 
-**Login** — pubblica.
 ```
-POST /api/auth/login
-{ "username": "autore1", "password": "12345678" }
-→ { userId, username, ruolo, token }
+POST /api/auth/register   { username, password, ruolo }   → 201, non ritorna il token
+POST /api/auth/login      { username, password }          → { userId, username, ruolo, token }
 ```
-Il token è firmato con `JWT_SECRET` e **non ha scadenza**.
-Payload: `{ userId, ruolo, username }`.
+Il token è firmato con `JWT_SECRET` e non scade. Payload: `{ userId, ruolo, username }`.
 
 ---
 
 ## Musei
 
-Nessun proprietario: qualsiasi `autore` può modificare o eliminare qualsiasi museo.
+Non hanno un proprietario: qualsiasi autore può modificarli.
 
-```
-GET    /api/musei       → lista tutti i musei                    (pubblica)
-GET    /api/musei/:id   → un museo                               (pubblica)
-POST   /api/musei       → crea museo                             (autore)
-PUT    /api/musei/:id   → modifica museo                         (autore)
-DELETE /api/musei/:id   → elimina museo                          (autore)
-```
+| | rotta | accesso |
+|---|---|---|
+| GET | `/api/musei` | libera |
+| GET | `/api/musei/:id` | libera |
+| POST | `/api/musei` | autore |
+| PUT | `/api/musei/:id` | autore |
+| DELETE | `/api/musei/:id` | autore |
 
-**Body museo:**
 ```json
-{
-  "nome": "Pinacoteca Nazionale di Bologna",
-  "citta": "Bologna",
-  "configFile": "pinacoteca-bologna.json"
-}
+{ "nome": "Pinacoteca Nazionale di Bologna", "citta": "Bologna", "configFile": "pinacoteca-bologna.json" }
 ```
-`configFile` è il nome del file dentro `navigator/public/config/`: il Player lo usa per
-caricare mappa, posizioni delle opere e informazioni logistiche del museo.
+`configFile` è il file dentro `navigator/public/config/` da cui il Player prende mappa,
+posizioni delle opere e informazioni logistiche.
 
 ---
 
 ## Item
 
-```
-GET    /api/items                 → lista tutti gli item          (pubblica)
-GET    /api/items?museoId=xxx     → filtra per museo
-GET    /api/items?livello=medio   → filtra per livello dei testi
-GET    /api/items/:id             → un item                       (pubblica)
-POST   /api/items                 → crea item                     (autore)
-PUT    /api/items/:id             → modifica item                 (autore proprietario)
-DELETE /api/items/:id             → elimina item                  (autore proprietario)
-```
+| | rotta | accesso |
+|---|---|---|
+| GET | `/api/items` | libera |
+| GET | `/api/items/:id` | libera |
+| GET | `/api/items/qr/:operaId` | libera |
+| POST | `/api/items` | autore |
+| PUT | `/api/items/:id` | proprietario |
+| DELETE | `/api/items/:id` | proprietario |
 
-**Body POST item** — `autoreId` NON va mandato, lo mette il server dal token:
+Filtri sull'elenco: `?museoId=`, `?livello=`, `?operaId=` (il codice Wikidata dentro al QR).
+`GET /api/items/qr/:operaId` restituisce direttamente il **PNG** del codice QR.
+La DELETE toglie l'item anche dalle visite che lo contengono.
+
 ```json
 {
   "operaId": "Q126599960",
-  "museoId": "id-museo",
-  "titolo": "Nome opera",
-  "descrizione": "…",
+  "tipo": "opera | approfondimento",
+  "museoId": "…",
+  "titolo": "…",
+  "descrizione": "didascalia da cartellino",
+  "autoreOpera": "…",
+  "stile": "…",
   "immagine": "https://…",
-  "testi": [
-    { "durata": "3s", "livello": "medio", "testo": "..." },
-    { "durata": "15s", "livello": "medio", "testo": "..." }
-  ],
   "licenza": "CC-BY",
-  "prezzo": 0
+  "prezzo": 0,
+  "testi": [ { "durata": "15s", "livello": "medio", "lingua": "it", "testo": "…", "generatoDa": "" } ]
 }
 ```
-
-Valori possibili per `durata`: `3s`, `15s`, `1min`, `4min`
-Valori possibili per `livello`: `infantile`, `elementare`, `medio`, `specialistico`
-
-> Manca ancora il filtro `?operaId=`, che servirà per la lookup da QR code (Estensione 2).
+`durata`: `3s`, `15s`, `1min`, `4min` · `livello`: `infantile`, `elementare`, `medio`,
+`specialistico` · `lingua`: `it`, `en`, `fr`, `es`, `de` (assente = italiano) ·
+`generatoDa`: il nome del modello, vuoto se l'ha scritto una persona.
+`autoreId` non va mandato: lo mette il server dal token.
 
 ---
 
 ## Visite
 
-```
-GET    /api/visite              → lista tutte le visite            (pubblica)
-GET    /api/visite?museoId=xxx  → filtra per museo
-GET    /api/visite/mie-visite   → le visite acquistate dall'utente (loggato)
-GET    /api/visite/:id          → una visita con gli item popolati (pubblica)
-POST   /api/visite              → crea visita                      (autore)
-POST   /api/visite/:id/acquista → sblocca la visita per l'utente   (loggato)
-PUT    /api/visite/:id          → modifica visita                  (autore proprietario)
-DELETE /api/visite/:id          → elimina visita                   (autore proprietario)
-```
+| | rotta | accesso |
+|---|---|---|
+| GET | `/api/visite` | libera |
+| GET | `/api/visite/mie-visite` | loggato |
+| GET | `/api/visite/:id` | loggato |
+| POST | `/api/visite` | autore |
+| POST | `/api/visite/:id/acquista` | loggato |
+| PUT | `/api/visite/:id` | proprietario |
+| DELETE | `/api/visite/:id` | proprietario |
 
-> `GET /api/visite` restituisce **anche le visite con `pubblica: false`**. Il filtro non è
-> implementato: per ora è il client a dover decidere cosa mostrare (e non lo fa — vedi TODO).
+Filtri sull'elenco: `?museoId=`, `?pubblica=true`. L'elenco non mostra mai i percorsi su misura.
 
-**Body POST visita** — `autoreId` lo mette il server dal token:
+`GET /api/visite/mie-visite` — le visite che l'utente può avviare: quelle acquistate più quelle
+scritte da lui. Se il token è valido ma l'utente non esiste più → `401`, non `404`.
+
+`GET /api/visite/:id` — popola autore, museo e le tappe. **Gli item completi arrivano solo a chi
+ha acquistato la visita o ne è l'autore**, agli altri arriva il solo titolo di ogni tappa.
+
+`POST /api/visite/:id/acquista` — aggiunge l'id a `utente.acquisti`, nessun pagamento.
+Se la visita è già sbloccata → `400`.
+
 ```json
 {
-  "nome": "Visita classica",
-  "museoId": "id-museo",
-  "items": [
-    {
-      "itemId": "id-item",
-      "ordine": 1,
-      "opzionale": false,
-      "indicazioneLogistica": "Sala 1, parete sinistra"
-    }
-  ],
-  "infoLogistiche": "Entrata da via Belle Arti 56",
+  "nome": "Capolavori della Pinacoteca",
+  "museoId": "…",
+  "items": [ { "itemId": "…", "ordine": 1, "opzionale": false, "indicazioneLogistica": "Sala 1, parete sinistra" } ],
+  "infoLogistiche": "Ingresso da via Belle Arti 56",
   "pubblica": true,
-  "prezzo": 0
+  "prezzo": 0,
+  "quiz": [ { "quesito": "…", "opzioni": ["…"], "rispostaCorretta": 0 } ]
 }
 ```
 
-**`GET /api/visite/:id`** popola `autoreId` (solo `username`), `museoId` (`nome`, `configFile`)
-e ogni `items.itemId` con l'item completo — è la chiamata che usa il Player del Navigator.
+---
 
-**`POST /api/visite/:id/acquista`** aggiunge l'id della visita a `utente.acquisti[]`.
-Non c'è nessun pagamento: è un checkout finto. Se la visita è già stata sbloccata → `400`.
+## Intelligenza artificiale
+
+Tutte loggate. Rispondono `502` se la chiamata al modello fallisce.
+
+| | rotta | cosa fa |
+|---|---|---|
+| POST | `/api/ai/testo` | scrive la versione mancante di un testo e la salva nell'item |
+| POST | `/api/ai/comando` | riconduce una frase detta a parole proprie a uno dei comandi |
+| POST | `/api/ai/visita` | compone un percorso su misura |
+| GET | `/api/ai/interessi` | gli stili delle opere che l'utente può già leggere |
+
 ```
-→ { "message": "Percorso sbloccato con successo!", "acquisti": [ ...ids ] }
+POST /api/ai/testo    { itemId, livello, durata, lingua }   → l'item aggiornato
+POST /api/ai/comando  { frase, comandi: [nomi] }            → { comando: "Prossimo" | null }
+POST /api/ai/visita   { minuti, compagnia, interessi[] }    → 201, la visita creata
+```
+
+`/api/ai/testo` vuole gli stessi permessi del dettaglio della visita: l'item deve essere in una
+visita acquistata, oppure essere dell'utente. Se la combinazione esiste già la ritorna senza
+chiamare il modello.
+
+`/api/ai/comando` risponde solo con uno dei nomi che ha ricevuto, mai con testo libero.
+
+`/api/ai/visita` sceglie fra le sole opere che l'utente può già leggere, `minuti` vale
+`30`, `60` o `120`, `compagnia` vale `solo`, `coppia`, `bambini` o `gruppo`.
+
+---
+
+## Voti della lezione sincrona
+
+```
+POST /api/visite/:visitaId/voti   { codiceSessione, risultati }   → salva lo storico sulla visita
 ```
 
 ---
 
-## Socket.io (Estensione 1 — solo lato server, nessun client lo usa ancora)
+## Socket.io (lezione sincrona)
 
-Stessa porta dell'API (`3000`). Le sessioni stanno in una `Map` in RAM: si perdono al riavvio.
-CORS accetta solo `http://localhost:5173`.
+Stessa origine dell'API. Le sessioni stanno in una `Map` in RAM e si perdono al riavvio.
 
-**Eventi che il client manda:**
+**Dal client:**
 ```
-docente:crea         { visitaId }              → crea la stanza, ritorna un codice di 6 caratteri
-docente:vaiA         { codice, indice }        → sposta tutta la classe sull'opera N
-docente:avviaQuiz    { codice, domande }       → domande ignorate, vedi nota
-docente:chiudi       { codice }                → chiude la stanza
-studente:entra       { codice, nome }          → entra nella stanza
+docente:crea           { visitaId, codiceMnemonico }
+docente:vaiA           { codice, indice }
+docente:forzaAudio     { codice }
+docente:avviaQuiz      { codice, domande }
+docente:chiudi         { codice }
+studente:entra         { codice, nome }
 studente:cambiaLivello { codice, livello, durata }
+studente:invioQuiz     { codice, risposte, totaleDomande, corrette }
 ```
 
-**Eventi che il server emette:**
+**Dal server:**
 ```
-sessione:creata      { codice }                → solo al docente
-stato:opera          { indice }                → a tutta la stanza (e al singolo che entra)
-sessione:studenti    [ { nome, livello, durata, risposte } ]   → a tutta la stanza
-quiz:inizio          —
-sessione:fine        —
+sessione:creata        { codice }                 al solo docente
+stato:item             { indice, visitaId }       a tutta la stanza
+sessione:studenti      [ { nome, livello, durata, voto, online } ]
+docente:nuovaAttivita  { nome, tipo, dettaglio, orario }
+docente:risultatiQuiz  [ { nome, punteggio, totale, voto } ]
+quiz:inizio            { quiz }
+studente:playAudio     —
+sessione:fine          —
+errore                 { messaggio }
 ```
-
-> Il quiz non è implementato: `docente:avviaQuiz` scarta le domande ricevute e nessuna risposta
-> viene mai salvata. Manca l'evento con cui lo studente risponde.
 
 ---
 
-## Dati nel DB (sviluppo)
+## Utenti del seed
 
-**Utenti**
-| Username | Password | Ruolo | ID |
-|----------|----------|-------|----|
-| autore1 | 12345678 | autore | 69ba9713f58ec6058b7866e1 |
-| visitatore1 | 12345678 | visitatore | (vedi Atlas) |
-
-**Musei**
-| Nome | ID |
-|------|----|
-| Pinacoteca Nazionale di Bologna | 69ba9857ae602e2be7e0c331 |
-
-**Item**
-| Titolo | ID |
-|--------|----|
-| Ritratto di frate in veste di San Tommaso d'Aquino | 69ba9a141ac08a21e1684f9e |
+`autore1`, `autore2`, `visitatore1`, `visitatore2`, tutti con password `12345678`.
+`visitatore1` ha già acquistato le due visite pubbliche, `visitatore2` no.
