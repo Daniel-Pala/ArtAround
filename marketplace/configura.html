@@ -9,9 +9,17 @@
     <link rel="stylesheet" href="stile.css">
 </head>
 <body>
-    <div class="container py-5">
-        <a href="index.html" class="btn btn-outline-secondary btn-sm mb-4">
-            <i class="bi bi-arrow-left me-1"></i>Dashboard
+
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand mb-0 h1 text-decoration-none" href="index.html">ArtAround</a>
+            <div id="userBox" class="d-flex align-items-center"></div>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <a href="index.html" class="btn btn-outline-dark btn-sm mb-4">
+            <i class="bi bi-arrow-left me-1"></i>Torna ai musei
         </a>
 
         <div class="section-head mb-4">
@@ -22,6 +30,8 @@
 
         <div class="row g-4">
             <div class="col-lg-8">
+              <div class="card">
+                <div class="card-body">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h2 class="h4 mb-0">Item disponibili</h2>
                     <div class="d-flex gap-2">
@@ -40,6 +50,8 @@
                 <div id="listaItems">
                     <div class="text-muted py-3">Caricamento item…</div>
                 </div>
+                </div>
+              </div>
             </div>
 
             <div class="col-lg-4">
@@ -99,7 +111,7 @@
 
                         <div id="readOnlySection" class="text-center py-3" style="display: none;">
                             <p class="text-muted small">Solo gli autori possono creare percorsi.</p>
-                            <a href="index.html" class="btn btn-sm btn-outline-secondary">Torna alla dashboard</a>
+                            <a href="index.html" class="btn btn-sm btn-outline-dark">Torna alla dashboard</a>
                         </div>
                     </div>
                 </div>

@@ -33,11 +33,8 @@
         <div class="section-head mb-4 d-flex justify-content-between align-items-end gap-3">
             <div>
                 <h1 class="section-title" id="titoloPagina">Item del museo</h1>
-                <p class="section-sub mt-2 mb-0" id="sottotitoloPagina">
-                    Tutti i contenuti scritti per questo museo, anche quelli degli altri autori.
-                </p>
             </div>
-            <a href="index.html" class="btn btn-outline-secondary btn-sm text-nowrap">
+            <a href="index.html" class="btn btn-outline-dark btn-sm text-nowrap">
                 <i class="bi bi-arrow-left me-1"></i>Torna ai musei
             </a>
         </div>
@@ -70,8 +67,9 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h2 class="fs-5 fw-semibold mb-0" id="titoloForm">Nuovo item</h2>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="svuotaForm()">
-                                <i class="bi bi-plus-lg me-1"></i>Nuovo
+                            <!-- mentre si crea non serve: compare solo per uscire da una modifica -->
+                            <button type="button" id="bottoneAnnulla" class="btn btn-sm btn-outline-dark d-none" onclick="svuotaForm()">
+                                Annulla modifica
                             </button>
                         </div>
 

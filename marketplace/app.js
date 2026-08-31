@@ -51,7 +51,7 @@ async function caricaDashboardAutore() {
                 <tr>
                     <td class="ps-4 fw-semibold">${museo.nome}</td>
                     <td class="text-muted">${museo.citta || '—'}</td>
-                    <td class="text-end pe-4">
+                    <td class="text-end pe-4 azioni-museo">
                         <a href="items.html?id=${museo._id}" class="btn btn-sm btn-outline-dark me-1">Item</a>
                         <button class="btn btn-sm btn-outline-dark me-1" onclick="apriModalVisite('${museo._id}')">Percorsi</button>
                         <a href="qr.html?id=${museo._id}" class="btn btn-sm btn-outline-dark">
@@ -220,7 +220,7 @@ async function caricaVisiteMuseo(museoId) {
                 <a href="${URL_NAVIGATOR}/player/${v._id}" target="_blank" class="btn btn-sm btn-outline-success me-1">
                     <i class="bi bi-play-fill me-1"></i>Avvia
                 </a>
-                <a href="configura.html?id=${museoId}&visitaId=${v._id}" class="btn btn-sm btn-outline-secondary me-1">
+                <a href="configura.html?id=${museoId}&visitaId=${v._id}" class="btn btn-sm btn-outline-dark me-1">
                     <i class="bi bi-pencil me-1"></i>Modifica
                 </a>
                 <button class="btn btn-sm btn-outline-danger" onclick="eliminaVisita('${v._id}', '${museoId}')" aria-label="Elimina percorso">

@@ -14,6 +14,8 @@ let visitaIdAttuale = null; // Per modifiche di visite esistenti
 richiediLogin();
 
 document.addEventListener('DOMContentLoaded', async () => {
+    renderNavbar(getUtenteLoggato());
+
     const urlParams = new URLSearchParams(window.location.search);
     museoIdAttuale = urlParams.get('id');
     visitaIdAttuale = urlParams.get('visitaId'); // Se presente, siamo in modalità modifica

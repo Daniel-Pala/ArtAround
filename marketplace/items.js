@@ -98,6 +98,7 @@ function renderLista() {
 function svuotaForm() {
     itemInModifica = null;
     document.getElementById('titoloForm').textContent = 'Nuovo item';
+    document.getElementById('bottoneAnnulla').classList.add('d-none');
     document.getElementById('formItem').reset();
     document.getElementById('testiContainer').innerHTML = '';
     aggiungiRigaTesto();
@@ -110,6 +111,7 @@ function modificaItem(itemId) {
     const item = items.find(i => i._id === itemId);
     itemInModifica = item._id;
     document.getElementById('titoloForm').textContent = 'Modifica item';
+    document.getElementById('bottoneAnnulla').classList.remove('d-none');
 
     document.getElementById('itemTitolo').value = item.titolo;
     document.getElementById('itemTipo').value = item.tipo;
