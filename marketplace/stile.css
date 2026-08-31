@@ -8,7 +8,10 @@
 :root {
   /* palette */
   --bs-body-bg: #F4F1E9;        /* carta */
-  --bs-light: #F4F1E9;          /* così anche .bg-light diventa carta */
+  --bs-light: #F4F1E9;
+  /* .bg-light non legge --bs-light ma --bs-light-rgb: senza questa riga
+     resta il quasi-bianco di Bootstrap invece della nostra carta */
+  --bs-light-rgb: 244, 241, 233;
   --bs-body-color: #1B1917;     /* inchiostro */
   --bs-border-color: #E4DDD0;
   --bs-secondary-color: #6F675C;   /* muted caldo per .text-muted */
