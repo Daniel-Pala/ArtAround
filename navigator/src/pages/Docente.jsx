@@ -32,7 +32,7 @@ export default function Docente() {
         }
       });
 
-    const socket = io('http://localhost:3000');
+    const socket = io();
     socketRef.current = socket;
 
     socket.on('sessione:creata', ({ codice }) => setCodiceAttivo(codice));

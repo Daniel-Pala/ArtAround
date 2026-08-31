@@ -98,7 +98,7 @@ function Player() {
   useEffect(() => {
     if (!codiceSessione) return;
 
-    const socket = io('http://localhost:3000');
+    const socket = io();
     socketRef.current = socket;
 
     socket.on('connect', () => {

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getUtenteLoggato } from '../auth';
 
-const URL_MARKETPLACE = `http://${location.hostname}:3000/index.html`;
+const URL_MARKETPLACE = '/index.html';
 
 // Montata solo dalla Dashboard, che sta dietro ProtectedRoute: qui l'utente c'e' sempre.
 // Durante la visita il Player e' a tutto schermo e non monta la navbar.

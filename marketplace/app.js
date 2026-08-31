@@ -1,9 +1,8 @@
 // app.js — dashboard autore e vetrina visitatore
 
-// il Navigator e' l'altra applicazione e gira su un'altra porta, ma sempre sulla
-// stessa macchina: prendendo l'host dalla pagina il link regge anche quando il
-// marketplace lo si apre dal telefono via IP di rete. La porta resta da sistemare col deploy.
-const URL_NAVIGATOR = `http://${location.hostname}:5173`;
+// il Navigator e' l'altra applicazione, servita dallo stesso server sotto /navigator:
+// un percorso relativo funziona ovunque, dal telefono come dal server del dipartimento
+const URL_NAVIGATOR = '/navigator/';
 
 richiediLogin();
 

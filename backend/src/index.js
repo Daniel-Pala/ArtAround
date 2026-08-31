@@ -2,6 +2,7 @@ const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
 const path = require('path')
+const fs = require('fs')
 const http = require('http')
 const { Server } = require('socket.io')
 require('dotenv').config()
@@ -10,12 +11,10 @@ const app = express()
 
 // Creazione server HTTP e inizializzazione Socket.io
 const server = http.createServer(app)
-const io = new Server(server, {
-  cors: {
-    origin: 'http://localhost:5173',
-    methods: ["GET", "POST"]
-  }
-})
+// Nessun CORS da dichiarare: in produzione le due applicazioni le serve questo stesso
+// processo, e in sviluppo il server di Vite gira le richieste qui, quindi per il browser
+// l'origine e' sempre una sola.
+const io = new Server(server)
 
 // Stato globale delle sessioni in RAM
 const sessioni = new Map()
@@ -242,6 +241,20 @@ app.get('/api-status', (req, res) => {
 })
 
 app.use(express.static(path.join(__dirname, '../../marketplace')))
+
+// Il Navigator e' l'altra applicazione. Una volta compilato (npm run build) diventa una
+// cartella di file statici che serviamo qui sotto /navigator: cosi' marketplace, Navigator e
+// API stanno sulla stessa origine e nel codice non c'e' nessun indirizzo scritto a mano.
+// Finche' non e' compilato — cioe' mentre si sviluppa — si usa il server di Vite sulla 5173,
+// e qui ci limitiamo a mandare li' chi arriva per sbaglio.
+const cartellaNavigator = path.join(__dirname, '../../navigator/dist')
+if (fs.existsSync(cartellaNavigator)) {
+  app.use('/navigator', express.static(cartellaNavigator))
+  // le rotte del Navigator non sono file: qualunque percorso riporta alla sua pagina
+  app.get(/^\/navigator(\/.*)?$/, (req, res) => res.sendFile(path.join(cartellaNavigator, 'index.html')))
+} else {
+  app.get(/^\/navigator(\/.*)?$/, (req, res) => res.redirect(`http://${req.hostname}:5173`))
+}
 
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
