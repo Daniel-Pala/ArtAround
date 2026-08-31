@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item del museo — ArtAround</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="stile.css">
+    <style>
+        /* le righe dell'elenco: separate da un filo d'inchiostro, niente riquadri */
+        .riga-item { border-bottom: 1px solid var(--bs-body-color); padding: .75rem 0; }
+        .riga-item:first-child { border-top: 1px solid var(--bs-body-color); }
+        .riga-item.scelto { background: rgba(198, 58, 36, .06); }
+        .riga-item .dato { font-weight: 600; }
+
+        /* su schermo grande il form resta fermo mentre l'elenco scorre */
+        @media (min-width: 992px) {
+            .colonna-form { position: sticky; top: 1rem; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand mb-0 h1 text-decoration-none" href="index.html">ArtAround</a>
+            <div id="userBox" class="d-flex align-items-center"></div>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <div class="section-head mb-4 d-flex justify-content-between align-items-end gap-3">
+            <div>
+                <h1 class="section-title" id="titoloPagina">Item del museo</h1>
+                <p class="section-sub mt-2 mb-0" id="sottotitoloPagina">
+                    Tutti i contenuti scritti per questo museo, anche quelli degli altri autori.
+                </p>
+            </div>
+            <a href="index.html" class="btn btn-outline-secondary btn-sm text-nowrap">
+                <i class="bi bi-arrow-left me-1"></i>Torna ai musei
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <!-- ============ ELENCO ============ -->
+            <div class="col-lg-7">
+                <div class="d-flex gap-2 mb-3">
+                    <input type="text" id="ricerca" class="form-control" placeholder="Cerca per titolo…" oninput="renderLista()">
+                    <select id="filtroTipo" class="form-select" style="max-width: 170px;" onchange="renderLista()">
+                        <option value="">Tutti i tipi</option>
+                        <option value="opera">Opere</option>
+                        <option value="approfondimento">Approfondimenti</option>
+                    </select>
+                    <select id="filtroAutore" class="form-select" style="max-width: 150px;" onchange="renderLista()">
+                        <option value="">Di chiunque</option>
+                        <option value="miei">Solo i miei</option>
+                    </select>
+                </div>
+                <p class="text-muted small" id="conteggio"></p>
+                <div id="lista"></div>
+            </div>
+
+            <!-- ============ FORM ============ -->
+            <div class="col-lg-5">
+                <div class="card colonna-form">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="fs-5 fw-semibold mb-0" id="titoloForm">Nuovo item</h2>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="svuotaForm()">
+                                <i class="bi bi-plus-lg me-1"></i>Nuovo
+                            </button>
+                        </div>
+
+                        <form id="formItem">
+                            <div class="mb-3">
+                                <label class="form-label" for="itemTitolo">Titolo dell'item</label>
+                                <input type="text" id="itemTitolo" class="form-control" placeholder="es. Ritratto di Giulio II" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="itemTipo">Tipo di item</label>
+                                <select id="itemTipo" class="form-select">
+                                    <option value="opera">Opera esposta</option>
+                                    <option value="approfondimento">Approfondimento (movimento, stile, artista…)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="itemWikidata">ID Wikidata</label>
+                                <input type="text" id="itemWikidata" class="form-control" placeholder="es. Q126599960" required>
+                                <div class="form-text">Lo stesso codice per tutti gli item che parlano della stessa opera.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="itemDescrizione">Didascalia</label>
+                                <input type="text" id="itemDescrizione" class="form-control" placeholder="es. Giotto, 1333 circa. Tempera e oro su tavola.">
+                                <div class="form-text">Autore, data, tecnica</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label" for="itemAutoreOpera">Autore dell'opera</label>
+                                    <input type="text" id="itemAutoreOpera" class="form-control" placeholder="es. Giotto">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label" for="itemStile">Stile</label>
+                                    <input type="text" id="itemStile" class="form-control" placeholder="es. Gotico">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="itemImmagine">Immagine (URL)</label>
+                                <input type="url" id="itemImmagine" class="form-control" placeholder="https://upload.wikimedia.org/...">
+                            </div>
+                            <div class="row">
+                                <div class="col-7 mb-3">
+                                    <label class="form-label" for="itemLicenza">Licenza</label>
+                                    <select id="itemLicenza" class="form-select" required>
+                                        <option value="">Seleziona una licenza</option>
+                                        <option value="CC-BY">CC-BY</option>
+                                        <option value="CC-BY-SA">CC-BY-SA</option>
+                                        <option value="CC0">CC0 (pubblico dominio)</option>
+                                        <option value="Proprietaria">Proprietaria</option>
+                                    </select>
+                                </div>
+                                <div class="col-5 mb-3">
+                                    <label class="form-label" for="itemPrezzo">Prezzo (€)</label>
+                                    <input type="number" id="itemPrezzo" class="form-control" min="0" step="0.01" value="0">
+                                </div>
+                            </div>
+
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0 fw-semibold">Testi</label>
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="aggiungiRigaTesto()">
+                                    <i class="bi bi-plus-lg me-1"></i>Aggiungi testo
+                                </button>
+                            </div>
+                            <div id="testiContainer" class="mb-3"></div>
+
+                            <!-- l'opera che non ha ancora tutte le descrizioni: il curatore scrive
+                                 la didascalia e un testo, le altre versioni gliele prepara il server -->
+                            <div id="bloccoScrittura" class="border rounded bg-light p-2 mb-4 d-none">
+                                <div class="d-flex flex-wrap align-items-end gap-2">
+                                    <div>
+                                        <label class="form-label small text-muted mb-1" for="scritturaLivello">Livello</label>
+                                        <select id="scritturaLivello" class="form-select form-select-sm">
+                                            <option value="infantile">Infantile</option>
+                                            <option value="elementare">Elementare</option>
+                                            <option value="medio" selected>Medio</option>
+                                            <option value="specialistico">Specialistico</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label small text-muted mb-1" for="scritturaDurata">Durata</label>
+                                        <select id="scritturaDurata" class="form-select form-select-sm">
+                                            <option value="3s">3 secondi</option>
+                                            <option value="15s" selected>15 secondi</option>
+                                            <option value="1min">1 minuto</option>
+                                            <option value="4min">4 minuti</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" id="bottoneScrittura" class="btn btn-sm btn-outline-primary" onclick="scriviTestoMancante()">
+                                        Scrivi questa versione
+                                    </button>
+                                </div>
+                                <p id="esitoScrittura" class="small text-muted mb-0 mt-2">
+                                    Parte dai testi qui sopra e la salva subito nell'item.
+                                </p>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">Salva item</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="sessione.js"></script>
+    <script src="items.js"></script>
+</body>
+</html>

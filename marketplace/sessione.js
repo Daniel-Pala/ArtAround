@@ -67,6 +67,30 @@ async function fetchAuth(url, options = {}) {
 
 
 // -----------------------------------------------------------------------------
+// La barra in alto, uguale su tutte le pagine: saluto e logout, oppure Accedi
+// -----------------------------------------------------------------------------
+function renderNavbar(utente) {
+    const userBox = document.getElementById('userBox');
+    if (!userBox) return;
+
+    if (utente) {
+        userBox.innerHTML = `
+            <span class="text-light me-3">Ciao, <strong>${utente.username}</strong></span>
+            <button class="btn btn-outline-light btn-sm" id="btnLogout">
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </button>
+        `;
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('utente');
+            window.location.href = 'login.html';
+        });
+    } else {
+        userBox.innerHTML = `<a href="login.html" class="btn btn-outline-light btn-sm">Accedi</a>`;
+    }
+}
+
+
+// -----------------------------------------------------------------------------
 // HELPER UI: mostra un messaggio di errore o successo nel box #messaggio
 // -----------------------------------------------------------------------------
 function mostraMessaggio(testo, tipo) {
