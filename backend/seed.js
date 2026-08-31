@@ -7,6 +7,15 @@
 // Commons: la specifica chiede identificativi universali, non nomi inventati.
 // Le stesse sigle sono le chiavi di `posizioni` in navigator/public/config/pinacoteca-bologna.json,
 // che e' quello che permette al Player di disegnare i segnaposti sulla mappa.
+//
+// Dentro OPERE ci sono tre casi:
+//  - l'item su un'opera esposta (la maggioranza);
+//  - un SECONDO item sulla stessa opera, scritto da un altro autore e con un taglio
+//    diverso: lo chiede la specifica ("multipli item per lo stesso oggetto di visita"),
+//    e ha una `chiave` propria perche' il codice Wikidata da solo non li distingue;
+//  - l'approfondimento (`tipo: 'approfondimento'`), che parla di un movimento o di un
+//    artista e non di un oggetto esposto: il suo codice Wikidata e' quello del movimento
+//    o della persona, quindi non compare fra le posizioni sulla mappa.
 
 require('dotenv').config();
 const mongoose = require('mongoose');
@@ -206,6 +215,93 @@ const OPERE = [
       { durata: '1min', livello: 'elementare', testo: 'Lavinia Fontana fu una delle prime donne in Europa a vivere del proprio lavoro di pittrice, con una bottega sua e committenti importanti fino a Roma. Qui ritrae una neonata coperta di gioielli: sembra strano, ma i ritratti di bambini servivano a mostrare la ricchezza e la continuita\' della famiglia. I gioielli sono dipinti uno per uno con enorme precisione, ed erano il pezzo forte del quadro.' },
       { durata: '4min', livello: 'specialistico', testo: 'Lavinia Fontana rappresenta il caso meglio documentato di professionalizzazione femminile nella pittura di eta\' moderna: attiva a Bologna e poi a Roma, con committenza aristocratica e pontificia, mantenne bottega propria e famiglia numerosa. La ritrattistica infantile risponde a esigenze dinastiche precise e l\'ostentazione dell\'apparato di gioielli va letta come inventario visivo del patrimonio familiare, secondo una funzione documentaria attestata anche dalle fonti notarili coeve. La resa analitica degli ornamenti riprende la tradizione ritrattistica emiliana e nord-europea; l\'identificazione della bambina e\' stata proposta in relazione a piu\' famiglie senatorie bolognesi senza approdo definitivo.' }
     ]
+  },
+  // --- Secondi item sulle stesse opere -------------------------------------
+  // La specifica lo chiede espressamente: "Ogni visita puo' (dovrebbe!!!) avere
+  // multipli item per lo stesso oggetto di visita". Stesso codice Wikidata, autore
+  // diverso, taglio diverso: e' il caso in cui il visitatore sceglie chi ascoltare.
+  // `chiave` serve solo qui dentro per distinguerli quando si montano le visite.
+  {
+    chiave: 'polittico-materiali', operaId: 'Q3907499', sala: 1, autore: 'autore2',
+    titolo: 'Il Polittico di Giotto: oro, legno e bottega',
+    descrizione: 'Giotto, 1333 circa. Come e\' fatto materialmente un polittico su tavola.',
+    autoreOpera: 'Giotto', stile: 'Gotico',
+    licenza: 'CC-BY', prezzo: 1.5,
+    immagine: img('Giotto.%20Polyptych.%201330-35.%2091x340cm.%20Pinacoteca%2C%20Bologna..jpg'),
+    testi: [
+      { durata: '15s', livello: 'medio', testo: 'Non e\' un quadro solo: sono tavole di pioppo unite da una carpenteria di legno. Sopra il legno va uno strato di gesso, poi la foglia d\'oro, poi il colore stemperato nel tuorlo d\'uovo.' },
+      { durata: '1min', livello: 'medio', testo: 'Un polittico nasce come un mobile. Il falegname assembla le tavole di pioppo e la cornice, poi la bottega stende sul legno strati sottilissimi di gesso e colla fino a ottenere una superficie liscia come un muro intonacato. Sopra si applica la foglia d\'oro, battuta fino a poche migliaia di millimetro, e la si lucida con una pietra dura finche\' non riflette la luce delle candele. Solo alla fine arriva il colore, macinato a mano e stemperato nel tuorlo d\'uovo, che asciuga in fretta e obbliga a dipingere per piccoli tratti sovrapposti. Quello che vedete non e\' quindi il lavoro di un uomo solo, ma di una squadra in cui Giotto firma e dirige.' },
+      { durata: '4min', livello: 'specialistico', testo: 'La struttura del polittico va letta come un manufatto prima che come un dipinto. Il supporto e\' in pioppo, legno tenero e disponibile, tagliato in assi verticali e collegato da traverse; la carpenteria della cornice e\' solidale al supporto, non applicata dopo, ed e\' quella che determina la scansione degli scomparti e delle cuspidi. Sul legno si stende la preparazione: colla animale e gesso in piu\' passate, levigate fino a ottenere un piano che accolga la doratura senza granulosita\'. La foglia d\'oro viene posata su bolo armeno, l\'argilla rossastra che le da\' calore e ne permette la brunitura; sotto la doratura, in molti punti, si legge ancora l\'incisione preparatoria del disegno. La pittura e\' a tempera d\'uovo: il legante asciuga in pochi minuti e non consente ritocchi, quindi il modellato si costruisce per velature successive e per tratteggio, tecnica che spiega la resa quasi grafica degli incarnati. Il rapporto fra maestro e bottega, che la critica discute da tempo, si legge proprio qui: la coerenza dell\'impianto e la qualita\' delle teste centrali si accompagnano a passaggi laterali piu\' correnti nella stesura dei panneggi. Infine la storia conservativa: i polittici sono stati quasi tutti smembrati fra Sette e Ottocento, quando il mercato preferiva le tavole singole, e la ricomposizione che vedete e\' il risultato di un lavoro di ricerca museale.' }
+    ]
+  },
+  {
+    chiave: 'frate-volto', operaId: 'Q126599960', sala: 2, autore: 'autore1',
+    titolo: 'Il frate di Bedoli: come si legge un volto',
+    descrizione: 'Girolamo Mazzola Bedoli. Un ritratto letto a partire dallo sguardo e dalle mani.',
+    autoreOpera: 'Girolamo Mazzola Bedoli', stile: 'Manierismo',
+    licenza: 'CC0', prezzo: 0,
+    immagine: null,
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Guarda le sue mani: stanno ferme sul libro.' },
+      { durata: '15s', livello: 'elementare', testo: 'L\'uomo non ci guarda: gli occhi vanno un po\' di lato, come quando si sta pensando a qualcosa. Le mani appoggiate sul libro non lo stanno leggendo, lo stanno solo tenendo.' },
+      { durata: '1min', livello: 'medio', testo: 'Un ritratto si legge partendo da tre cose: dove guarda la persona, cosa fanno le mani, e quanta aria c\'e\' intorno. Qui lo sguardo esce dal quadro ma non incrocia il nostro, e questo tiene il frate a distanza; le mani sono ferme sul libro, un gesto sospeso che non racconta un\'azione ma uno stato; lo spazio e\' stretto, il fondo scuro sta addosso alla figura e non lascia respiro. Sono scelte, non limiti del pittore: nello stesso momento altri ritrattisti allargano lo sfondo su paesaggi e finestre. Bedoli toglie tutto quello che potrebbe distrarre e lascia solo la tensione interna del personaggio.' }
+    ]
+  },
+  {
+    chiave: 'strage-composizione', operaId: 'Q2448678', sala: 3, autore: 'autore2',
+    titolo: 'La Strage degli innocenti come una scena di teatro',
+    descrizione: 'Guido Reni, 1611 circa. La costruzione della scena, non il suo racconto.',
+    autoreOpera: 'Guido Reni', stile: 'Barocco',
+    licenza: 'CC-BY-SA', prezzo: 2,
+    immagine: null,
+    testi: [
+      { durata: '15s', livello: 'medio', testo: 'Le figure sono disposte come sul palco di un teatro: chi urla sta davanti, chi fugge sale verso il fondo, e in alto due angeli chiudono la scena con le palme dei martiri.' },
+      { durata: '4min', livello: 'specialistico', testo: 'La tela e\' organizzata su tre registri sovrapposti che funzionano come i piani di un palcoscenico. In basso i corpi dei bambini e le madri inginocchiate costruiscono una fascia orizzontale che chiude la composizione e obbliga lo sguardo a risalire. Al centro il gruppo dei sicari e delle madri in fuga forma una diagonale che attraversa il campo da sinistra verso destra: e\' il vero motore della scena, e Reni la costruisce alternando braccia alzate e teste rovesciate in un ritmo quasi musicale. In alto, sopra l\'architettura appena accennata, i due angeli con le palme introducono il registro celeste e sciolgono l\'orrore in significato. La scelta che allontana Reni dal naturalismo dei suoi anni e\' la temperatura emotiva: nessuna figura e\' deformata dal dolore, i volti restano composti anche nell\'urlo, e il colore chiaro e smaltato tiene la scena a distanza. E\' la lezione classicista dell\'ambiente bolognese, che rifiuta di far coincidere la violenza del soggetto con la violenza della pittura. Il confronto obbligato e\' con le stesse scene dipinte a Roma negli stessi anni, dove il buio e il taglio ravvicinato cercano invece l\'urto diretto con chi guarda.' }
+    ]
+  },
+
+  // --- Approfondimenti ------------------------------------------------------
+  // "Gli item possono riferirsi sia agli oggetti della visita, sia a contenuti
+  // associati (movimenti culturali, stili, artisti, eventi storici)". Questi non
+  // sono oggetti esposti, quindi non stanno sulla mappa: il codice Wikidata e'
+  // quello del movimento o della persona.
+  {
+    chiave: 'manierismo', operaId: 'Q131808', tipo: 'approfondimento', autore: 'autore2',
+    titolo: 'Che cos\'e\' il Manierismo',
+    descrizione: 'Il movimento a cui appartengono diverse opere di questa sala.',
+    stile: 'Manierismo',
+    licenza: 'CC-BY-SA', prezzo: 0,
+    immagine: null,
+    testi: [
+      { durata: '15s', livello: 'elementare', testo: 'E\' il modo di dipingere che viene dopo Raffaello: figure allungate, colori strani e pose difficili, fatte apposta per stupire.' },
+      { durata: '1min', livello: 'medio', testo: 'Manierismo e\' il nome che si da\' alla pittura italiana del Cinquecento dopo la generazione di Raffaello e Michelangelo. Il problema di quei pittori e\' che i modelli erano gia\' perfetti: invece di ripeterli, hanno cominciato a forzarli. Le figure si allungano, le pose diventano difficili, i colori si fanno acidi e cangianti, e lo spazio smette di essere misurabile. Per secoli e\' stato giudicato un periodo di decadenza, proprio perche\' si allontanava dall\'equilibrio classico; oggi si legge al contrario, come una ricerca consapevole di eleganza e artificio. La parola viene da "maniera", che nel Cinquecento non significava affettazione ma stile personale riconoscibile.' },
+      { durata: '4min', livello: 'specialistico', testo: 'Il termine nasce da Vasari, che usa "maniera" come categoria di qualita\' stilistica, e viene trasformato in etichetta storiografica solo nell\'Ottocento, con una connotazione negativa che il Novecento ha progressivamente smontato. Il fenomeno si colloca fra il terzo decennio del Cinquecento e la fine del secolo, e non e\' unitario: la linea fiorentina di Pontormo e Rosso lavora sulla dissonanza cromatica e sulla compressione spaziale; quella emiliana, che interessa direttamente questa raccolta, passa attraverso Parmigianino e la sua discendenza, con l\'allungamento delle proporzioni, la levigatezza degli incarnati e un\'eleganza che diventa fine a se stessa. Bedoli, cugino acquisito e collaboratore di Parmigianino, ne rappresenta la versione piu\' misurata e ritrattistica. Sul piano dei contenuti il Manierismo coincide con la crisi religiosa del secolo: la Riforma e poi il Concilio di Trento cambiano la committenza e le regole dell\'immagine sacra, e la ricerca formale si intreccia con la richiesta di decoro. Il superamento arrivera\' proprio da Bologna, con la riforma naturalistica dei Carracci.' }
+    ]
+  },
+  {
+    chiave: 'guido-reni', operaId: 'Q109061', tipo: 'approfondimento', autore: 'autore1',
+    titolo: 'Guido Reni in breve',
+    descrizione: 'Chi era il pittore di diverse opere della Sala 3.',
+    autoreOpera: 'Guido Reni', stile: 'Barocco',
+    licenza: 'CC-BY-SA', prezzo: 0,
+    immagine: null,
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Un pittore bolognese famoso per i suoi cieli chiari.' },
+      { durata: '15s', livello: 'medio', testo: 'Bolognese, 1575-1642. Formato nell\'Accademia dei Carracci, lavora fra Bologna e Roma e diventa il pittore piu\' pagato d\'Europa. La sua cifra e\' la luce chiara e le figure composte anche nelle scene tragiche.' },
+      { durata: '1min', livello: 'medio', testo: 'Guido Reni nasce a Bologna nel 1575 e si forma nell\'Accademia dei Carracci, dove impara a disegnare dal vero prima che dai modelli antichi. A Roma incontra la pittura di Caravaggio e la rifiuta consapevolmente: prende il naturalismo dei corpi ma lo porta verso una luce alta e chiarissima, l\'opposto dei fondi neri. Torna a Bologna e diventa il pittore piu\' richiesto e piu\' pagato del suo tempo, con una bottega numerosa. La sua fama ottocentesca lo trasforma nel campione della grazia, la reazione novecentesca lo condanna come sdolcinato, e solo in tempi recenti se ne e\' riletta la costruzione intellettuale. Muore nel 1642, pieno di debiti di gioco.' }
+    ]
+  },
+  {
+    chiave: 'incamminati', operaId: 'Q2720193', tipo: 'approfondimento', autore: 'autore1',
+    titolo: 'I Carracci e l\'Accademia degli Incamminati',
+    descrizione: 'La scuola bolognese da cui esce buona parte delle opere del Seicento.',
+    stile: 'Barocco',
+    licenza: 'CC-BY-SA', prezzo: 0,
+    immagine: null,
+    testi: [
+      { durata: '15s', livello: 'elementare', testo: 'Tre parenti pittori, i Carracci, aprirono a Bologna una scuola dove si imparava disegnando dal vero invece che copiando gli altri quadri.' },
+      { durata: '1min', livello: 'medio', testo: 'Verso il 1582 Ludovico Carracci e i cugini Agostino e Annibale aprono a Bologna una bottega-scuola che chiamano degli Incamminati, cioe\' di quelli che si sono messi in cammino. L\'idea e\' semplice e per l\'epoca radicale: si impara disegnando dal vero, dal modello vivo e dalla natura, invece di ripetere le formule dei manieristi. Da quella scuola escono Guido Reni, Domenichino, Guercino e l\'Albani, cioe\' quasi tutti i pittori che riempiono le sale del Seicento di questo museo. E\' anche il primo caso in Italia di una didattica organizzata dell\'arte, con lezioni di anatomia e di prospettiva: il modello delle accademie che si diffonderanno in tutta Europa nei due secoli successivi.' }
+    ]
   }
 ];
 
@@ -219,6 +315,8 @@ const VISITE = [
     infoLogistiche: "Ingresso da via delle Belle Arti 56. Biglietto intero 6 euro, guardaroba gratuito a sinistra della biglietteria. Il percorso dura circa un'ora.",
     tappe: [
       { opera: 'Q3907499', indicazione: 'Dall\'ingresso sali la scala principale ed entra nella Sala 1: la tavola dorata e\' sulla parete di fronte.' },
+      // stessa opera, un altro autore: chi vuole sapere com'e' fatta resta qui davanti
+      { opera: 'polittico-materiali', indicazione: 'Resta davanti alla stessa tavola.', opzionale: true },
       { opera: 'Q27345212', indicazione: 'Stessa sala, sulla parete a sinistra.' },
       { opera: 'Q3889219', indicazione: 'Sempre in Sala 1, ultima parete a destra prima del passaggio.' },
       { opera: 'Q16038421', indicazione: 'Attraversa il passaggio ed entra in Sala 2: la pala e\' subito a sinistra.' },
@@ -241,9 +339,13 @@ const VISITE = [
       { opera: 'Q1103801', indicazione: 'Al centro della Sala 2.' },
       { opera: 'Q3842737', indicazione: 'Sulla parete di destra.' },
       { opera: 'Q126599960', indicazione: 'A fianco della precedente, stessa parete.' },
+      { opera: 'frate-volto', indicazione: 'Resta davanti al ritratto.', opzionale: true },
+      { opera: 'manierismo', indicazione: 'Da ascoltare qui, guardando le due tavole di questa parete.', opzionale: true },
       { opera: 'Q3208041', indicazione: 'Scendi in Sala 3, prima parete a sinistra.' },
       { opera: 'Q3685503', indicazione: 'Prosegui sulla stessa parete.' },
       { opera: 'Q2448678', indicazione: 'Al centro della parete lunga.' },
+      { opera: 'strage-composizione', indicazione: 'Resta davanti alla tela grande.', opzionale: true },
+      { opera: 'guido-reni', indicazione: 'Da ascoltare in Sala 3, dove ci sono le sue opere.', opzionale: true },
       { opera: 'Q25217589', indicazione: 'Subito a destra della precedente.' },
       { opera: 'Q23008334', indicazione: 'Ancora a destra, verso il fondo della Sala 3.' },
       { opera: 'Q29997042', indicazione: 'Ultima parete della Sala 3, vicino all\'uscita.', opzionale: true }
@@ -265,7 +367,8 @@ const VISITE = [
       { opera: 'Q1103801', indicazione: 'Al centro della Sala 2.' },
       { opera: 'Q2448678', indicazione: 'Scendi in Sala 3, al centro della parete lunga.' },
       { opera: 'Q23008334', indicazione: 'Verso il fondo della stessa parete.' },
-      { opera: 'Q29997042', indicazione: 'Ultima tappa, vicino all\'uscita della Sala 3.' }
+      { opera: 'Q29997042', indicazione: 'Ultima tappa, vicino all\'uscita della Sala 3.' },
+      { opera: 'incamminati', indicazione: 'Da ascoltare seduti, prima di uscire.', opzionale: true }
     ]
   }
 ];
@@ -290,11 +393,13 @@ async function seed() {
     configFile: 'pinacoteca-bologna.json'
   }).save();
 
-  // gli id assegnati da Mongo, indicizzati per codice opera: servono a montare le visite
-  const idPerOpera = {};
+  // gli id assegnati da Mongo: servono a montare le visite. La chiave e' il codice
+  // dell'opera, tranne dove due item parlano della stessa opera e serve distinguerli
+  const idPerItem = {};
   for (const o of OPERE) {
     const item = await new Item({
       operaId: o.operaId,
+      tipo: o.tipo || 'opera',
       museoId: museo._id,
       titolo: o.titolo,
       descrizione: o.descrizione,
@@ -303,10 +408,10 @@ async function seed() {
       immagine: o.immagine,
       testi: o.testi,
       autoreId: utenti[o.autore]._id,
-      licenza: 'CC-BY-SA',
-      prezzo: 0
+      licenza: o.licenza || 'CC-BY-SA',
+      prezzo: o.prezzo || 0
     }).save();
-    idPerOpera[o.operaId] = item._id;
+    idPerItem[o.chiave || o.operaId] = item._id;
   }
   console.log(`Creati ${OPERE.length} item.`);
 
@@ -317,7 +422,7 @@ async function seed() {
       museoId: museo._id,
       autoreId: utenti[v.autore]._id,
       items: v.tappe.map((t, i) => ({
-        itemId: idPerOpera[t.opera],
+        itemId: idPerItem[t.opera],
         ordine: i + 1,
         opzionale: Boolean(t.opzionale),
         indicazioneLogistica: t.indicazione

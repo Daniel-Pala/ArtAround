@@ -7,10 +7,10 @@
 
 :root {
   /* palette */
-  --bs-body-bg: #F4F1E9;        /* carta */
-  --bs-surface: #FFFFFF;        /* i fogli appoggiati sulla carta: card, tabelle, pannelli */
+  --bs-body-bg: #FFFFFF;        /* il marketplace e' bianco: si lavora su schermo grande e pieno di dati */
+  --bs-surface: #FFFFFF;        /* card, tabelle e pannelli: stesso bianco, li separa il bordo */
   --bs-body-color: #1B1917;     /* inchiostro */
-  --bs-border-color: #E4DDD0;
+  --bs-border-color: #D6D0C4;
   --bs-secondary-color: #6F675C;   /* muted caldo per .text-muted */
   --bs-secondary-rgb: 111, 103, 92;
 
