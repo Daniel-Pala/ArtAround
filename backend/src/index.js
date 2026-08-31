@@ -117,7 +117,7 @@ io.on('connection', (socket) => {
 
       socket.emit('stato:item', { indice: sessione.indiceCorrente, visitaId: sessione.visitaId })
       
-      // Se il quiz è già iniziato e uno studente si riconnecte, glielo rimandiamo subito
+      // Se il quiz è già iniziato e uno studente si riconnette, glielo rimandiamo subito
       if (sessione.fase === 'quiz' && sessione.quizDati) {
         socket.emit('quiz:inizio', { quiz: sessione.quizDati })
       }
