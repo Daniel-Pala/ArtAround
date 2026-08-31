@@ -5,7 +5,8 @@ const path = require('path')
 const fs = require('fs')
 const http = require('http')
 const { Server } = require('socket.io')
-require('dotenv').config()
+// il .env sta nella cartella backend, non in quella da cui si lancia il comando
+require('dotenv').config({ path: path.join(__dirname, '../.env') })
 
 const app = express()
 

@@ -17,7 +17,9 @@
 //    artista e non di un oggetto esposto: il suo codice Wikidata e' quello del movimento
 //    o della persona, quindi non compare fra le posizioni sulla mappa.
 
-require('dotenv').config();
+const path = require('path');
+// come in index.js: il .env si cerca accanto al codice, non nella cartella corrente
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const mongoose = require('mongoose');
 
 const Utente = require('./src/models/Utente');
