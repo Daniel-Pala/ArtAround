@@ -142,11 +142,15 @@ function Player() {
     };
   }, [codiceSessione, nomeStudente]);
 
-  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica
+  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica.
+  // BASE_URL e' la radice da cui e' servita questa applicazione: '/' mentre si sviluppa,
+  // '/navigator/' una volta compilata. Con un percorso assoluto il file si andrebbe a
+  // cercare sotto la radice del sito, dove c'e' il marketplace, e da li' tornerebbe la
+  // sua pagina con dentro dell'HTML: res.ok sarebbe vero e a rompersi sarebbe la json().
   useEffect(() => {
     const file = visita?.museoId?.configFile;
     if (!file) return;
-    fetch(`/config/${file}`)
+    fetch(`${import.meta.env.BASE_URL}config/${file}`)
       .then(res => res.ok ? res.json() : null)
       .then(setConfig);
   }, [visita]);

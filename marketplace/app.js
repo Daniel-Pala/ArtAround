@@ -125,7 +125,7 @@ async function caricaMarketplaceVisitatore() {
         visite.forEach(v => {
             // Confrontiamo forzando anche l'id del percorso a stringa
             const isAcquistata = acquistiIds.includes(String(v._id));
-            const urlPlayer = `${URL_NAVIGATOR}/player/${v._id}`;
+            const urlPlayer = `${URL_NAVIGATOR}player/${v._id}`;
             const prezzoLabel = v.prezzo > 0 ? `${v.prezzo} €` : 'Gratis';
 
             htmlCards += `
@@ -216,7 +216,7 @@ async function caricaVisiteMuseo(museoId) {
         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
             <span class="fw-semibold text-truncate me-2">${v.nome}</span>
             <span class="text-nowrap">
-                <a href="${URL_NAVIGATOR}/player/${v._id}" target="_blank" class="btn btn-sm btn-outline-success me-1">
+                <a href="${URL_NAVIGATOR}player/${v._id}" target="_blank" class="btn btn-sm btn-outline-success me-1">
                     <i class="bi bi-play-fill me-1"></i>Avvia
                 </a>
                 <a href="configura.html?id=${museoId}&visitaId=${v._id}" class="btn btn-sm btn-outline-dark me-1">
