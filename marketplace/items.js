@@ -150,16 +150,26 @@ async function eliminaItem(itemId) {
     }
 }
 
+const NOMI_LINGUA = { it: 'italiano', en: 'inglese', fr: 'francese', es: 'spagnolo', de: 'tedesco' };
+
 // Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal item.
 // In modifica riceve il testo gia' salvato e lo rimette nei tre campi.
 // I testi che ha scritto il modello portano il suo nome: il curatore deve sapere da
 // dove viene quello che sta pubblicando. Al visitatore invece non si dice, perche' la
 // specifica chiede che i contenuti generati non siano distinguibili dagli altri.
+// La lingua non ha un campo suo: qui non si sceglie, la chiede il Player quando gli
+// serve. Ma va tenuta da parte e va scritta sopra alla riga, se no la stessa descrizione
+// in tre lingue sembrano tre righe uguali e la si cancella per sbaglio.
 function aggiungiRigaTesto(testo) {
     const riga = document.createElement('div');
     riga.className = 'testo-riga border rounded p-2 mb-2';
     riga.dataset.generatoDa = testo?.generatoDa || '';
     riga.dataset.testoOriginale = testo?.testo || '';
+    riga.dataset.lingua = testo?.lingua || 'it';
+
+    const note = [];
+    if (riga.dataset.lingua !== 'it') note.push(`In ${NOMI_LINGUA[riga.dataset.lingua] || riga.dataset.lingua}`);
+    if (testo?.generatoDa) note.push(`testo generato da ${testo.generatoDa}`);
     riga.innerHTML = `
         <div class="row g-2 mb-2 align-items-center">
             <div class="col">
@@ -184,7 +194,7 @@ function aggiungiRigaTesto(testo) {
                 </button>
             </div>
         </div>
-        ${testo?.generatoDa ? `<div class="small text-muted mb-1">Testo generato da ${testo.generatoDa}</div>` : ''}
+        ${note.length ? `<div class="small text-muted mb-1">${note.join(' · ')}</div>` : ''}
         <textarea class="form-control form-control-sm testo-contenuto" rows="2" placeholder="Testo della descrizione…"></textarea>
     `;
     document.getElementById('testiContainer').appendChild(riga);
@@ -208,9 +218,12 @@ function setupFormItem() {
                 durata: riga.querySelector('.testo-durata').value,
                 livello: riga.querySelector('.testo-livello').value,
                 testo,
-                // il form ricostruisce i testi dal DOM, quindi senza questa riga una
-                // qualsiasi modifica all'item cancellerebbe la provenienza. Se pero' il
-                // curatore ha riscritto il testo, quel testo e' suo e la provenienza cade.
+                // il form ricostruisce i testi leggendo il DOM, quindi quello che non ha
+                // un campo a schermo va riportato a mano o si perde: la lingua tornerebbe
+                // al suo default ('it') e un testo francese risulterebbe italiano.
+                lingua: riga.dataset.lingua,
+                // stessa storia per la provenienza. Se pero' il curatore ha riscritto il
+                // testo, quel testo e' suo e la provenienza cade apposta.
                 generatoDa: testo === riga.dataset.testoOriginale ? riga.dataset.generatoDa : ''
             };
         }).filter(t => t.testo);
