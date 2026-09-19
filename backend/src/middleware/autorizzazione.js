@@ -10,7 +10,7 @@ const richiediAutenticazione = (req, res, next) => {
     req.user = jwt.verify(token, process.env.JWT_SECRET)
     next()
   } catch (error) {
-    return res.status(401).json({ message: 'Autenticazione fallita o token scaduto' })
+    return res.status(401).json({ message: 'Autenticazione fallita: token mancante o non valido' })
   }
 }
 

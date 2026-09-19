@@ -357,8 +357,16 @@ function Player() {
     if (indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); 
   };
 
-  const cambiaDurata = (verso) => setDurataScelta(d => DURATE[Math.min(Math.max(DURATE.indexOf(d) + verso, 0), DURATE.length - 1)]);
-  const cambiaLivello = (verso) => setLivelloScelto(l => LIVELLI[Math.min(Math.max(LIVELLI.indexOf(l) + verso, 0), LIVELLI.length - 1)]);
+  // "dimmi di piu" e "piu semplice" spostano di un posto sulla scala. Agli estremi si
+  // fermano invece di ricominciare: da "4 minuti" chi chiede piu' dettagli non deve
+  // ritrovarsi con la descrizione da 3 secondi.
+  const unPassoSu = (scala, valore, verso) => {
+    const posizione = scala.indexOf(valore) + verso;
+    if (posizione < 0 || posizione >= scala.length) return valore;
+    return scala[posizione];
+  };
+  const cambiaDurata = (verso) => setDurataScelta(d => unPassoSu(DURATE, d, verso));
+  const cambiaLivello = (verso) => setLivelloScelto(l => unPassoSu(LIVELLI, l, verso));
 
   const staLeggendo = parlando && !inPausa;
 

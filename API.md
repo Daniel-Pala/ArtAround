@@ -51,15 +51,21 @@ posizioni delle opere e informazioni logistiche.
 
 | | rotta | accesso |
 |---|---|---|
-| GET | `/api/items` | libera |
-| GET | `/api/items/:id` | libera |
+| GET | `/api/items` | loggato |
+| GET | `/api/items/:id` | loggato |
 | GET | `/api/items/qr/:operaId` | libera |
 | POST | `/api/items` | autore |
 | PUT | `/api/items/:id` | proprietario |
 | DELETE | `/api/items/:id` | proprietario |
 
 Filtri sull'elenco: `?museoId=`, `?livello=`, `?operaId=` (il codice Wikidata dentro al QR).
-`GET /api/items/qr/:operaId` restituisce direttamente il **PNG** del codice QR.
+Di un item che non è di chi lo chiede i testi tornano senza il contenuto: restano durata,
+livello, lingua e provenienza, cioè quello che serve all'elenco del curatore per sapere cosa
+è già stato scritto su un'opera. Il testo è il contenuto a pagamento e si legge comprando la
+visita che contiene l'item.
+`GET /api/items/qr/:operaId` resta libera ed è l'unica: un `<img src>` non manda header, e il
+codice Wikidata è già stampato sul cartellino appeso di fianco all'opera. Restituisce
+direttamente il **PNG** del codice QR.
 La DELETE toglie l'item anche dalle visite che lo contengono.
 
 ```json
