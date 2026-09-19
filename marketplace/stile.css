@@ -109,7 +109,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--ink-faint);
 }
 
-/* ---- struttura editoriale (intestazioni di sezione) ---- */
+/* intestazioni di sezione */
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -132,7 +132,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .uppercase { text-transform: uppercase; letter-spacing: .05em; }
 
-/* ---- card catalogo (visite) ---- */
+/* card del catalogo (visite) */
 .card-interactive { transition: transform .18s ease, border-color .18s ease; }
 .card-interactive:hover { transform: translateY(-3px); border-color: var(--bs-primary); }
 
@@ -145,13 +145,13 @@ h1, h2, h3, h4, h5, h6,
   font-size: 1.35rem; font-weight: 600; line-height: 1;
 }
 
-/* ---- liste (opere / carrello del configuratore) ---- */
+/* liste: opere e carrello del configuratore */
 .list-group-item {
   background-color: transparent;
   border-color: var(--bs-border-color);
 }
 
-/* ---- righe testo (configuratore) ---- */
+/* righe testo del configuratore */
 .testo-row {
   background-color: var(--surface);
   border-radius: var(--bs-border-radius);

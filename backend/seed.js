@@ -218,7 +218,7 @@ const OPERE = [
       { durata: '4min', livello: 'specialistico', testo: 'Lavinia Fontana rappresenta il caso meglio documentato di professionalizzazione femminile nella pittura di eta\' moderna: attiva a Bologna e poi a Roma, con committenza aristocratica e pontificia, mantenne bottega propria e famiglia numerosa. La ritrattistica infantile risponde a esigenze dinastiche precise e l\'ostentazione dell\'apparato di gioielli va letta come inventario visivo del patrimonio familiare, secondo una funzione documentaria attestata anche dalle fonti notarili coeve. La resa analitica degli ornamenti riprende la tradizione ritrattistica emiliana e nord-europea; l\'identificazione della bambina e\' stata proposta in relazione a piu\' famiglie senatorie bolognesi senza approdo definitivo.' }
     ]
   },
-  // --- Secondi item sulle stesse opere -------------------------------------
+  // Secondi item sulle stesse opere
   // La specifica lo chiede espressamente: "Ogni visita puo' (dovrebbe!!!) avere
   // multipli item per lo stesso oggetto di visita". Stesso codice Wikidata, autore
   // diverso, taglio diverso: e' il caso in cui il visitatore sceglie chi ascoltare.
@@ -262,7 +262,7 @@ const OPERE = [
     ]
   },
 
-  // --- Approfondimenti ------------------------------------------------------
+  // Approfondimenti
   // "Gli item possono riferirsi sia agli oggetti della visita, sia a contenuti
   // associati (movimenti culturali, stili, artisti, eventi storici)". Questi non
   // sono oggetti esposti, quindi non stanno sulla mappa: il codice Wikidata e'

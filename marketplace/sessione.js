@@ -4,12 +4,10 @@
 //   2) esporta funzioni che le ALTRE pagine (index.html, configura.html)
 //      possono usare per sapere chi è loggato e fare chiamate autenticate.
 
-// COSTANTI: l'API sta sulla stessa origine che serve queste pagine (le serve
+// L'API sta sulla stessa origine che serve queste pagine (le serve
 // Express), quindi basta il percorso relativo: cosi' vale su localhost, sull'IP
 // di rete quando si prova dal telefono e sul server del dipartimento.
 const API_URL = '/api';
-
-// FUNZIONI DI SESSIONE — usabili da qualsiasi pagina che includa sessione.js
 
 // Salva i dati dell'utente loggato nel localStorage del browser.
 // localStorage accetta solo stringhe, quindi serializziamo con JSON.stringify.
@@ -77,7 +75,7 @@ function renderNavbar(utente) {
     }
 }
 
-// HELPER UI: mostra un messaggio di errore o successo nel box #messaggio
+// Mostra un messaggio di errore o di conferma nel box #messaggio
 function mostraMessaggio(testo, tipo) {
     // tipo può essere 'success' o 'danger' (sono classi Bootstrap)
     const box = document.getElementById('messaggio');
@@ -85,10 +83,8 @@ function mostraMessaggio(testo, tipo) {
     box.innerHTML = `<div class="alert alert-${tipo} py-2">${testo}</div>`;
 }
 
-// LOGICA SPECIFICA DELLA PAGINA login.html
-// Tutto quello che riguarda i form sta dentro questo blocco "if",
-// così se carichiamo sessione.js da index.html (dove i form non esistono)
-// non esplode.
+// Da qui in giù è roba di login.html. Sta dentro un if perché sessione.js lo caricano
+// anche le altre pagine, dove i due form non esistono.
 
 const formLogin = document.getElementById('formLogin');
 const formRegister = document.getElementById('formRegister');
@@ -99,7 +95,6 @@ if (formLogin) {
         window.location.href = 'index.html';
     }
 
-    // ============ HANDLER LOGIN ============
     formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -138,7 +133,6 @@ if (formLogin) {
 }
 
 if (formRegister) {
-    // ============ HANDLER REGISTRAZIONE ============
     formRegister.addEventListener('submit', async (e) => {
         e.preventDefault();
 

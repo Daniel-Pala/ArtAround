@@ -104,7 +104,7 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .2);
 }
 
-/* ---- struttura editoriale (intestazioni di sezione) ---- */
+/* intestazioni di sezione */
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: .12em;
@@ -127,7 +127,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .uppercase { text-transform: uppercase; letter-spacing: .05em; }
 
-/* ---- card catalogo (musei / percorsi) ---- */
+/* card del catalogo: musei e percorsi */
 .price-label {
   font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
   color: var(--ink-faint); margin-bottom: .15rem;
@@ -137,7 +137,7 @@ h1, h2, h3, h4, h5, h6,
   font-size: 1.35rem; font-weight: 600; line-height: 1;
 }
 
-/* ---- liste ---- */
+/* liste */
 .list-group-item {
   background-color: transparent;
   border-color: var(--bs-border-color);

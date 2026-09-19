@@ -19,11 +19,10 @@ function Dashboard() {
 
   useEffect(() => {
     fetchAuth('/api/visite/mie-visite')
-      
-    .then(res => res.json()) // == function(res) { return res.json(); } is equivalent to res => res.json()
+      .then(res => res.json())
       .then(data => {
         //controllo perche potrebbe essere anche errore
-        if (Array.isArray(data)) setVisite(data); 
+        if (Array.isArray(data)) setVisite(data);
       })
       .finally(() => setLoading(false));
   }, []);
