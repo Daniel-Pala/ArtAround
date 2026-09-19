@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const museo = await (await fetch(`${API_URL}/musei/${museoId}`)).json();
     document.getElementById('titoloPagina').textContent = `Codici QR della ${museo.nome}`;
 
-    const items = await (await fetch(`${API_URL}/items?museoId=${museoId}`)).json();
+    const items = await (await fetchAuth(`${API_URL}/items?museoId=${museoId}`)).json();
 
     // Piu' item possono parlare della stessa opera (una descrizione base e un
     // approfondimento hanno lo stesso operaId): di cartellini ne serve uno solo.

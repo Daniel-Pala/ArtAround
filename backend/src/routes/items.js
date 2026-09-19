@@ -3,9 +3,31 @@ const router = express.Router()
 const Item = require('../models/Item')
 const Visita = require('../models/Visita')
 const QRCode = require('qrcode')
-const { richiediAutore } = require('../middleware/autorizzazione')
+const { richiediAutore, richiediAutenticazione } = require('../middleware/autorizzazione')
 
-router.get('/', async (req, res) => {
+// I testi sono la merce del negozio: di un item che non e' nostro escono durata, livello,
+// lingua e provenienza — quello che serve all'elenco del curatore per dire cosa e' gia'
+// stato scritto su un'opera e a che prezzo — ma non il testo, che si legge comprando la
+// visita che lo contiene. Stessa regola del dettaglio di una visita.
+// Elenco i campi che escono invece di cancellare quelli che non devono uscire: se domani
+// un testo si porta dietro un campo nuovo, quello non parte da solo.
+function senzaTestoAltrui(item, userId) {
+  // qui autoreId non e' piu' un id: la populate l'ha gia' sostituito con { _id, username }.
+  // Il ?. serve solo a non far crollare la rotta se l'utente autore e' stato cancellato.
+  const suo = String(item.autoreId?._id) === userId
+  if (suo) return item
+  return {
+    ...item,
+    testi: item.testi.map(t => ({
+      durata: t.durata,
+      livello: t.livello,
+      lingua: t.lingua,
+      generatoDa: t.generatoDa
+    }))
+  }
+}
+
+router.get('/', richiediAutenticazione, async (req, res) => {
   try {
     //cerca in url se è presente un museoId, se sì filtra gli item per quel museo, altrimenti ritorna tutti gli item
     //es . /api/items?museoId=1234
@@ -17,9 +39,11 @@ router.get('/', async (req, res) => {
     // operaId e' il codice Wikidata: e' quello che sta dentro il QR code
     // appeso di fianco all'opera, quindi da una scansione si arriva agli item.
     if (operaId) filtro.operaId = operaId;
-    // items viene arricchito dal nome dell'autore e dal nome del museo, grazie a populate
-    const items = await Item.find(filtro).populate('autoreId', 'username').populate('museoId', 'nome')
-    res.json(items)
+    // items viene arricchito dal nome dell'autore e dal nome del museo, grazie a populate.
+    // lean() perche' i documenti qui li devo modificare prima di mandarli: senza, mongoose
+    // torna oggetti suoi, con dentro i metodi, e lo spread di senzaTestoAltrui li perderebbe
+    const items = await Item.find(filtro).populate('autoreId', 'username').populate('museoId', 'nome').lean()
+    res.json(items.map(item => senzaTestoAltrui(item, req.user.userId)))
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
@@ -29,7 +53,9 @@ router.get('/', async (req, res) => {
 // Dentro al QR ci sta solo il codice Wikidata: un QR non e' un identificatore
 // registrato da qualche parte, e' solo un modo di disegnare una stringa, quindi
 // ci mettiamo quella che usiamo gia' come chiave delle opere.
-// La pagina di stampa (marketplace/qr.html) lo mostra con un semplice <img src>.
+// La pagina di stampa (marketplace/qr.html) lo mostra con un semplice <img src>, ed e'
+// anche il motivo per cui questa resta l'unica rotta degli item senza token: un <img>
+// non manda header. Del resto il codice Wikidata e' gia' stampato sul cartellino al muro.
 // Va dichiarata prima di GET /:id per non farsi leggere "qr" come un id.
 router.get('/qr/:operaId', async (req, res) => {
   const png = await QRCode.toBuffer(req.params.operaId, { width: 400, margin: 1 })
@@ -37,11 +63,11 @@ router.get('/qr/:operaId', async (req, res) => {
 })
 
 //ritorna un item specifico per id, con i dati dell'autore e del museo
-router.get('/:id', async (req, res) => {
+router.get('/:id', richiediAutenticazione, async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id).populate('autoreId', 'username').populate('museoId', 'nome')
+    const item = await Item.findById(req.params.id).populate('autoreId', 'username').populate('museoId', 'nome').lean()
     if (!item) return res.status(404).json({ message: 'Item non trovato' })
-    res.json(item)
+    res.json(senzaTestoAltrui(item, req.user.userId))
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

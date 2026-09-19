@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             titoloElement.innerText = museo.nome;
         }
 
-        const itemsResponse = await fetch(`${API_URL}/items?museoId=${museoIdAttuale}`);
+        const itemsResponse = await fetchAuth(`${API_URL}/items?museoId=${museoIdAttuale}`);
         if (itemsResponse.ok) {
             itemsDisponibili = await itemsResponse.json();
             renderItemsDisponibili();

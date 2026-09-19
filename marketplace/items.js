@@ -30,7 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function caricaItems() {
-    const risposta = await fetch(`${API_URL}/items?museoId=${museoId}`);
+    // fetchAuth e non fetch: da quando GET /items chiede il token, una fetch nuda prende 401
+    const risposta = await fetchAuth(`${API_URL}/items?museoId=${museoId}`);
     items = await risposta.json();
     renderLista();
 }
