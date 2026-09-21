@@ -1,6 +1,8 @@
 // backend/seed.js — riempie il database con dati di presentazione.
-// Si lancia a mano da dentro backend/: `cd backend && node seed.js` (il .env sta li').
-// Cancella tutto e ricrea da zero.
+// Cancella tutto e ricrea da zero. Si usa in due modi:
+//  - in locale, a mano: `cd backend && node seed.js`;
+//  - sul server del dipartimento, dove il database si raggiunge solo da dentro il cluster,
+//    attraverso la rotta POST /api/admin/seed (routes/admin.js).
 //
 // I codici delle opere sono i veri identificativi Wikidata (P195 = "collezione:
 // Pinacoteca Nazionale di Bologna", Q1103550) e le immagini arrivano da Wikimedia
@@ -375,10 +377,10 @@ const VISITE = [
   }
 ];
 
-async function seed() {
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log('Connesso al database.');
-
+// Svuota il database e lo riempie. Non apre e non chiude la connessione: usa quella che
+// trova, cosi' la puo' chiamare anche il server acceso, che una connessione ce l'ha gia' e
+// non deve perderla (vedi routes/admin.js).
+async function popola() {
   await Promise.all([Utente.deleteMany({}), Museo.deleteMany({}), Item.deleteMany({}), Visita.deleteMany({})]);
   console.log('Collezioni svuotate.');
 
@@ -441,9 +443,15 @@ async function seed() {
   // cosi' nel Navigator si vedono sia la lista piena sia il messaggio "non hai ancora sbloccato".
   utenti.visitatore1.acquisti = visiteCreate.filter(v => v.pubblica).map(v => v._id);
   await utenti.visitatore1.save();
-
-  await mongoose.connection.close();
-  console.log('Fatto.');
 }
 
-seed();
+module.exports = { popola };
+
+// require.main === module vuol dire "questo file e' stato lanciato con node seed.js, non
+// importato da un altro file". Solo in quel caso apre la connessione e poi la chiude.
+if (require.main === module) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(popola)
+    .then(() => mongoose.connection.close())
+    .then(() => console.log('Fatto.'));
+}

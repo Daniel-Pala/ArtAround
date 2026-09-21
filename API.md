@@ -198,3 +198,14 @@ errore                 { messaggio }
 
 `autore1`, `autore2`, `visitatore1`, `visitatore2`, tutti con password `12345678`.
 `visitatore1` ha già acquistato le due visite pubbliche, `visitatore2` no.
+
+## Seed sul server
+
+| | rotta | accesso |
+|---|---|---|
+| POST | `/api/admin/seed` | header `x-seed-token` |
+
+Svuota il database e lo riempie coi dati del seed. Serve sul server del dipartimento, dove il
+database è un container raggiungibile solo da dentro il cluster e `node seed.js` lanciato da un
+nodo del laboratorio non lo trova. La rotta esiste solo se nel `.env` c'è `SEED_TOKEN`, e vuole
+quel valore nell'header `x-seed-token`: in tutti gli altri casi risponde 404.
