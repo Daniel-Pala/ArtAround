@@ -8,8 +8,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // il percorso su misura: quanto tempo si ha, con chi si e', cosa interessa
+  // il percorso su misura: in che museo, quanto tempo si ha, con chi si e', cosa interessa
   const [mostraMisura, setMostraMisura] = useState(false);
+  const [museoMisura, setMuseoMisura] = useState('');
   const [stili, setStili] = useState([]);
   const [minuti, setMinuti] = useState('60');
   const [compagnia, setCompagnia] = useState('solo');
@@ -27,26 +28,35 @@ function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Le caselle "cosa ti interessa" sono gli stili delle opere che l'utente puo' gia' leggere:
-  // l'elenco lo fa il backend, che e' l'unico a sapere quali visite sono sue.
+  // I musei in cui l'utente ha almeno una visita: il percorso su misura si compone dentro uno
+  // solo, perche' mappa e indicazioni valgono per un museo alla volta. Finche' non ne sceglie
+  // un altro vale il primo.
+  const musei = [];
+  for (const v of visite) {
+    if (v.museoId && !musei.some(m => m._id === v.museoId._id)) musei.push(v.museoId);
+  }
+  const museoScelto = museoMisura || musei[0]?._id;
+
+  // Le caselle "cosa ti interessa" sono gli stili delle opere che l'utente puo' gia' leggere
+  // in quel museo: l'elenco lo fa il backend, che e' l'unico a sapere quali visite sono sue.
   useEffect(() => {
-    if (!mostraMisura || stili.length > 0) return;
-    fetchAuth('/api/ai/interessi')
+    if (!mostraMisura || !museoScelto) return;
+    fetchAuth(`/api/ai/interessi?museoId=${museoScelto}`)
       .then(res => res.json())
       .then(elenco => { if (Array.isArray(elenco)) setStili(elenco); });
-  }, [mostraMisura, stili.length]);
+  }, [mostraMisura, museoScelto]);
 
   const cambiaInteresse = (stile) =>
     setInteressi(scelti => scelti.includes(stile) ? scelti.filter(s => s !== stile) : [...scelti, stile]);
 
   // il percorso nasce dalle opere che l'utente ha gia' sbloccato: e' il backend a metterle
-  // insieme, qui si mandano solo le tre risposte del form
+  // insieme, qui si mandano solo le risposte del form
   const componiVisita = async () => {
     setComponendo(true);
     setErroreMisura('');
     const res = await fetchAuth('/api/ai/visita', {
       method: 'POST',
-      body: JSON.stringify({ minuti, compagnia, interessi })
+      body: JSON.stringify({ museoId: museoScelto, minuti, compagnia, interessi })
     });
     const dati = await res.json();
     setComponendo(false);
@@ -85,7 +95,15 @@ function Dashboard() {
                 Scegliamo noi le tappe fra le opere che hai gia' sbloccato, nel tempo che hai.
               </p>
               <div className="row g-3">
-                <div className="col-sm-6">
+                {/* cambiando museo cambiano anche gli stili, quindi le spunte di prima non valgono
+                    piu': si azzerano qui, nel momento in cui l'utente cambia museo */}
+                <div className="col-sm-4">
+                  <label className="form-label small text-muted mb-1" htmlFor="misuraMuseo">In quale museo</label>
+                  <select id="misuraMuseo" className="form-select form-select-sm" value={museoScelto} onChange={(e) => { setMuseoMisura(e.target.value); setInteressi([]); }}>
+                    {musei.map(m => <option key={m._id} value={m._id}>{m.nome}</option>)}
+                  </select>
+                </div>
+                <div className="col-sm-4">
                   <label className="form-label small text-muted mb-1" htmlFor="misuraTempo">Quanto tempo hai</label>
                   <select id="misuraTempo" className="form-select form-select-sm" value={minuti} onChange={(e) => setMinuti(e.target.value)}>
                     <option value="30">Mezz'ora</option>
@@ -93,7 +111,7 @@ function Dashboard() {
                     <option value="120">Due ore</option>
                   </select>
                 </div>
-                <div className="col-sm-6">
+                <div className="col-sm-4">
                   <label className="form-label small text-muted mb-1" htmlFor="misuraCompagnia">Con chi sei</label>
                   <select id="misuraCompagnia" className="form-select form-select-sm" value={compagnia} onChange={(e) => setCompagnia(e.target.value)}>
                     <option value="solo">Da solo</option>

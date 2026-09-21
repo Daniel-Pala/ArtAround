@@ -146,34 +146,38 @@ router.post('/comando', richiediAutenticazione, async (req, res) => {
 // Le opere fra cui si puo' comporre un percorso su misura: quelle delle visite che l'utente
 // ha comprato o scritto, cioe' quelle che gia' puo' leggere. E' questo filtro a impedire che
 // il percorso su misura diventi il modo di farsi dare gratis i contenuti di tutto il museo.
-// Torna anche le indicazioni logistiche, che ogni tappa si porta dietro dalla visita da cui
-// viene, e il museo: mappa e logistica valgono per un museo solo, quindi un percorso che ne
-// mescolasse due non si potrebbe nemmeno seguire.
-async function opereDisponibili(utente) {
-  const sue = await Visita.find({ $or: [{ autoreId: utente._id }, { _id: { $in: utente.acquisti } }] })
-    .populate('items.itemId')
+// Il museo lo sceglie l'utente nel form, perche' mappa e logistica valgono per un museo solo:
+// un percorso che ne mescolasse due non si potrebbe nemmeno seguire. Sta dentro la query, cosi'
+// chiedere un museo in cui non si ha nessuna visita da' semplicemente zero risultati.
+// Torna anche le indicazioni logistiche, che ogni tappa si porta dietro dalla visita da cui viene.
+async function opereDisponibili(utente, museoId) {
+  const sue = await Visita.find({
+    museoId,
+    $or: [{ autoreId: utente._id }, { _id: { $in: utente.acquisti } }]
+  }).populate('items.itemId')
   if (sue.length === 0) return null
 
-  const museoId = String(sue[0].museoId)
   const candidati = new Map()
   const indicazioni = new Map()
-  for (const visita of sue.filter(v => String(v.museoId) === museoId)) {
+  for (const visita of sue) {
     for (const tappa of visita.items) {
       if (!tappa.itemId) continue
       candidati.set(String(tappa.itemId._id), tappa.itemId)
       if (tappa.indicazioneLogistica) indicazioni.set(String(tappa.itemId._id), tappa.indicazioneLogistica)
     }
   }
-  return { museoId, candidati, indicazioni, infoLogistiche: sue[0].infoLogistiche }
+  return { candidati, indicazioni, infoLogistiche: sue[0].infoLogistiche }
 }
 
 // Gli stili delle opere qui sopra: sono le caselle "cosa ti interessa" del form, quindi
-// l'elenco esce dai dati veri del museo e non da una lista scritta a mano.
+// l'elenco esce dai dati veri del museo e non da una lista scritta a mano. Cambiano col
+// museo scelto, per questo il form li richiede ogni volta che il museo cambia.
 router.get('/interessi', richiediAutenticazione, async (req, res) => {
   try {
+    if (!req.query.museoId) return res.status(400).json({ message: 'Manca il museo' })
     const utente = await Utente.findById(req.user.userId)
     if (!utente) return res.status(401).json({ message: 'Sessione non piu\' valida' })
-    const disponibili = await opereDisponibili(utente)
+    const disponibili = await opereDisponibili(utente, req.query.museoId)
     const stili = [...(disponibili?.candidati.values() || [])].map(i => i.stile).filter(Boolean)
     res.json([...new Set(stili)])
   } catch (err) {
@@ -188,19 +192,19 @@ router.get('/interessi', richiediAutenticazione, async (req, res) => {
 // su misura diventi il modo di leggere gratis i contenuti di tutto il museo.
 router.post('/visita', richiediAutenticazione, async (req, res) => {
   try {
-    const { minuti, compagnia, interessi } = req.body
-    if (!tempi[minuti] || !compagnie[compagnia]) {
-      return res.status(400).json({ message: 'Tempo o compagnia non previsti' })
+    const { museoId, minuti, compagnia, interessi } = req.body
+    if (!museoId || !tempi[minuti] || !compagnie[compagnia]) {
+      return res.status(400).json({ message: 'Museo, tempo o compagnia non previsti' })
     }
 
     const utente = await Utente.findById(req.user.userId)
     if (!utente) return res.status(401).json({ message: 'Sessione non piu\' valida' })
 
-    const disponibili = await opereDisponibili(utente)
+    const disponibili = await opereDisponibili(utente, museoId)
     if (!disponibili) {
-      return res.status(400).json({ message: 'Non hai ancora nessuna visita da cui partire' })
+      return res.status(400).json({ message: 'Non hai ancora nessuna visita in questo museo' })
     }
-    const { museoId, candidati, indicazioni, infoLogistiche } = disponibili
+    const { candidati, indicazioni, infoLogistiche } = disponibili
 
     // anche gli interessi finiscono nel prompt: tengo solo gli stili che il museo ha davvero
     const stili = new Set([...candidati.values()].map(i => i.stile).filter(Boolean))
