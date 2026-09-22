@@ -208,9 +208,11 @@ function renderItemsDisponibili() {
         const etichettaTipo = item.tipo === 'approfondimento' ? 'Approfondimento' : 'Opera';
         const giaSelezionata = itemsSelezionati.some(sel => sel._id === item._id);
 
+        // flex-shrink-0 e text-nowrap: con un titolo lungo il bottone si stringeva e andava a
+        // capo, e ogni riga aveva un bottone di forma diversa. Cosi' e' uguale su tutte.
         const bottoneHtml = giaSelezionata
-            ? `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-check-lg me-1"></i>Aggiunto</button>`
-            : `<button class="btn btn-sm btn-outline-success" onclick="aggiungiAVisita('${item._id}')"><i class="bi bi-plus-lg me-1"></i>Aggiungi</button>`;
+            ? `<button class="btn btn-sm btn-secondary flex-shrink-0 text-nowrap ms-3" disabled><i class="bi bi-check-lg me-1"></i>Aggiunto</button>`
+            : `<button class="btn btn-sm btn-outline-success flex-shrink-0 text-nowrap ms-3" onclick="aggiungiAVisita('${item._id}')"><i class="bi bi-plus-lg me-1"></i>Aggiungi</button>`;
 
         htmlLista += `
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">

@@ -50,12 +50,14 @@ async function caricaDashboardAutore() {
                 <tr>
                     <td class="ps-4 fw-semibold">${museo.nome}</td>
                     <td class="text-muted">${museo.citta || '—'}</td>
-                    <td class="text-end pe-4 azioni-museo">
-                        <a href="items.html?id=${museo._id}" class="btn btn-sm btn-outline-dark me-1">Item</a>
-                        <button class="btn btn-sm btn-outline-dark me-1" onclick="apriModalVisite('${museo._id}')">Percorsi</button>
-                        <a href="qr.html?id=${museo._id}" class="btn btn-sm btn-outline-dark">
-                            <i class="bi bi-qr-code me-1"></i>QR
-                        </a>
+                    <td class="pe-4">
+                        <div class="azioni-museo d-flex flex-wrap justify-content-end gap-1">
+                            <a href="items.html?id=${museo._id}" class="btn btn-sm btn-outline-dark">Item</a>
+                            <button class="btn btn-sm btn-outline-dark" onclick="apriModalVisite('${museo._id}')">Percorsi</button>
+                            <a href="qr.html?id=${museo._id}" class="btn btn-sm btn-outline-dark">
+                                <i class="bi bi-qr-code me-1"></i>QR
+                            </a>
+                        </div>
                     </td>
                 </tr>`;
         });
@@ -182,8 +184,9 @@ async function acquistaVisita(visitaId) {
         });
 
         if (response.ok) {
-            alert("Percorso sbloccato.");
-            caricaMarketplaceVisitatore(); // Ricarica la lista per mostrare il bottone Avvia
+            // niente avviso: la lista si ridisegna e il bottone blu "Acquista" diventa quello
+            // verde "Avvia", ed e' quello a dire che l'acquisto e' andato
+            caricaMarketplaceVisitatore();
         } else {
             const data = await response.json();
             alert(data.message || "Errore durante l'acquisto");
