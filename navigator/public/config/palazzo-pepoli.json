@@ -1,0 +1,26 @@
+{
+  "nome": "Palazzo Pepoli Campogrande",
+  "mappa": "palazzo-pepoli.svg",
+  "posizioni": {
+    "Q123685640": { "x": 44, "y": 29 },
+
+    "Q131543603": { "x": 79.75, "y": 50 },
+
+    "Q131628822": { "x": 52.5, "y": 66 },
+
+    "Q131628823": { "x": 31.75, "y": 64 },
+    "Q123685655": { "x": 31.75, "y": 71.5 },
+
+    "Q123685682": { "x": 14, "y": 64 },
+    "Q114073475": { "x": 9, "y": 71 },
+    "Q131472696": { "x": 19, "y": 71 },
+
+    "Q131449654": { "x": 15.5, "y": 37 },
+    "Q123685671": { "x": 15.5, "y": 44.5 }
+  },
+  "logistica": {
+    "uscita": "Si esce dallo stesso scalone da cui si e' entrati, tornando nell'atrio.",
+    "toilette": "Al piano terra: chiedere alla biglietteria.",
+    "ostacoli": "Le sale sono al piano nobile e si raggiungono dallo scalone. Per l'ascensore rivolgersi alla biglietteria."
+  }
+}

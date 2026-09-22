@@ -4,11 +4,11 @@
 //  - sul server del dipartimento, dove il database si raggiunge solo da dentro il cluster,
 //    attraverso la rotta POST /api/admin/seed (routes/admin.js).
 //
-// I codici delle opere sono i veri identificativi Wikidata (P195 = "collezione:
-// Pinacoteca Nazionale di Bologna", Q1103550) e le immagini arrivano da Wikimedia
-// Commons: la specifica chiede identificativi universali, non nomi inventati.
-// Le stesse sigle sono le chiavi di `posizioni` in navigator/public/config/pinacoteca-bologna.json,
-// che e' quello che permette al Player di disegnare i segnaposti sulla mappa.
+// Due musei: la Pinacoteca Nazionale e Palazzo Pepoli Campogrande, la sua seconda sede.
+// I codici delle opere sono i veri identificativi Wikidata e le immagini arrivano da
+// Wikimedia Commons: la specifica chiede identificativi universali, non nomi inventati.
+// Le stesse sigle sono le chiavi di `posizioni` nel file di configurazione di ciascun museo
+// (navigator/public/config/), ed e' quello che permette al Player di disegnare i segnaposti.
 //
 // Dentro OPERE ci sono tre casi:
 //  - l'item su un'opera esposta (la maggioranza);
@@ -377,6 +377,239 @@ const VISITE = [
   }
 ];
 
+// Il secondo museo: Palazzo Pepoli Campogrande, la sede della Pinacoteca che ospita la
+// collezione Zambeccari. Le sale portano il nome degli affreschi delle volte, e ogni volta
+// l'ha fatta dipingere un Pepoli diverso, uno dopo l'altro: per questo qui le opere
+// principali sono i soffitti. Le sale e i fatti vengono dalle pagine del museo
+// (pinacotecabologna.cultura.gov.it), i codici e le immagini da Wikidata e Commons.
+// I codici sono le chiavi di `posizioni` in navigator/public/config/palazzo-pepoli.json.
+const OPERE_PEPOLI = [
+  {
+    operaId: 'Q123685640', autore: 'autore1',
+    titolo: 'La vita di Taddeo Pepoli',
+    descrizione: 'Domenico Maria Canuti, 1665. Affreschi nei due ovali dello scalone.',
+    autoreOpera: 'Domenico Maria Canuti', stile: 'Barocco',
+    immagine: img('2017-03%20Bologna%20Mattes%20Pana%20%28156%29%20%28Taddeo%20becoming%20the%20ruler%20of%20Bologna%20in%201337%29.JPG'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Due storie di un antenato famoso della famiglia.' },
+      { durata: '15s', livello: 'elementare', testo: 'Salendo le scale si incontrano due ovali dipinti. Raccontano Taddeo Pepoli, l\'antenato piu\' illustre della famiglia: nel 1337 diventa signore di Bologna, e pochi anni dopo il papa gli riconosce quel potere.' },
+      { durata: '1min', livello: 'medio', testo: 'Prima ancora del Salone d\'onore, Domenico Maria Canuti dipinge per Odoardo Pepoli i due ovali dello scalone. La scelta del soggetto e\' un biglietto da visita: chi sale incontra per prima cosa Taddeo Pepoli, che nel 1337 si fa signore di Bologna e nel 1340 ottiene da papa Benedetto XII il titolo di vicario apostolico, cioe\' il riconoscimento del suo governo da parte della Chiesa. Trecento anni dopo i Pepoli non sono piu\' signori della citta\', ma ci tengono a ricordare a ogni ospite da dove viene il loro nome. Il resto del palazzo continua questo racconto.' }
+    ]
+  },
+  {
+    operaId: 'Q131543603', autore: 'autore1',
+    titolo: 'Apoteosi di Ercole',
+    descrizione: 'Domenico Maria Canuti, con le quadrature di Antonio Santi detto il Mengazzino, 1669-1671. Affresco sulla volta del Salone d\'onore.',
+    autoreOpera: 'Domenico Maria Canuti', stile: 'Barocco',
+    immagine: img('Palazzo%20Pepoli%20Campogrande%20-%20il%20soffitto%20del%20Salone%20d%27onore.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Alza la testa: il soffitto e\' un cielo pieno di dei.' },
+      { durata: '15s', livello: 'elementare', testo: 'Ercole, l\'eroe fortissimo, viene accolto sull\'Olimpo da Giove, seduto su un\'aquila. Sotto di lui cadono due donne, la Superbia e l\'Invidia. E le colonne e i cornicioni tutto intorno? Sono dipinti.' },
+      { durata: '1min', livello: 'medio', testo: 'Tra il 1669 e il 1671 Domenico Maria Canuti dipinge per Odoardo Pepoli la volta di questa sala. Al centro Ercole viene accolto nell\'Olimpo da Giove, a cavalcioni dell\'aquila, con accanto Giunone, Amore ed Ebe, la dea dell\'eterna giovinezza che diventa sua sposa. Sotto l\'eroe la Ragione tiene a bada la Forza, e la Superbia e l\'Invidia precipitano verso il basso. Il nome non e\' scelto a caso: Ercole si chiamavano il padre di Odoardo e il nipote destinato a ereditare la casata. Celebrare l\'eroe era un modo di celebrare la famiglia.' },
+      { durata: '4min', livello: 'specialistico', testo: 'La volta nasce dalla collaborazione, tipica della decorazione bolognese del Seicento, fra un figurista, Canuti, e un quadraturista, Antonio Santi detto il Mengazzino. E\' quest\'ultimo a costruire l\'impianto: amplia l\'architettura reale della sala con cornicioni, balaustre, archi, nicchie, colonne e bassorilievi dipinti, fino a far credere che lo spazio si apra all\'infinito sul cielo in cui si svolge la scena. L\'architettura finta e\' abitata da telamoni che reggono i cornicioni e da putti con festoni di frutta; ai quattro angoli, giganti in pose forzate rimandano agli ignudi michelangioleschi della Sistina. Al centro di ogni lato quattro medaglioni a monocromo dorato raccontano altre imprese dell\'eroe: la liberazione di Alcesti dall\'Ade, la contesa del tripode di Delfi, Ercole e i Cercopi, i pomi delle Esperidi. Il soggetto e\' dinastico prima che mitologico: Ercole era il nome del padre di Odoardo e del nipote erede della casata, e la sua apoteosi e\' un\'apoteosi dei Pepoli.' }
+    ]
+  },
+  {
+    operaId: 'Q131628822', autore: 'autore2',
+    titolo: 'Trionfo di Felsina',
+    descrizione: 'Giuseppe e Antonio Rolli, 1690. Affresco sulla volta della Sala di Felsina.',
+    autoreOpera: 'Giuseppe e Antonio Rolli', stile: 'Barocco',
+    immagine: img('Giuseppe%20e%20Antonio%20Rolli%2C%20Trionfo%20di%20Felsina%2C%20affresco%2C%20%281690%29%2C%20soffitto%2C%20palazzo%20Pepoli%20Campogrande%20Bologna.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Una ragazza su un carro tirato da leoni con le ali.' },
+      { durata: '15s', livello: 'elementare', testo: 'Felsina e\' il nome antico di Bologna. La ragazza bionda sul carro, tirato dai leoni alati di Venezia, rappresenta i nobili bolognesi. In un angolo un bambino spezza delle catene: e\' la liberta\' che volevano dal papa.' },
+      { durata: '1min', livello: 'medio', testo: 'Nel 1680 Odoardo Pepoli muore e i lavori passano al nipote Ercole, che nel 1686 entra a far parte della nobilta\' veneziana. Questa volta lo racconta: nel 1690 i fratelli Rolli, allievi di Canuti, dipingono il Trionfo di Felsina, cioe\' di Bologna. La giovane sul cocchio e\' l\'Aristocrazia bolognese, e i leoni alati che la trainano sono quelli di Venezia; un putto la incorona con il corno ducale, il berretto rosso dei dogi. Le ancelle intorno portano i simboli del potere e di Bologna, compreso il vessillo con la scritta Libertas, e un putto spezza le catene: la liberta\' dal governo del papa, a cui la nobilta\' della citta\' aspirava.' },
+      { durata: '4min', livello: 'specialistico', testo: 'La sala e\' decorata nel 1690 dai fratelli Rolli secondo la divisione dei compiti consueta a Bologna: Giuseppe come figurista, Antonio come quadraturista. Il programma allude all\'aggregazione di Ercole Pepoli, senatore dal 1683, alla nobilta\' veneziana nel 1686, e va letto sullo sfondo del governo misto della citta\', retta dal Legato pontificio e da un Senato ereditario di famiglie aristocratiche. L\'Aristocrazia bolognese avanza su un cocchio trainato dai leoni marciani, incoronata col corno ducale; le ancelle recano il fascio littorio, la clava che rimanda a Ercole, lo stendardo crociato e il vessillo con la scritta Libertas, mentre un putto spezza le catene della soggezione papale. Sotto il carro la Felicita\' pubblica, con cornucopia e caduceo, addita a Felsina una fanciulla letta ora come Amore, per la rosa, ora come la Casata dei Pepoli, per il cigno araldico sul calzare. Completano il programma la Giustizia che sottomette la Forza, con la scritta IUS sul libro, la Generosita\' e la Scienza.' }
+    ]
+  },
+  {
+    operaId: 'Q131628823', autore: 'autore1',
+    titolo: 'Trionfo di Ercole e le Stagioni',
+    descrizione: 'Giuseppe Maria Crespi, 1699-1700 circa. Affresco sulla volta della Sala delle Stagioni.',
+    autoreOpera: 'Giuseppe Maria Crespi', stile: 'Barocco',
+    immagine: img('Giuseppe%20maria%20crespi%2C%20trionfo%20di%20ercole%2C%201691-1702%20ca.%2C%20sala%20delle%20stagioni%20di%20pal.%20pepoli%2001.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Quattro personaggi si sporgono per guardarti.' },
+      { durata: '15s', livello: 'elementare', testo: 'Dal bordo del soffitto si affacciano le quattro Stagioni, ma sembrano contadini travestiti. L\'Estate ha uno specchio per abbagliarti, l\'Inverno e\' un vecchio che ha freddo. In mezzo, quasi nascosto, passa Ercole sul suo carro.' },
+      { durata: '1min', livello: 'medio', testo: 'Questa volta la dipinge un solo pittore, Giuseppe Maria Crespi, intorno al 1699-1700, e si vede. L\'architettura finta si riduce a un parapetto, e da li\' si sporgono quattro figure che per gli attributi sono le Stagioni, ma che somigliano piuttosto a contadini travestiti in fretta. La Primavera, coronata di mirto, ride del proprio costume; l\'Estate, coronata di spighe, gioca ad abbagliare i visitatori con uno specchio ustorio; l\'Autunno si tira su la veste per pigiare l\'uva; l\'Inverno e\' un vecchio infreddolito, e i bambini lasciano spegnere il fuoco per un gioco poco educato. Al centro ci sarebbe il protagonista, Ercole in trionfo: ma resta in secondo piano.' },
+      { durata: '4min', livello: 'specialistico', testo: 'Rispetto alle sale precedenti, dove figurista e quadraturista lavorano in coppia, qui Giuseppe Maria Crespi fa tutto da solo, attorno al 1699-1700, e la differenza e\' di sostanza. La quadratura perde il ruolo di protagonista e si riduce a una balaustra impostata sul cornicione reale. Da questa si affacciano le Stagioni, riconoscibili dagli attributi ma dipinte con un carattere popolaresco che le allontana dalla personificazione allegorica: sono contadini travestiti, che si sporgono per attirare l\'attenzione di chi guarda. Il tema celebrativo resta al centro della volta: Ercole attraversa il cielo sul carro scortato dalle Ore, fanciulle con ali di libellula, mentre il Tempo, vecchio alato con falce e clessidra, precipita sconfitto dall\'eroe divenuto immortale. Ma la gerarchia si rovescia: la vitalita\' delle Stagioni supera il trionfo, e il naturalismo di Crespi comincia a incrinare la tradizione della grande decorazione bolognese.' }
+    ]
+  },
+  {
+    operaId: 'Q123685655', autore: 'autore2',
+    titolo: 'Ester davanti ad Assuero; Adamo ed Eva',
+    descrizione: 'Pittore manierista di Anversa, 1510 circa.',
+    autoreOpera: 'Pittore manierista di Anversa', stile: 'Manierismo',
+    immagine: img('2017-03%20Bologna%20Mattes%20Pana%20%28178%29.JPG'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Una regina davanti a un re.' },
+      { durata: '15s', livello: 'elementare', testo: 'La regina Ester si presenta al re Assuero senza essere chiamata, e per questo rischia la vita: lo fa per salvare il suo popolo. L\'opera ha anche un secondo soggetto, Adamo ed Eva.' },
+      { durata: '1min', livello: 'medio', testo: 'Il pittore non ha un nome: e\' uno dei cosiddetti manieristi di Anversa, artisti attivi in quella citta\' nei primi decenni del Cinquecento, che si riconoscono dalle figure allungate, dalle vesti sontuose e dalle architetture fantastiche. La scena principale viene dalla Bibbia: la regina Ester si presenta al re persiano Assuero senza essere stata convocata, cosa che poteva costarle la vita, per chiedergli di salvare il suo popolo. L\'opera ha anche un secondo soggetto, Adamo ed Eva. Il nome del gruppo inganna: con il Manierismo italiano questi pittori non hanno niente a che fare.' }
+    ]
+  },
+  {
+    operaId: 'Q123685682', autore: 'autore1',
+    titolo: 'L\'Olimpo',
+    descrizione: 'Giuseppe Maria Crespi, 1700 circa. Affresco sulla volta della Sala dell\'Olimpo.',
+    autoreOpera: 'Giuseppe Maria Crespi', stile: 'Barocco',
+    immagine: img('2017-03%20Bologna%20Mattes%20Pana%20%28188%29.JPG'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Il cielo degli dei, pieno di colori.' },
+      { durata: '15s', livello: 'elementare', testo: 'Qui non ci sono colonne dipinte: il soffitto si apre su un paesaggio con il mare e un cielo infuocato. Ci sono tutti gli dei dell\'Olimpo, e Venere tiene in grembo un cigno: e\' il cigno dei Pepoli.' },
+      { durata: '1min', livello: 'medio', testo: 'Nello stesso periodo della Sala delle Stagioni, Crespi affresca anche questa volta, e qui si stacca del tutto dalla tradizione bolognese: niente piu\' architettura dipinta, il soffitto diventa un\'unica grande apertura su un paesaggio di bosco e di mare, in toni grigio-azzurri, sotto un cielo che si accende. In alto passa il carro del Sole, poi Mercurio in volo, al centro Giove e Giunone. Marte si toglie l\'elmo, Minerva e\' in armatura, Amore porta una fiaccola accesa, e Venere tiene in grembo il cigno araldico dei Pepoli. Visti i temi, si pensa che fosse una camera nuziale.' },
+      { durata: '4min', livello: 'specialistico', testo: 'Con questa volta Crespi porta a compimento l\'allontanamento dalla quadratura, il genere che nella Bologna del Seicento aveva servito le esigenze celebrative delle famiglie aristocratiche combinando illusionismo architettonico e trionfi sacri o mitologici. L\'architettura prospettica scompare, e il soffitto e\' occupato da un\'apertura paesaggistica che sale dall\'imposta della volta. Nella fascia sopra il cornicione si leggono Nettuno e Anfitrite sul carro, Diana con le ninfe e i cani dopo la caccia, Plutone che rapisce Proserpina. A destra le Parche, Cloto, Lachesi e Atropo: tradizionalmente vecchie e deformi, qui sono floride fanciulle, e accanto a loro un bambino soffia bolle di sapone. Il senso e\' esplicito: le favole mitologiche, come la gloria terrena, sono belle e inconsistenti, e la vita e\' appesa al filo che Atropo, con sguardo beffardo, e\' pronta a recidere.' }
+    ]
+  },
+  {
+    operaId: 'Q131472696', autore: 'autore2',
+    titolo: 'Lucrezia',
+    descrizione: 'Bartolomeo Passerotti, XVI secolo.',
+    autoreOpera: 'Bartolomeo Passerotti', stile: 'Manierismo',
+    immagine: img('Bartolomeo%20passerotti%2C%20lucrezia%2002.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Una donna romana di tanto tempo fa.' },
+      { durata: '15s', livello: 'elementare', testo: 'Lucrezia e\' una donna dell\'antica Roma. Dopo una grave offesa ricevuta dal figlio del re sceglie di morire, e il suo gesto fa ribellare la citta\': cosi\', racconta la leggenda, i re vengono cacciati da Roma.' },
+      { durata: '1min', livello: 'medio', testo: 'Bartolomeo Passerotti e\' uno dei pittori piu\' richiesti della Bologna del Cinquecento, prima che arrivassero i Carracci: famoso per i ritratti e per le scene di vita quotidiana, come i suoi banchi di macellai e di pescivendoli. Qui affronta un soggetto classico. Secondo lo storico Tito Livio, Lucrezia, nobildonna romana, viene violentata da Sesto Tarquinio, figlio del re; racconta tutto al padre e al marito e si toglie la vita. Lo sdegno che ne segue porta alla cacciata dei re e alla nascita della Repubblica romana. Per secoli Lucrezia e\' stata dipinta come modello di virtu\', ed e\' cosi\' che la vedevano i collezionisti del tempo.' }
+    ]
+  },
+  {
+    operaId: 'Q114073475', autore: 'autore1',
+    titolo: 'Abramo visitato dagli angeli',
+    descrizione: 'Ludovico Carracci, 1610 circa.',
+    autoreOpera: 'Ludovico Carracci', stile: 'Barocco',
+    immagine: img('Carracci%2C%20Lodovico%E2%80%94Abraham%20And%20The%20Three%20Angels%E2%80%94Q114073475.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Tre angeli vengono a trovare un vecchio.' },
+      { durata: '15s', livello: 'elementare', testo: 'Abramo accoglie tre visitatori sconosciuti e offre loro da mangiare. Sono angeli, e portano una notizia incredibile: sua moglie Sara, anche se e\' anziana, avra\' un figlio.' },
+      { durata: '1min', livello: 'medio', testo: 'Il racconto e\' nel libro della Genesi. Presso le querce di Mamre Abramo vede arrivare tre sconosciuti, corre loro incontro e li accoglie con tutti gli onori. Sono messaggeri di Dio, e annunciano che Sara, sua moglie ormai anziana, avra\' un figlio: sara\' Isacco. Ludovico era il piu\' anziano dei tre Carracci, e con i cugini Annibale e Agostino aveva fondato a Bologna l\'Accademia degli Incamminati, la scuola che riporto\' la pittura allo studio del vero dopo le raffinatezze del tardo Manierismo.' }
+    ]
+  },
+  {
+    operaId: 'Q131449654', autore: 'autore2',
+    titolo: 'Alessandro taglia il nodo gordiano',
+    descrizione: 'Donato Creti, con le quadrature di Marc\'Antonio Chiarini, 1710. Affresco sulla volta della Sala di Alessandro.',
+    autoreOpera: 'Donato Creti', stile: 'Barocco',
+    immagine: img('Creti%2C%20Donato%20%E2%80%94%20Alessandro%20taglia%20il%20nodo%20gordiano.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Un re taglia una corda con la spada.' },
+      { durata: '15s', livello: 'elementare', testo: 'C\'era un nodo che nessuno riusciva a sciogliere, e chi ci fosse riuscito avrebbe conquistato tutta l\'Asia. Alessandro Magno non perde tempo: lo taglia con un colpo di spada. Guarda il suo mantello rosso.' },
+      { durata: '1min', livello: 'medio', testo: 'Alla morte di Ercole Pepoli, nel 1707, i lavori passano ad Alessandro, che nel 1710 chiama Donato Creti. E come Ercole prima di lui sceglie un eroe col proprio nome: Alessandro Magno. Durante la guerra contro il re persiano Dario, il condottiero entra a Gordio, dove e\' conservato il carro degli antenati di re Mida, legato con un nodo che nessuno riesce a sciogliere. Una profezia dice che chi lo scioglie conquistera\' l\'Asia. Alessandro non ci prova nemmeno: lo taglia con la spada. Creti lo dipinge al centro, col mantello rosso, un attimo prima del colpo.' },
+      { durata: '4min', livello: 'specialistico', testo: 'Con la Sala di Alessandro, dopo il naturalismo di Crespi, torna l\'ordine. Riappare la quadratura, affidata a Marc\'Antonio Chiarini, che con una vertiginosa successione di spazi illusori amplia a dismisura un soffitto in realta\' non grande e diventa la vera protagonista della decorazione. Al centro dello sfondato Creti colloca il condottiero eretto davanti al carro, sormontato da una statua di Giove, nel momento che precede il colpo; il rosso vivo del mantello isola la figura. Nei due medaglioni dorati alla base della volta sono raffigurati Alessandro con il maestro Aristotele e la vittoria su Dario a Isso. Il classicismo di Creti, fatto di fermezza costruttiva e di un disegno impeccabile, si contrappone alla vitalita\' degli affreschi di Crespi, e chiude la sequenza con cui tre Pepoli, uno dopo l\'altro, hanno scritto la storia della famiglia sulle volte del palazzo.' }
+    ]
+  },
+  {
+    operaId: 'Q123685671', autore: 'autore1',
+    titolo: 'Abramo sacrifica Isacco',
+    descrizione: 'Mattia Preti, intorno al 1652.',
+    autoreOpera: 'Mattia Preti', stile: 'Barocco',
+    immagine: img('2017-03%20Bologna%20Mattes%20Pana%20%28197%29.JPG'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Un angelo ferma la mano di un padre.' },
+      { durata: '15s', livello: 'elementare', testo: 'Dio mette alla prova Abramo chiedendogli di sacrificare il figlio Isacco. All\'ultimo istante arriva un angelo e gli ferma la mano. Guarda come la luce illumina solo alcune parti, e il resto resta al buio.' },
+      { durata: '1min', livello: 'medio', testo: 'E\' uno degli episodi piu\' drammatici della Genesi. Dio mette alla prova Abramo chiedendogli di sacrificare il figlio Isacco; Abramo obbedisce, ma quando alza il coltello un angelo lo ferma, e al posto del ragazzo viene sacrificato un montone. Mattia Preti, calabrese, detto il Cavalier Calabrese, e\' uno dei pittori che piu\' hanno raccolto l\'eredita\' di Caravaggio: figure a grandezza naturale, luce violenta che le strappa al buio, gesti colti nell\'istante decisivo. Lavorera\' poi a Napoli e a Malta, per i Cavalieri dell\'Ordine.' }
+    ]
+  },
+
+  // Secondi item sulle stesse opere: un altro autore, un altro taglio
+  {
+    chiave: 'salone-stemma', operaId: 'Q131543603', autore: 'autore2',
+    titolo: 'Lo scacchiere dei Pepoli',
+    descrizione: 'Salone d\'onore: lo stemma alla base della volta e il pavimento.',
+    autoreOpera: 'Domenico Maria Canuti', stile: 'Barocco',
+    immagine: img('Palazzo%20Pepoli%20Campogrande%20-%20il%20soffitto%20del%20Salone%20d%27onore.jpg'),
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Il pavimento e\' a scacchi, come lo stemma.' },
+      { durata: '15s', livello: 'elementare', testo: 'Guarda il pavimento: e\' a scacchi bianchi e neri, come lo stemma dei Pepoli dipinto in alto. Viene dalla scacchiera che usavano i cambiavalute per fare i conti: e\' da li\' che la famiglia era partita.' },
+      { durata: '1min', livello: 'medio', testo: 'Alla base della volta c\'e\' lo stemma dei Pepoli, uno scaccato bianco e nero. Lo stesso disegno torna nel pavimento del salone, e non e\' un caso: allude alla scacchiera, lo strumento di lavoro dei cambiavalute, il mestiere da cui era cominciata la ricchezza della famiglia. Accanto allo stemma ci sono le insegne delle mogli dei Pepoli, e sopra il cigno, l\'altro simbolo della casata, che ritroverai in tutte le sale del piano nobile. Guarda anche le corone sopra i cigni: sono di metallo, non dipinte, e ricordano il titolo di conte ottenuto dal ramo di Odoardo. Il vero e il dipinto si mescolano apposta.' }
+    ]
+  },
+  {
+    chiave: 'olimpo-colori', operaId: 'Q123685682', autore: 'autore2',
+    titolo: 'Il bianco e il nero nell\'Olimpo',
+    descrizione: 'Sala dell\'Olimpo: i colori della casata dentro il mito.',
+    autoreOpera: 'Giuseppe Maria Crespi', stile: 'Barocco',
+    immagine: img('2017-03%20Bologna%20Mattes%20Pana%20%28188%29.JPG'),
+    testi: [
+      { durata: '15s', livello: 'elementare', testo: 'Cerca i colori dei Pepoli in questo cielo: la conchiglia che viene offerta a Giove e\' a scacchi bianchi e neri, come lo stemma. E i cavalli di Nettuno? Uno bianco e uno nero.' },
+      { durata: '1min', livello: 'medio', testo: 'Lo scaccato bianco e nero dello stemma, quello che hai visto nel Salone d\'onore, qui entra nel mito. Sotto Giove e Giunone una coppia di divinita\' marine, forse Teti e Oceano, porge al re degli dei una conchiglia scaccata. Venere tiene in grembo il cigno, l\'altro simbolo della famiglia. E se guardi la fascia sopra il cornicione, i cavalli del carro di Nettuno sono uno bianco e uno nero, e bianchi e neri sono anche i cani di Diana: in un palazzo dove quei due colori tornano dappertutto, e\' difficile che sia un caso.' }
+    ]
+  },
+
+  // Approfondimenti: non sono oggetti esposti, quindi non stanno sulla mappa
+  {
+    chiave: 'casato-pepoli', operaId: 'Q2268224', tipo: 'approfondimento', autore: 'autore1',
+    titolo: 'Il casato dei Pepoli',
+    descrizione: 'La famiglia che ha costruito e affrescato il palazzo.',
+    stile: 'Barocco',
+    licenza: 'CC-BY-SA', prezzo: 0,
+    immagine: null,
+    testi: [
+      { durata: '15s', livello: 'elementare', testo: 'I Pepoli sono una famiglia bolognese che si arricchi\' facendo i cambiavalute. Nel Trecento uno di loro, Taddeo, divento\' signore di Bologna. I loro simboli sono lo scaccato bianco e nero e il cigno: li troverai in ogni sala.' },
+      { durata: '1min', livello: 'medio', testo: 'La ricchezza dei Pepoli nasce dal cambio del denaro: lo scaccato bianco e nero dello stemma ricorda la scacchiera su cui i cambiavalute facevano i conti. Nel 1337 Taddeo Pepoli si fa signore di Bologna e la governa per dieci anni. Nei secoli successivi, con la citta\' sotto il governo del papa, la famiglia resta fra le piu\' potenti e siede nel Senato cittadino. Nel Seicento un ramo della famiglia costruisce questo palazzo, e tre suoi esponenti, Odoardo, Ercole e Alessandro, lo fanno affrescare uno dopo l\'altro. Scelgono eroi che portano i nomi di casa: Ercole, come il padre di Odoardo e il nipote, e Alessandro Magno, come Alessandro.' }
+    ]
+  },
+  {
+    chiave: 'quadratura', operaId: 'Q2121876', tipo: 'approfondimento', autore: 'autore2',
+    titolo: 'La quadratura: architetture dipinte',
+    descrizione: 'Il genere pittorico delle volte di questo palazzo.',
+    stile: 'Barocco',
+    licenza: 'CC-BY-SA', prezzo: 0,
+    immagine: null,
+    testi: [
+      { durata: '3s', livello: 'infantile', testo: 'Colonne dipinte che sembrano vere.' },
+      { durata: '15s', livello: 'elementare', testo: 'Quadratura vuol dire dipingere architetture finte: colonne, archi e cornicioni che sembrano veri e fanno sembrare il soffitto piu\' alto. Di solito lo facevano due pittori insieme, uno per le architetture e uno per le figure.' },
+      { durata: '1min', livello: 'medio', testo: 'La quadratura e\' la pittura di architetture illusorie: cornicioni, balaustre, colonne e archi dipinti in prospettiva che prolungano quelli veri, fino a far credere che la stanza si apra sul cielo. A Bologna nel Seicento diventa una specialita\' al servizio delle famiglie nobili che volevano celebrarsi, e il lavoro si divide in due: il quadraturista costruisce l\'architettura, il figurista dipinge le storie. In questo palazzo la vedi in tutte le sue fasi: piena nel Salone d\'onore, con Canuti e il Mengazzino; ridotta a un parapetto nella Sala delle Stagioni e sparita del tutto nell\'Olimpo, con Crespi; di nuovo vertiginosa nella Sala di Alessandro, con Creti e Chiarini.' }
+    ]
+  }
+];
+
+// Due visite: il giro completo delle sale, e uno breve solo sulle volte.
+const VISITE_PEPOLI = [
+  {
+    nome: 'Palazzo Pepoli, sala per sala',
+    autore: 'autore1',
+    pubblica: true,
+    prezzo: 0,
+    infoLogistiche: 'Ingresso da via Castiglione. Le sale sono al piano nobile e si raggiungono dallo scalone. Il percorso segue le cinque sale nell\'ordine del museo e dura circa un\'ora.',
+    tappe: [
+      { opera: 'casato-pepoli', indicazione: 'Nell\'atrio, prima di salire: chi erano i Pepoli.' },
+      { opera: 'Q123685640', indicazione: 'Sullo scalone: i due ovali dipinti.' },
+      { opera: 'Q131543603', indicazione: 'In cima allo scalone gira a destra ed entra nel Salone d\'onore. Alza la testa.' },
+      { opera: 'salone-stemma', indicazione: 'Resta nel salone e guarda la base della volta, poi il pavimento.', opzionale: true },
+      { opera: 'Q131628822', indicazione: 'Passa nella sala accanto al salone, la Sala di Felsina: la scena e\' sulla volta.' },
+      { opera: 'Q131628823', indicazione: 'Prosegui nella Sala delle Stagioni: guarda prima i bordi del soffitto, poi il centro.' },
+      { opera: 'Q123685655', indicazione: 'Stessa sala, sulle pareti.' },
+      { opera: 'Q123685682', indicazione: 'Entra nella Sala dell\'Olimpo: tutto il soffitto e\' un unico paesaggio.' },
+      { opera: 'Q114073475', indicazione: 'Stessa sala, sulle pareti.' },
+      { opera: 'Q131472696', indicazione: 'Sempre nella Sala dell\'Olimpo.', opzionale: true },
+      { opera: 'Q131449654', indicazione: 'Ultima sala, la Sala di Alessandro: il condottiero e\' al centro della volta.' },
+      { opera: 'Q123685671', indicazione: 'Stessa sala, sulle pareti. Da qui si torna allo scalone.' }
+    ]
+  },
+  {
+    nome: 'Le volte dei Pepoli',
+    autore: 'autore2',
+    pubblica: true,
+    prezzo: 3,
+    infoLogistiche: 'Un percorso breve, tutto col naso all\'insu\': le cinque volte affrescate, da Canuti a Creti. Circa mezz\'ora.',
+    tappe: [
+      { opera: 'quadratura', indicazione: 'Nell\'atrio, prima di salire: che cos\'e\' la quadratura.' },
+      { opera: 'Q131543603', indicazione: 'Sali lo scalone e gira a destra, nel Salone d\'onore.' },
+      { opera: 'Q131628822', indicazione: 'Nella sala accanto, la Sala di Felsina.' },
+      { opera: 'Q131628823', indicazione: 'Prosegui nella Sala delle Stagioni.' },
+      { opera: 'Q123685682', indicazione: 'Poi la Sala dell\'Olimpo.' },
+      { opera: 'olimpo-colori', indicazione: 'Resta sotto la stessa volta e cerca il bianco e il nero.', opzionale: true },
+      { opera: 'Q131449654', indicazione: 'Ultima, la Sala di Alessandro.' }
+    ]
+  }
+];
+
+// I musei del seed, ciascuno con le sue opere, le sue visite e il suo file di configurazione.
+const MUSEI = [
+  { nome: 'Pinacoteca Nazionale di Bologna', citta: 'Bologna', configFile: 'pinacoteca-bologna.json', opere: OPERE, visite: VISITE },
+  { nome: 'Palazzo Pepoli Campogrande', citta: 'Bologna', configFile: 'palazzo-pepoli.json', opere: OPERE_PEPOLI, visite: VISITE_PEPOLI }
+];
+
 // Svuota il database e lo riempie. Non apre e non chiude la connessione: usa quella che
 // trova, cosi' la puo' chiamare anche il server acceso, che una connessione ce l'ha gia' e
 // non deve perderla (vedi routes/admin.js).
@@ -391,56 +624,55 @@ async function popola() {
   }
   console.log('Creati 4 utenti (password 12345678).');
 
-  const museo = await new Museo({
-    nome: 'Pinacoteca Nazionale di Bologna',
-    citta: 'Bologna',
-    configFile: 'pinacoteca-bologna.json'
-  }).save();
-
-  // gli id assegnati da Mongo: servono a montare le visite. La chiave e' il codice
-  // dell'opera, tranne dove due item parlano della stessa opera e serve distinguerli
-  const idPerItem = {};
-  for (const o of OPERE) {
-    const item = await new Item({
-      operaId: o.operaId,
-      tipo: o.tipo || 'opera',
-      museoId: museo._id,
-      titolo: o.titolo,
-      descrizione: o.descrizione,
-      autoreOpera: o.autoreOpera,
-      stile: o.stile,
-      immagine: o.immagine,
-      testi: o.testi,
-      autoreId: utenti[o.autore]._id,
-      licenza: o.licenza || 'CC-BY-SA',
-      prezzo: o.prezzo || 0
-    }).save();
-    idPerItem[o.chiave || o.operaId] = item._id;
-  }
-  console.log(`Creati ${OPERE.length} item.`);
-
   const visiteCreate = [];
-  for (const v of VISITE) {
-    const visita = await new Visita({
-      nome: v.nome,
-      museoId: museo._id,
-      autoreId: utenti[v.autore]._id,
-      items: v.tappe.map((t, i) => ({
-        itemId: idPerItem[t.opera],
-        ordine: i + 1,
-        opzionale: Boolean(t.opzionale),
-        indicazioneLogistica: t.indicazione
-      })),
-      infoLogistiche: v.infoLogistiche,
-      pubblica: v.pubblica,
-      prezzo: v.prezzo
-    }).save();
-    visiteCreate.push(visita);
-  }
-  console.log(`Create ${VISITE.length} visite.`);
+  for (const m of MUSEI) {
+    const museo = await new Museo({ nome: m.nome, citta: m.citta, configFile: m.configFile }).save();
 
-  // visitatore1 ha gia' comprato le due visite pubbliche, visitatore2 non ha niente:
-  // cosi' nel Navigator si vedono sia la lista piena sia il messaggio "non hai ancora sbloccato".
+    // gli id assegnati da Mongo: servono a montare le visite. La chiave e' il codice
+    // dell'opera, tranne dove due item parlano della stessa opera e serve distinguerli.
+    // Vale dentro un museo solo, per questo si riparte da capo a ogni museo.
+    const idPerItem = {};
+    for (const o of m.opere) {
+      const item = await new Item({
+        operaId: o.operaId,
+        tipo: o.tipo || 'opera',
+        museoId: museo._id,
+        titolo: o.titolo,
+        descrizione: o.descrizione,
+        autoreOpera: o.autoreOpera,
+        stile: o.stile,
+        immagine: o.immagine,
+        testi: o.testi,
+        autoreId: utenti[o.autore]._id,
+        licenza: o.licenza || 'CC-BY-SA',
+        prezzo: o.prezzo || 0
+      }).save();
+      idPerItem[o.chiave || o.operaId] = item._id;
+    }
+
+    for (const v of m.visite) {
+      const visita = await new Visita({
+        nome: v.nome,
+        museoId: museo._id,
+        autoreId: utenti[v.autore]._id,
+        items: v.tappe.map((t, i) => ({
+          itemId: idPerItem[t.opera],
+          ordine: i + 1,
+          opzionale: Boolean(t.opzionale),
+          indicazioneLogistica: t.indicazione
+        })),
+        infoLogistiche: v.infoLogistiche,
+        pubblica: v.pubblica,
+        prezzo: v.prezzo
+      }).save();
+      visiteCreate.push(visita);
+    }
+    console.log(`${m.nome}: ${m.opere.length} item, ${m.visite.length} visite.`);
+  }
+
+  // visitatore1 ha gia' comprato le visite pubbliche di tutti e due i musei, visitatore2 non
+  // ha niente: cosi' nel Navigator si vedono sia la lista piena sia il messaggio "non hai
+  // ancora sbloccato", e nel percorso su misura la tendina dei musei ha davvero da scegliere.
   utenti.visitatore1.acquisti = visiteCreate.filter(v => v.pubblica).map(v => v._id);
   await utenti.visitatore1.save();
 }

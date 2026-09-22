@@ -197,7 +197,8 @@ errore                 { messaggio }
 ## Utenti del seed
 
 `autore1`, `autore2`, `visitatore1`, `visitatore2`, tutti con password `12345678`.
-`visitatore1` ha già acquistato le due visite pubbliche, `visitatore2` no.
+`visitatore1` ha già acquistato le visite pubbliche dei due musei, la Pinacoteca e Palazzo Pepoli
+Campogrande; `visitatore2` non ha niente.
 
 ## Seed sul server
 

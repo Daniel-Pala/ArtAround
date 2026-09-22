@@ -54,7 +54,7 @@ Dopo `node seed.js`, tutti con password `12345678`:
 | utente | ruolo |
 |---|---|
 | `autore1`, `autore2` | curatori: scrivono item e compongono visite |
-| `visitatore1` | ha già comprato le due visite pubbliche |
+| `visitatore1` | ha già comprato le visite pubbliche di tutti e due i musei |
 | `visitatore2` | non ha ancora comprato niente |
 
 ## Documentazione
