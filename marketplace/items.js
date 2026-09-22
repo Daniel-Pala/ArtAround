@@ -3,8 +3,8 @@
 // dashboard: con qualche centinaio di contenuti una finestrella non si sfoglia, e
 // la specifica chiede che sia facile "analizzarli, sceglierli, aggiungerli,
 // scartarli".
-// L'elenco mostra gli item di TUTTI gli autori del museo, perche' e' li' che si
-// vede cosa e' gia' stato scritto su un'opera e a che prezzo; la matita e il
+// L'elenco mostra gli item di TUTTI gli autori del museo, perché è lì che si
+// vede cosa è già stato scritto su un'opera e a che prezzo; la matita e il
 // cestino compaiono solo sui propri.
 
 richiediLogin();
@@ -104,7 +104,7 @@ function svuotaForm() {
     renderLista();
 }
 
-// stesso form della creazione, con i campi riempiti con quello che c'e' gia' nel database
+// stesso form della creazione, con i campi riempiti con quello che c'è già nel database
 function modificaItem(itemId) {
     const item = items.find(i => i._id === itemId);
     itemInModifica = item._id;
@@ -139,7 +139,7 @@ function mostraAnteprima() {
 }
 
 async function eliminaItem(itemId) {
-    if (!confirm("Eliminare questo item? Sparira' anche dai percorsi che lo contengono.")) return;
+    if (!confirm("Eliminare questo item? Sparirà anche dai percorsi che lo contengono.")) return;
 
     const risposta = await fetchAuth(`${API_URL}/items/${itemId}`, { method: 'DELETE' });
     if (risposta.ok) {
@@ -153,9 +153,9 @@ async function eliminaItem(itemId) {
 const NOMI_LINGUA = { it: 'italiano', en: 'inglese', fr: 'francese', es: 'spagnolo', de: 'tedesco' };
 
 // Aggiunge una riga "testo" (durata + livello + contenuto) all'editor del modal item.
-// In modifica riceve il testo gia' salvato e lo rimette nei tre campi.
+// In modifica riceve il testo già salvato e lo rimette nei tre campi.
 // I testi che ha scritto il modello portano il suo nome: il curatore deve sapere da
-// dove viene quello che sta pubblicando. Al visitatore invece non si dice, perche' la
+// dove viene quello che sta pubblicando. Al visitatore invece non si dice, perché la
 // specifica chiede che i contenuti generati non siano distinguibili dagli altri.
 // La lingua non ha un campo suo: qui non si sceglie, la chiede il Player quando gli
 // serve. Ma va tenuta da parte e va scritta sopra alla riga, se no la stessa descrizione
@@ -222,8 +222,8 @@ function setupFormItem() {
                 // un campo a schermo va riportato a mano o si perde: la lingua tornerebbe
                 // al suo default ('it') e un testo francese risulterebbe italiano.
                 lingua: riga.dataset.lingua,
-                // stessa storia per la provenienza. Se pero' il curatore ha riscritto il
-                // testo, quel testo e' suo e la provenienza cade apposta.
+                // stessa storia per la provenienza. Se però il curatore ha riscritto il
+                // testo, quel testo è suo e la provenienza cade apposta.
                 generatoDa: testo === riga.dataset.testoOriginale ? riga.dataset.generatoDa : ''
             };
         }).filter(t => t.testo);
@@ -258,7 +258,7 @@ function setupFormItem() {
             );
 
             if (response.ok) {
-                // l'elenco a fianco deve mostrare subito quello che si e' appena salvato
+                // l'elenco a fianco deve mostrare subito quello che si è appena salvato
                 await caricaItems();
                 svuotaForm();
             } else {

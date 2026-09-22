@@ -7,7 +7,7 @@ const { chiedi } = require('../ai')
 const { richiediAutenticazione } = require('../middleware/autorizzazione')
 
 // Quanto deve venire lungo il testo: ad alta voce si leggono circa due parole e mezzo al
-// secondo. Accanto al numero di parole ci va la forma, perche' col solo numero il modello
+// secondo. Accanto al numero di parole ci va la forma, perché col solo numero il modello
 // tira via e da un testo da quattro minuti tira fuori un riassunto invece di una frase.
 const lunghezze = {
   '3s': { parole: 8, forma: 'una frase sola e corta' },
@@ -19,7 +19,7 @@ const lunghezze = {
 // Le lingue in cui sappiamo scrivere: il nome per esteso finisce dentro al prompt.
 const lingue = { it: 'italiano', en: 'inglese', fr: 'francese', es: 'spagnolo', de: 'tedesco' }
 
-// Quanto tempo ha il visitatore e con chi e'. Sono tendine, non caselle di testo: il
+// Quanto tempo ha il visitatore e con chi è. Sono tendine, non caselle di testo: il
 // prompt lo compone il backend, l'utente sceglie e basta.
 const tempi = { '30': 'mezz\'ora', '60': "un'ora", '120': 'due ore' }
 const compagnie = {
@@ -38,17 +38,16 @@ const destinatari = {
 }
 
 // Scrive la combinazione di livello, durata e lingua che manca e la salva dentro l'item,
-// cosi' la volta dopo c'e' gia' e non si dipende dall'API viva.
-// La chiamano in due: il Player, da solo, quando il visitatore sceglie una combinazione che
-// nessuno ha ancora scritto (per lui non c'e' nessun bottone e nessuna casella di testo, il
-// testo compare e basta), e il marketplace, dove invece e' il curatore a chiederla per
-// un'opera che ha appena messo in catalogo.
+// così la volta dopo c'è già e non si dipende dall'API viva.
+// La chiama solo il Player, da solo, quando il visitatore sceglie una combinazione che
+// nessuno ha ancora scritto: per lui non c'è nessun bottone e nessuna casella di testo,
+// il testo compare e basta.
 router.post('/testo', richiediAutenticazione, async (req, res) => {
   try {
     const { itemId, livello, durata } = req.body
     const lingua = req.body.lingua || 'it'
     // i valori arrivano dal client e finiscono in un prompt: passano solo quelli
-    // che il model conosce gia'
+    // che il model conosce già
     if (!lunghezze[durata] || !destinatari[livello] || !lingue[lingua]) {
       return res.status(400).json({ message: 'Livello, durata o lingua non previsti' })
     }
@@ -59,34 +58,34 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     // stessi permessi del dettaglio della visita: i testi sono contenuto a pagamento,
     // e senza questo controllo basterebbe un id per farseli scrivere tutti
     const utente = await Utente.findById(req.user.userId)
-    if (!utente) return res.status(401).json({ message: 'Sessione non piu\' valida' })
+    if (!utente) return res.status(401).json({ message: 'Sessione non più valida' })
     const suo = String(item.autoreId) === req.user.userId
     const acquistato = await Visita.exists({ 'items.itemId': item._id, _id: { $in: utente.acquisti } })
     if (!suo && !acquistato) {
-      return res.status(403).json({ message: 'Questo contenuto non e\' tuo' })
+      return res.status(403).json({ message: 'Questo contenuto non è tuo' })
     }
 
-    // se la combinazione nel frattempo c'e' gia' ci fermiamo qui: rigenerarla
+    // se la combinazione nel frattempo c'è già ci fermiamo qui: rigenerarla
     // costerebbe una chiamata e lascerebbe due testi gemelli nello stesso item
     if (item.testi.some(t => t.livello === livello && t.durata === durata && (t.lingua || 'it') === lingua)) {
       return res.json(item)
     }
 
-    // Il materiale di partenza e' sempre quello che ha scritto il curatore, cosi' la LLM
-    // riscrive e non inventa: non puo' attribuire all'opera fatti che nessuno le ha dato.
+    // Il materiale di partenza è sempre quello che ha scritto il curatore, così la LLM
+    // riscrive e non inventa: non può attribuire all'opera fatti che nessuno le ha dato.
     // Per una lingua straniera parto dal testo italiano dello stesso livello e durata, se
-    // c'e', perche' allora e' una traduzione e basta; altrimenti dal piu' lungo che ho.
+    // c'è, perché allora è una traduzione e basta; altrimenti dal più lungo che ho.
     const italiani = item.testi.filter(t => (t.lingua || 'it') === 'it')
     const fonte = italiani.find(t => t.livello === livello && t.durata === durata)
       || [...italiani].sort((a, b) => b.testo.length - a.testo.length)[0]
 
     // La lunghezza gliela chiediamo in parole dentro al prompt e non come tetto sui
-    // token: il tetto e' un taglio netto, e un testo troncato a meta' frase finirebbe
-    // salvato cosi' com'e'.
+    // token: il tetto è un taglio netto, e un testo troncato a metà frase finirebbe
+    // salvato così com'è.
     const testo = await chiedi([
       {
         role: 'system',
-        content: `Sei il curatore di un museo e scrivi le audioguide. Riscrivi il materiale che ti viene dato senza aggiungere fatti che non ci sono, e taglia quello che non ci sta: la lunghezza richiesta e' un vincolo, non un consiglio, anche quando il materiale di partenza e' molto piu' lungo. Rispondi in ${lingue[lingua]} con il solo testo da ascoltare: niente titolo, niente elenchi, niente asterischi e nessuna virgoletta attorno al testo, dato che quello che scrivi lo legge ad alta voce una voce sintetica. Gli apostrofi dentro le parole servono e vanno scritti.`
+        content: `Sei il curatore di un museo e scrivi le audioguide. Riscrivi il materiale che ti viene dato senza aggiungere fatti che non ci sono, e taglia quello che non ci sta: la lunghezza richiesta è un vincolo, non un consiglio, anche quando il materiale di partenza è molto più lungo. Rispondi in ${lingue[lingua]} con il solo testo da ascoltare: niente titolo, niente elenchi, niente asterischi e nessuna virgoletta attorno al testo, dato che quello che scrivi lo legge ad alta voce una voce sintetica. Gli apostrofi dentro le parole servono e vanno scritti.`
       },
       {
         role: 'user',
@@ -95,9 +94,9 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
           item.autoreOpera && `Autore: ${item.autoreOpera}`,
           item.stile && `Stile: ${item.stile}`,
           item.descrizione && `Didascalia: ${item.descrizione}`,
-          fonte && `Testo gia' scritto: ${fonte.testo}`,
+          fonte && `Testo già scritto: ${fonte.testo}`,
           `Scrivi la descrizione in ${lingue[lingua]} per ${destinatari[livello]}.`,
-          `Lunghezza: ${lunghezze[durata].forma}, circa ${lunghezze[durata].parole} parole, e non di piu'.`
+          `Lunghezza: ${lunghezze[durata].forma}, circa ${lunghezze[durata].parole} parole, e non di più.`
         ].filter(Boolean).join('\n')
       }
     ])
@@ -107,8 +106,8 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     // torna l'item intero: al Player serve rileggerlo per trovarci dentro il testo nuovo
     res.json(item)
   } catch (err) {
-    // qui l'unica cosa che va storta davvero e' la chiamata alla LLM, e il suo
-    // messaggio e' quello da leggere
+    // qui l'unica cosa che va storta davvero è la chiamata alla LLM, e il suo
+    // messaggio è quello da leggere
     res.status(502).json({ message: err.message })
   }
 })
@@ -117,7 +116,7 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
 // Il vocabolario fisso del Player copre le frasi previste ("prossimo", "avanti"); quando
 // non riconosce niente arriva qui la frase intera insieme all'elenco dei comandi
 // disponibili in quel momento. La LLM non risponde alla domanda del visitatore: sceglie
-// una voce da un elenco chiuso, e se quello che risponde non e' in elenco lo buttiamo.
+// una voce da un elenco chiuso, e se quello che risponde non è in elenco lo buttiamo.
 router.post('/comando', richiediAutenticazione, async (req, res) => {
   try {
     const { frase, comandi } = req.body
@@ -143,12 +142,12 @@ router.post('/comando', richiediAutenticazione, async (req, res) => {
   }
 })
 
-// Le opere fra cui si puo' comporre un percorso su misura: quelle delle visite che l'utente
-// ha comprato o scritto, cioe' quelle che gia' puo' leggere. E' questo filtro a impedire che
+// Le opere fra cui si può comporre un percorso su misura: quelle delle visite che l'utente
+// ha comprato o scritto, cioè quelle che già può leggere. È questo filtro a impedire che
 // il percorso su misura diventi il modo di farsi dare gratis i contenuti di tutto il museo.
-// Il museo lo sceglie l'utente nel form, perche' mappa e logistica valgono per un museo solo:
-// un percorso che ne mescolasse due non si potrebbe nemmeno seguire. Sta dentro la query, cosi'
-// chiedere un museo in cui non si ha nessuna visita da' semplicemente zero risultati.
+// Il museo lo sceglie l'utente nel form, perché mappa e logistica valgono per un museo solo:
+// un percorso che ne mescolasse due non si potrebbe nemmeno seguire. Sta dentro la query, così
+// chiedere un museo in cui non si ha nessuna visita dà semplicemente zero risultati.
 // Torna anche le indicazioni logistiche, che ogni tappa si porta dietro dalla visita da cui viene.
 async function opereDisponibili(utente, museoId) {
   const sue = await Visita.find({
@@ -176,7 +175,7 @@ router.get('/interessi', richiediAutenticazione, async (req, res) => {
   try {
     if (!req.query.museoId) return res.status(400).json({ message: 'Manca il museo' })
     const utente = await Utente.findById(req.user.userId)
-    if (!utente) return res.status(401).json({ message: 'Sessione non piu\' valida' })
+    if (!utente) return res.status(401).json({ message: 'Sessione non più valida' })
     const disponibili = await opereDisponibili(utente, req.query.museoId)
     const stili = [...(disponibili?.candidati.values() || [])].map(i => i.stile).filter(Boolean)
     res.json([...new Set(stili)])
@@ -186,9 +185,9 @@ router.get('/interessi', richiediAutenticazione, async (req, res) => {
 })
 
 // Il quarto mestiere della LLM: comporre una visita su misura.
-// Non inventa niente: riceve l'elenco delle tappe fra cui puo' scegliere e risponde con
-// i loro id. Quell'elenco lo costruiamo qui dalle visite che l'utente ha gia' comprato o
-// scritto, e non da quello che manda il client: e' quel filtro a impedire che una visita
+// Non inventa niente: riceve l'elenco delle tappe fra cui può scegliere e risponde con
+// i loro id. Quell'elenco lo costruiamo qui dalle visite che l'utente ha già comprato o
+// scritto, e non da quello che manda il client: è quel filtro a impedire che una visita
 // su misura diventi il modo di leggere gratis i contenuti di tutto il museo.
 router.post('/visita', richiediAutenticazione, async (req, res) => {
   try {
@@ -198,7 +197,7 @@ router.post('/visita', richiediAutenticazione, async (req, res) => {
     }
 
     const utente = await Utente.findById(req.user.userId)
-    if (!utente) return res.status(401).json({ message: 'Sessione non piu\' valida' })
+    if (!utente) return res.status(401).json({ message: 'Sessione non più valida' })
 
     const disponibili = await opereDisponibili(utente, museoId)
     if (!disponibili) {
@@ -217,7 +216,7 @@ router.post('/visita', richiediAutenticazione, async (req, res) => {
     const risposta = await chiedi([
       {
         role: 'system',
-        content: 'Sei chi accoglie i visitatori di un museo e prepara i percorsi. Ti do le opere fra cui puoi scegliere, una per riga, nel formato id | titolo | autore | stile. Scegli quali far vedere e in che ordine. Rispondi con il solo JSON {"nome": "...", "items": ["id", "id"]}: nessun commento, nessun blocco di codice. Gli id devono essere copiati esatti dall\'elenco, il nome e\' un titolo breve in italiano per il percorso.'
+        content: 'Sei chi accoglie i visitatori di un museo e prepara i percorsi. Ti do le opere fra cui puoi scegliere, una per riga, nel formato id | titolo | autore | stile. Scegli quali far vedere e in che ordine. Rispondi con il solo JSON {"nome": "...", "items": ["id", "id"]}: nessun commento, nessun blocco di codice. Gli id devono essere copiati esatti dall\'elenco, il nome è un titolo breve in italiano per il percorso.'
       },
       {
         role: 'user',

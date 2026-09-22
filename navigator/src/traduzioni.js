@@ -1,6 +1,6 @@
-// Le etichette dell'interfaccia nelle lingue che offriamo. E' un file JS e non un JSON
-// perche' un JSON andrebbe letto con una fetch, con il caricamento da aspettare: qui si
-// importa e le etichette sono gia' a disposizione.
+// Le etichette dell'interfaccia nelle lingue che offriamo. È un file JS e non un JSON
+// perché un JSON andrebbe letto con una fetch, con il caricamento da aspettare: qui si
+// importa e le etichette sono già a disposizione.
 // I testi delle opere non stanno qui: quelli li scrive il backend, che li traduce nella
 // lingua scelta e li salva insieme agli altri.
 

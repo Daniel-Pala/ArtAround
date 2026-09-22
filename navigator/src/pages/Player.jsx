@@ -143,9 +143,9 @@ function Player() {
   }, [codiceSessione, nomeStudente]);
 
   // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica.
-  // BASE_URL e' la radice da cui e' servita questa applicazione: '/' mentre si sviluppa,
+  // BASE_URL è la radice da cui è servita questa applicazione: '/' mentre si sviluppa,
   // '/navigator/' una volta compilata. Con un percorso assoluto il file si andrebbe a
-  // cercare sotto la radice del sito, dove c'e' il marketplace, e da li' tornerebbe la
+  // cercare sotto la radice del sito, dove c'è il marketplace, e da lì tornerebbe la
   // sua pagina con dentro dell'HTML: res.ok sarebbe vero e a rompersi sarebbe la json().
   useEffect(() => {
     const file = visita?.museoId?.configFile;
@@ -156,7 +156,7 @@ function Player() {
   }, [visita]);
 
   // le voci del browser arrivano in modo asincrono, e le tengo tutte: quale usare dipende
-  // dalla lingua scelta, che cambia mentre la visita e' in corso
+  // dalla lingua scelta, che cambia mentre la visita è in corso
   useEffect(() => {
     const caricaVoci = () => setVoci(window.speechSynthesis.getVoices());
     caricaVoci();
@@ -178,7 +178,7 @@ function Player() {
   }, []);
 
   // Il QR appeso di fianco all'opera contiene il codice Wikidata (operaId), niente altro.
-  // Se quell'opera e' una tappa di questa visita ci salto sopra; se e' del museo ma non del
+  // Se quell'opera è una tappa di questa visita ci salto sopra; se è del museo ma non del
   // percorso lo dico e basta: gli item si comprano con la visita che li contiene, mostrarli
   // qui vorrebbe dire regalarli.
   const gestisciCodice = async (codice) => {
@@ -209,7 +209,7 @@ function Player() {
 
   // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
   // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
-  // tengo tutte e due le liste. Se un item e' stato cancellato dal marketplace la populate
+  // tengo tutte e due le liste. Se un item è stato cancellato dal marketplace la populate
   // restituisce null e scarto la tappa intera.
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
@@ -224,9 +224,9 @@ function Player() {
 
   // Nessuno scrive tutte e sedici le combinazioni di livello e durata per ogni opera:
   // quella che manca la chiediamo al backend, che la fa scrivere e la salva dentro
-  // l'item. Non c'e' nessun bottone da premere, il testo compare e basta.
-  // Se testi non c'e' proprio vuol dire che la visita non e' nostra e il server ci ha
-  // mandato i soli titoli: li' non manca un testo, manca il permesso.
+  // l'item. Non c'è nessun bottone da premere, il testo compare e basta.
+  // Se testi non c'è proprio vuol dire che la visita non è nostra e il server ci ha
+  // mandato i soli titoli: lì non manca un testo, manca il permesso.
   useEffect(() => {
     if (!itemCorrente?.testi || testoTrovato) return;
     let annullato = false;
@@ -239,7 +239,7 @@ function Player() {
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(aggiornato => {
         if (annullato) return;
-        // rimpiazzo l'item dentro la visita: testoTrovato lo rilegge da li'
+        // rimpiazzo l'item dentro la visita: testoTrovato lo rilegge da lì
         setVisita(v => ({
           ...v,
           items: v.items.map(tappa => (tappa.itemId?._id === aggiornato._id ? { ...tappa, itemId: aggiornato } : tappa))
@@ -247,7 +247,7 @@ function Player() {
       })
       .catch(() => { if (!annullato) setErroreTesto(t.testoNonDisponibile); })
       .finally(() => { if (!annullato) setGenerando(false); });
-    // chi cambia tappa mentre il testo e' in preparazione non deve vederselo arrivare addosso
+    // chi cambia tappa mentre il testo è in preparazione non deve vederselo arrivare addosso
     return () => { annullato = true; };
   }, [itemCorrente?._id, livelloScelto, durataScelta, linguaScelta]);
 
@@ -286,13 +286,13 @@ function Player() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forzaAudioStamp]);
 
-  // Qui finiscono gli hook, e solo qui si puo' uscire: React riconosce useState e useEffect
-  // dall'ordine in cui vengono chiamati, quindi un return piu' in alto ne salterebbe qualcuno
+  // Qui finiscono gli hook, e solo qui si può uscire: React riconosce useState e useEffect
+  // dall'ordine in cui vengono chiamati, quindi un return più in alto ne salterebbe qualcuno
   // e al ridisegno successivo l'ordine non tornerebbe.
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
   if (items.length === 0) return <div className="alert alert-warning m-3 text-center">{t.nessunItem}</div>;
 
-  // risposta a un comando vocale: apre il pannello, cosi' il testo resta anche a schermo,
+  // risposta a un comando vocale: apre il pannello, così il testo resta anche a schermo,
   // e lo pronuncia.
   const rispondi = (testo) => {
     setMostraInfo(true);
@@ -300,7 +300,7 @@ function Player() {
   };
 
   // etichetta, testo, frase pronunciata dal comando vocale, frasi che lo attivano.
-  // righeOpera sta solo fra i comandi vocali: autore e data sono gia' nella didascalia
+  // righeOpera sta solo fra i comandi vocali: autore e data sono già nella didascalia
   // sotto al titolo, ripeterli nel pannello era un doppione.
   const righeOpera = [
     [t.comandi.autore, itemCorrente?.autoreOpera, t.frase.autore(itemCorrente?.autoreOpera), ['autore', 'dipinto']],
@@ -335,7 +335,7 @@ function Player() {
     }
   };
 
-  // il bottone centrale e' un solo tasto, quindi alterna; i comandi vocali invece sono distinti
+  // il bottone centrale è un solo tasto, quindi alterna; i comandi vocali invece sono distinti
   const gestisciAudio = () => {
     if (!parlando) return leggi();
     inPausa ? riprendi() : pausa();
@@ -358,7 +358,7 @@ function Player() {
   };
 
   // "dimmi di piu" e "piu semplice" spostano di un posto sulla scala. Agli estremi si
-  // fermano invece di ricominciare: da "4 minuti" chi chiede piu' dettagli non deve
+  // fermano invece di ricominciare: da "4 minuti" chi chiede più dettagli non deve
   // ritrovarsi con la descrizione da 3 secondi.
   const unPassoSu = (scala, valore, verso) => {
     const posizione = scala.indexOf(valore) + verso;
@@ -369,14 +369,14 @@ function Player() {
   const cambiaLivello = (verso) => setLivelloScelto(l => unPassoSu(LIVELLI, l, verso));
 
   const staLeggendo = parlando && !inPausa;
-  // La rotella sul bottone va mostrata solo se il testo che aspetto non c'e' ancora.
+  // La rotella sul bottone va mostrata solo se il testo che aspetto non c'è ancora.
   // Senza il secondo pezzo restava a girare per sempre: chi cambiava tappa durante una
-  // generazione arrivava su una tappa che il testo ce l'ha gia', l'effetto usciva subito
-  // e non spegneva piu' niente.
+  // generazione arrivava su una tappa che il testo ce l'ha già, l'effetto usciva subito
+  // e non spegneva più niente.
   const staGenerando = generando && !testoTrovato;
 
-  // vocabolario controllato: ogni comando ha piu' frasi accettate e l'azione del bottone corrispondente
-  // Le frasi restano in italiano: sono la scorciatoia per chi visita in italiano, che cosi'
+  // vocabolario controllato: ogni comando ha più frasi accettate e l'azione del bottone corrispondente
+  // Le frasi restano in italiano: sono la scorciatoia per chi visita in italiano, che così
   // viene servito senza rete. In un'altra lingua non combaciano e la frase passa al backend,
   // che la riconduce lo stesso a uno di questi comandi.
   const comandi = [
@@ -394,15 +394,15 @@ function Player() {
     ...(tappaCorrente?.indicazioneLogistica ? [
       { nome: t.comandi.comeCiArrivo, frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
     ] : []),
-    // stessa fonte per bottoni e voce: ogni riga del pannello e' anche un comando vocale
+    // stessa fonte per bottoni e voce: ogni riga del pannello è anche un comando vocale
     ...[...righeOpera, ...righeMuseo].map(([nome, , dettato, frasi]) => ({ nome, frasi, azione: () => rispondi(dettato) })),
   ];
 
   const eseguiComando = async (trascrizione) => {
     // Il riconoscimento vocale scrive l'italiano con gli accenti: "dimmi di piu" arriva
-    // accentato e non combacia con nessuna frase qui sopra, cosi' anche i comandi previsti
+    // accentato e non combacia con nessuna frase qui sopra, così anche i comandi previsti
     // finivano dalla LLM. normalize('NFD') separa la lettera dal suo accento, e la
-    // sostituzione butta via l'accento rimasto da solo. Le frasi dei comandi sono gia'
+    // sostituzione butta via l'accento rimasto da solo. Le frasi dei comandi sono già
     // scritte in questa forma: senza accenti e senza apostrofi.
     const frase = trascrizione.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -445,8 +445,8 @@ function Player() {
   };
 
   // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase.
-  // Su Firefox SpeechRecognition non esiste: il tasto resta al suo posto ma spento, cosi' si
-  // vede che la funzione c'e' senza far credere che sia rotta.
+  // Su Firefox SpeechRecognition non esiste: il tasto resta al suo posto ma spento, così si
+  // vede che la funzione c'è senza far credere che sia rotta.
   const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
@@ -606,7 +606,7 @@ function Player() {
         ) : mostraMappa ? (
           <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: '#F4F1E9' }}>
             <svg viewBox="0 0 100 100" className="flex-grow-1" style={{ width: '100%', minHeight: 0, display: 'block' }}>
-              {/* nel config la piantina e' solo il nome del file: sta nella stessa cartella del config,
+              {/* nel config la piantina è solo il nome del file: sta nella stessa cartella del config,
                   e il percorso si costruisce da BASE_URL come per il config stesso */}
               <image href={`${import.meta.env.BASE_URL}config/${config.mappa}`} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
               {items.map((op, i) => {
@@ -633,7 +633,7 @@ function Player() {
                 );
               })}
             </svg>
-            {/* i tondini portano alla tappa: qui sotto si legge su quale si e' finiti */}
+            {/* i tondini portano alla tappa: qui sotto si legge su quale si è finiti */}
             <p className="text-center small mb-0 px-3 py-2 border-top">
               <span className="text-muted">{t.tappa} {indiceAttuale + 1}</span> · {itemCorrente?.titolo}
             </p>

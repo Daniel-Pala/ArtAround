@@ -8,7 +8,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // il percorso su misura: in che museo, quanto tempo si ha, con chi si e', cosa interessa
+  // il percorso su misura: in che museo, quanto tempo si ha, con chi si è, cosa interessa
   const [mostraMisura, setMostraMisura] = useState(false);
   const [museoMisura, setMuseoMisura] = useState('');
   const [stili, setStili] = useState([]);
@@ -29,7 +29,7 @@ function Dashboard() {
   }, []);
 
   // I musei in cui l'utente ha almeno una visita: il percorso su misura si compone dentro uno
-  // solo, perche' mappa e indicazioni valgono per un museo alla volta. Finche' non ne sceglie
+  // solo, perché mappa e indicazioni valgono per un museo alla volta. Finché non ne sceglie
   // un altro vale il primo.
   const musei = [];
   for (const v of visite) {
@@ -37,8 +37,8 @@ function Dashboard() {
   }
   const museoScelto = museoMisura || musei[0]?._id;
 
-  // Le caselle "cosa ti interessa" sono gli stili delle opere che l'utente puo' gia' leggere
-  // in quel museo: l'elenco lo fa il backend, che e' l'unico a sapere quali visite sono sue.
+  // Le caselle "cosa ti interessa" sono gli stili delle opere che l'utente può già leggere
+  // in quel museo: l'elenco lo fa il backend, che è l'unico a sapere quali visite sono sue.
   useEffect(() => {
     if (!mostraMisura || !museoScelto) return;
     fetchAuth(`/api/ai/interessi?museoId=${museoScelto}`)
@@ -49,7 +49,7 @@ function Dashboard() {
   const cambiaInteresse = (stile) =>
     setInteressi(scelti => scelti.includes(stile) ? scelti.filter(s => s !== stile) : [...scelti, stile]);
 
-  // il percorso nasce dalle opere che l'utente ha gia' sbloccato: e' il backend a metterle
+  // il percorso nasce dalle opere che l'utente ha già sbloccato: è il backend a metterle
   // insieme, qui si mandano solo le risposte del form
   const componiVisita = async () => {
     setComponendo(true);
@@ -76,13 +76,13 @@ function Dashboard() {
             <p className="section-sub mt-2 mb-0">Premi Avvia quando sei al museo.</p>
           </div>
           <div className="d-flex flex-wrap gap-2">
-            {/* senza visite sbloccate non c'e' niente con cui comporre un percorso */}
+            {/* senza visite sbloccate non c'è niente con cui comporre un percorso */}
             {visite.length > 0 && (
               <button className="btn btn-outline-primary btn-sm text-nowrap" onClick={() => setMostraMisura(m => !m)}>
                 Percorso su misura
               </button>
             )}
-            {/* la lezione di un altro non e' fra le proprie visite: si entra col codice, non da una card */}
+            {/* la lezione di un altro non è fra le proprie visite: si entra col codice, non da una card */}
             <button className="btn btn-outline-primary btn-sm text-nowrap" onClick={() => navigate('/studente')}>
               Partecipa a una lezione
             </button>
@@ -94,11 +94,11 @@ function Dashboard() {
             <div className="card-body">
               <h2 className="fs-5 fw-semibold mb-1">Un percorso adatto a te</h2>
               <p className="text-muted small mb-3">
-                Scegliamo noi le tappe fra le opere che hai gia' sbloccato, nel tempo che hai.
+                Scegliamo noi le tappe fra le opere che hai già sbloccato, nel tempo che hai.
               </p>
               <div className="row g-3">
                 {/* cambiando museo cambiano anche gli stili, quindi le spunte di prima non valgono
-                    piu': si azzerano qui, nel momento in cui l'utente cambia museo */}
+                    più: si azzerano qui, nel momento in cui l'utente cambia museo */}
                 <div className="col-sm-4">
                   <label className="form-label small text-muted mb-1" htmlFor="misuraMuseo">In quale museo</label>
                   <select id="misuraMuseo" className="form-select form-select-sm" value={museoScelto} onChange={(e) => { setMuseoMisura(e.target.value); setInteressi([]); }}>
@@ -169,7 +169,7 @@ function Dashboard() {
                     <div className="eyebrow mb-2">{v.museoId?.nome || 'Museo'}</div>
                     <h5 className="card-title mb-2">{v.nome}</h5>
                     <p className="card-text text-muted small flex-grow-1">{v.infoLogistiche || 'Nessuna informazione logistica.'}</p>
-                    {/* niente prezzo: queste visite l'utente le ha gia' sbloccate.
+                    {/* niente prezzo: queste visite l'utente le ha già sbloccate.
                         Il numero di tappe invece serve a capire quanto dura il giro */}
                     <div className="d-flex justify-content-between align-items-end pt-3 border-top">
                       <div className="text-muted small">

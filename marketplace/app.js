@@ -1,6 +1,6 @@
 // app.js — dashboard autore e vetrina visitatore
 
-// il Navigator e' l'altra applicazione, servita dallo stesso server sotto /navigator:
+// il Navigator è l'altra applicazione, servita dallo stesso server sotto /navigator:
 // un percorso relativo funziona ovunque, dal telefono come dal server del dipartimento
 const URL_NAVIGATOR = '/navigator/';
 
@@ -160,7 +160,7 @@ async function caricaMarketplaceVisitatore() {
 
 // L'elenco delle tappe non arriva con la vetrina: la rotta ?pubblica=true tiene gli item
 // come riferimenti, quindi lo chiedo alla rotta della singola visita, che li popola.
-// Il nome lo leggo dalla risposta invece di passarlo nell'onclick: cosi' gli apostrofi
+// Il nome lo leggo dalla risposta invece di passarlo nell'onclick: così gli apostrofi
 // nei titoli non spezzano l'attributo.
 async function mostraTappe(visitaId) {
     const elenco = document.getElementById('elencoTappe');
@@ -185,7 +185,7 @@ async function acquistaVisita(visitaId) {
 
         if (response.ok) {
             // niente avviso: la lista si ridisegna e il bottone blu "Acquista" diventa quello
-            // verde "Avvia", ed e' quello a dire che l'acquisto e' andato
+            // verde "Avvia", ed è quello a dire che l'acquisto è andato
             caricaMarketplaceVisitatore();
         } else {
             const data = await response.json();

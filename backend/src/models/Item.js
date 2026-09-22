@@ -8,21 +8,21 @@ const testoSchema = new mongoose.Schema({
   // valgono come italiano, quindi ovunque si legge (t.lingua || 'it')
   lingua: { type: String, enum: ['it', 'en', 'fr', 'es', 'de'], default: 'it' },
   // il nome del modello che l'ha scritto, vuoto se l'ha scritto una persona.
-  // Sta qui e non su Item perche' lo stesso item puo' avere un testo del curatore
-  // e uno generato: la provenienza e' del singolo testo, non dell'opera.
+  // Sta qui e non su Item perché lo stesso item può avere un testo del curatore
+  // e uno generato: la provenienza è del singolo testo, non dell'opera.
   generatoDa: { type: String }
 });
 
 const itemSchema = new mongoose.Schema({
   operaId: { type: String, required: true },
-  // un item puo' parlare di un oggetto esposto oppure di un contenuto associato
+  // un item può parlare di un oggetto esposto oppure di un contenuto associato
   // (un movimento, uno stile, un artista): questi ultimi non stanno sulla mappa
   tipo: { type: String, enum: ['opera', 'approfondimento'], default: 'opera' },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
   descrizione: { type: String }, // didascalia da cartellino: autore, data, tecnica
-  // chi ha dipinto l'opera e a che movimento appartiene. Sono gia' dentro la didascalia,
-  // ma qui stanno separati perche' i comandi "chi e' l'autore" e "qual e' lo stile"
-  // devono pronunciare solo quelli. Da non confondere con autoreId, che e' chi ha
+  // chi ha dipinto l'opera e a che movimento appartiene. Sono già dentro la didascalia,
+  // ma qui stanno separati perché i comandi "chi è l'autore" e "qual è lo stile"
+  // devono pronunciare solo quelli. Da non confondere con autoreId, che è chi ha
   // scritto l'item.
   autoreOpera: { type: String },
   stile: { type: String },

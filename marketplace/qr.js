@@ -1,12 +1,12 @@
 // qr.js — codici QR delle opere di un museo, da stampare e appendere ai quadri
-// Dentro ogni QR c'e' solo il codice Wikidata dell'opera (es. Q3907499): il QR non
-// e' un codice registrato da nessuna parte, e' il disegno di una stringa, quindi ci
-// mettiamo quella che il progetto usa gia' per identificare le opere.
+// Dentro ogni QR c'è solo il codice Wikidata dell'opera (es. Q3907499): il QR non
+// è un codice registrato da nessuna parte, è il disegno di una stringa, quindi ci
+// mettiamo quella che il progetto usa già per identificare le opere.
 // Il PNG lo genera il backend (GET /api/items/qr/:operaId), qui basta un <img>.
 
 richiediLogin();
 
-let opere = [];   // [operaId, titolo] — un'opera sola anche se ha piu' item
+let opere = [];   // [operaId, titolo] — un'opera sola anche se ha più item
 
 document.addEventListener('DOMContentLoaded', async () => {
     const museoId = new URLSearchParams(window.location.search).get('id');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const items = await (await fetchAuth(`${API_URL}/items?museoId=${museoId}`)).json();
 
-    // Piu' item possono parlare della stessa opera (una descrizione base e un
+    // Più item possono parlare della stessa opera (una descrizione base e un
     // approfondimento hanno lo stesso operaId): di cartellini ne serve uno solo.
     const perOpera = new Map();
     items.forEach(item => {
@@ -49,7 +49,7 @@ function disegna(elenco) {
 }
 
 // Stampa un cartellino solo: nasconde gli altri, apre la stampa e rimette a posto.
-// Dalla finestra di stampa si puo' anche scegliere "Salva come PDF".
+// Dalla finestra di stampa si può anche scegliere "Salva come PDF".
 function stampaUno(operaId) {
     document.body.classList.add('solo-uno');
     document.getElementById(`col-${operaId}`).classList.add('da-stampare');

@@ -5,7 +5,7 @@
 //      possono usare per sapere chi è loggato e fare chiamate autenticate.
 
 // L'API sta sulla stessa origine che serve queste pagine (le serve
-// Express), quindi basta il percorso relativo: cosi' vale su localhost, sull'IP
+// Express), quindi basta il percorso relativo: così vale su localhost, sull'IP
 // di rete quando si prova dal telefono e sul server del dipartimento.
 const API_URL = '/api';
 

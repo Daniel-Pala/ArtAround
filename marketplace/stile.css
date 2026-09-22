@@ -7,7 +7,7 @@
 
 :root {
   /* palette */
-  --bs-body-bg: #FFFFFF;        /* il marketplace e' bianco: si lavora su schermo grande e pieno di dati */
+  --bs-body-bg: #FFFFFF;        /* il marketplace è bianco: si lavora su schermo grande e pieno di dati */
   --bs-surface: #FFFFFF;        /* card, tabelle e pannelli: stesso bianco, li separa il bordo */
   --bs-body-color: #1B1917;     /* inchiostro */
   --bs-border-color: #D6D0C4;
@@ -61,7 +61,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--ink-faint, var(--bs-secondary-color));
 }
 
-/* i tre bottoni di ogni museo: stessa larghezza anche se una scritta e' piu' corta */
+/* i tre bottoni di ogni museo: stessa larghezza anche se una scritta è più corta */
 .azioni-museo .btn { min-width: 92px; }
 
 /* superfici piatte: fogli bianchi sulla carta, bordo sottile al posto delle ombre */

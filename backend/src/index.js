@@ -13,7 +13,7 @@ const app = express()
 const server = http.createServer(app)
 // Nessun CORS da dichiarare: in produzione le due applicazioni le serve questo stesso
 // processo, e in sviluppo il server di Vite gira le richieste qui, quindi per il browser
-// l'origine e' sempre una sola.
+// l'origine è sempre una sola.
 const io = new Server(server)
 
 // Stato globale delle sessioni in RAM
@@ -242,11 +242,11 @@ app.get('/api-status', (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../../marketplace')))
 
-// Il Navigator e' l'altra applicazione. Una volta compilato (npm run build) diventa una
-// cartella di file statici che serviamo qui sotto /navigator: cosi' marketplace, Navigator e
-// API stanno sulla stessa origine e nel codice non c'e' nessun indirizzo scritto a mano.
-// Finche' non e' compilato — cioe' mentre si sviluppa — si usa il server di Vite sulla 5173,
-// e qui ci limitiamo a mandare li' chi arriva per sbaglio.
+// Il Navigator è l'altra applicazione. Una volta compilato (npm run build) diventa una
+// cartella di file statici che serviamo qui sotto /navigator: così marketplace, Navigator e
+// API stanno sulla stessa origine e nel codice non c'è nessun indirizzo scritto a mano.
+// Finché non è compilato — cioè mentre si sviluppa — si usa il server di Vite sulla 5173,
+// e qui ci limitiamo a mandare lì chi arriva per sbaglio.
 const cartellaNavigator = path.join(__dirname, '../../navigator/dist')
 if (fs.existsSync(cartellaNavigator)) {
   app.use('/navigator', express.static(cartellaNavigator))

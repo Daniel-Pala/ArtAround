@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 
 // Una domanda del test finale della lezione sincrona.
-// La forma e' quella che scrive il marketplace in configura.js: quattro opzioni
+// La forma è quella che scrive il marketplace in configura.js: quattro opzioni
 // e l'indice di quella giusta.
 const domandaQuizSchema = new mongoose.Schema({
   quesito: { type: String, required: true },
@@ -21,7 +21,7 @@ const visitaSchema = new mongoose.Schema({
   }],
   infoLogistiche: String,
   pubblica: { type: Boolean, default: false },
-  // un percorso composto su richiesta di un visitatore: e' suo e basta, non e' merce del
+  // un percorso composto su richiesta di un visitatore: è suo e basta, non è merce del
   // negozio, quindi non compare negli elenchi del museo
   suMisura: { type: Boolean, default: false },
   prezzo: { type: Number, default: 0 },

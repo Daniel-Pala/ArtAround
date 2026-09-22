@@ -13,8 +13,8 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
-  // in produzione l'applicazione e' servita sotto /navigator: il percorso di base lo
-  // dichiara Vite, e il router lo legge da li' invece di averlo scritto dentro
+  // in produzione l'applicazione è servita sotto /navigator: il percorso di base lo
+  // dichiara Vite, e il router lo legge da lì invece di averlo scritto dentro
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>

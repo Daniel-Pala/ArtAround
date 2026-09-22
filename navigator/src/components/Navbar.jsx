@@ -4,8 +4,8 @@ import { getUtenteLoggato } from '../auth';
 
 const URL_MARKETPLACE = '/index.html';
 
-// Montata solo dalla Dashboard, che sta dietro ProtectedRoute: qui l'utente c'e' sempre.
-// Durante la visita il Player e' a tutto schermo e non monta la navbar.
+// Montata solo dalla Dashboard, che sta dietro ProtectedRoute: qui l'utente c'è sempre.
+// Durante la visita il Player è a tutto schermo e non monta la navbar.
 function Navbar() {
   const navigate = useNavigate();
   const utente = getUtenteLoggato();
@@ -24,8 +24,8 @@ function Navbar() {
             {/* sul telefono il nome intero manda "Esci" a capo: resta solo ArtAround */}
             ArtAround<span className="d-none d-sm-inline">&nbsp;Navigator</span>
           </Link>
-          {/* il marketplace e' l'altra applicazione, quindi link vero e non rotta React.
-              Sta a sinistra perche' e' un "torna indietro", non un'azione sull'account */}
+          {/* il marketplace è l'altra applicazione, quindi link vero e non rotta React.
+              Sta a sinistra perché è un "torna indietro", non un'azione sull'account */}
           <a className="small text-light text-decoration-none" href={URL_MARKETPLACE}>
             <i className="bi bi-arrow-left me-1"></i>Marketplace
           </a>
