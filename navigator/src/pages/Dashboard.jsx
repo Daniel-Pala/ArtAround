@@ -68,12 +68,14 @@ function Dashboard() {
     <div>
       <Navbar />
       <div className="container mt-4">
-        <div className="section-head mb-4 d-flex justify-content-between align-items-end gap-3">
+        {/* flex-wrap: su un telefono titolo e bottoni non stanno su una riga, e i bottoni vanno
+            sotto invece di schiacciare il titolo una parola per riga */}
+        <div className="section-head mb-4 d-flex flex-wrap justify-content-between align-items-end gap-3">
           <div>
             <h1 className="section-title">Le mie visite</h1>
             <p className="section-sub mt-2 mb-0">Premi Avvia quando sei al museo.</p>
           </div>
-          <div className="d-flex gap-2">
+          <div className="d-flex flex-wrap gap-2">
             {/* senza visite sbloccate non c'e' niente con cui comporre un percorso */}
             {visite.length > 0 && (
               <button className="btn btn-outline-primary btn-sm text-nowrap" onClick={() => setMostraMisura(m => !m)}>
