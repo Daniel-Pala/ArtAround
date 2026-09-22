@@ -1,6 +1,6 @@
 {
   "nome": "Pinacoteca Nazionale di Bologna",
-  "mappa": "/config/pinacoteca-bologna.svg",
+  "mappa": "pinacoteca-bologna.svg",
   "posizioni": {
     "Q3907499":   { "x": 13, "y": 20 },
     "Q27345212":  { "x": 26, "y": 20 },

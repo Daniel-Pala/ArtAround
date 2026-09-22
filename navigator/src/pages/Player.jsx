@@ -587,7 +587,9 @@ function Player() {
         ) : mostraMappa ? (
           <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: '#F4F1E9' }}>
             <svg viewBox="0 0 100 100" className="flex-grow-1" style={{ width: '100%', minHeight: 0, display: 'block' }}>
-              <image href={config.mappa} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
+              {/* nel config la piantina e' solo il nome del file: sta nella stessa cartella del config,
+                  e il percorso si costruisce da BASE_URL come per il config stesso */}
+              <image href={`${import.meta.env.BASE_URL}config/${config.mappa}`} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
               {items.map((op, i) => {
                 const pos = config.posizioni?.[op?.operaId];
                 if (!pos) return null;
