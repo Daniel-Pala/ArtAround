@@ -369,6 +369,11 @@ function Player() {
   const cambiaLivello = (verso) => setLivelloScelto(l => unPassoSu(LIVELLI, l, verso));
 
   const staLeggendo = parlando && !inPausa;
+  // La rotella sul bottone va mostrata solo se il testo che aspetto non c'e' ancora.
+  // Senza il secondo pezzo restava a girare per sempre: chi cambiava tappa durante una
+  // generazione arrivava su una tappa che il testo ce l'ha gia', l'effetto usciva subito
+  // e non spegneva piu' niente.
+  const staGenerando = generando && !testoTrovato;
 
   // vocabolario controllato: ogni comando ha piu' frasi accettate e l'azione del bottone corrispondente
   // Le frasi restano in italiano: sono la scorciatoia per chi visita in italiano, che cosi'
@@ -380,7 +385,7 @@ function Player() {
     { nome: t.comandi.pausa, frasi: ['pausa', 'ferma', 'stop'], azione: pausa },
     { nome: t.comandi.riprendi, frasi: ['riprendi', 'continua'], azione: riprendi },
     { nome: t.comandi.ripeti, frasi: ['ripeti', 'rileggi', 'ancora'], azione: leggi },
-    { nome: t.comandi.leggi, frasi: ['leggi', "cos'e questo", 'cosa e questo', 'ascolta'], azione: leggi },
+    { nome: t.comandi.leggi, frasi: ['leggi', 'cose questo', 'cosa e questo', 'ascolta'], azione: leggi },
     { nome: t.comandi.piuDettagli, frasi: ['dimmi di piu', 'piu lungo', 'piu dettagli'], azione: () => cambiaDurata(1) },
     { nome: t.comandi.menoDettagli, frasi: ['dimmi di meno', 'piu corto', 'piu breve'], azione: () => cambiaDurata(-1) },
     { nome: t.comandi.piuSemplice, frasi: ['non capisco', 'piu semplice', 'troppo difficile'], azione: () => cambiaLivello(-1) },
@@ -394,7 +399,15 @@ function Player() {
   ];
 
   const eseguiComando = async (trascrizione) => {
-    const frase = trascrizione.toLowerCase().replace(/[''`]/g, '').trim();
+    // Il riconoscimento vocale scrive l'italiano con gli accenti: "dimmi di piu" arriva
+    // accentato e non combacia con nessuna frase qui sopra, cosi' anche i comandi previsti
+    // finivano dalla LLM. normalize('NFD') separa la lettera dal suo accento, e la
+    // sostituzione butta via l'accento rimasto da solo. Le frasi dei comandi sono gia'
+    // scritte in questa forma: senza accenti e senza apostrofi.
+    const frase = trascrizione.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/['\u2019`]/g, '')
+      .trim();
     const comando = comandi.find(c => c.frasi.some(f => frase.includes(f)));
     
     // --- AGGIUNTA LOG AZIONI ---
@@ -437,6 +450,12 @@ function Player() {
   const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
+    // Chi tocca il microfono mentre la voce legge vuole interromperla, non parlarci sopra:
+    // se no il microfono sente la voce del telefono insieme alla sua. cancel() e non
+    // pause(), che su Firefox non fa niente.
+    window.speechSynthesis.cancel();
+    setParlando(false);
+    setInPausa(false);
     const Riconoscimento = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new Riconoscimento();
     rec.lang = tagLingua;
@@ -713,9 +732,9 @@ function Player() {
             style={{ width: '62px', height: '62px' }}
             disabled={!testoTrovato}
             onClick={gestisciAudio}
-            aria-label={generando ? t.ariaPreparando : !testoTrovato ? t.ariaAudioNo : staLeggendo ? t.ariaPausa : t.ariaAscolta}
+            aria-label={staGenerando ? t.ariaPreparando : !testoTrovato ? t.ariaAudioNo : staLeggendo ? t.ariaPausa : t.ariaAscolta}
           >
-            {generando
+            {staGenerando
               ? <span className="spinner-border spinner-border-sm"></span>
               : <i className={`bi ${!testoTrovato ? 'bi-volume-mute' : staLeggendo ? 'bi-pause-fill' : 'bi-play-fill'} fs-3`}></i>}
           </button>
