@@ -5,13 +5,9 @@ import { io } from 'socket.io-client';
 import QrScanner from 'qr-scanner';
 import { LINGUE, TRADUZIONI } from '../traduzioni';
 
-// scale ordinate: i comandi "dimmi di piu/meno" e "piu/troppo semplice" ci si muovono su
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
-// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X".
-// La stessa chiave nomina l'etichetta dentro traduzioni.js, quindi aggiungerne una qui la fa
-// comparire nel pannello, fra i comandi vocali e in tutte le lingue.
 const LOGISTICA = [
   ['uscita', ['uscita']],
   ['toilette', ['toilette', 'bagno']],
@@ -27,7 +23,6 @@ function Player() {
   const codiceSessione = searchParams.get('sessione');
   const nomeStudente = searchParams.get('nome');
 
-  // Gestione ID visita dinamico (se è 'live', verrà inviato dal socket)
   const [visitaIdAttiva, setVisitaIdAttiva] = useState(
     visitaIdParam && visitaIdParam !== 'live' ? visitaIdParam : null
   );
@@ -40,7 +35,6 @@ function Player() {
   const [durataScelta, setDurataScelta] = useState('15s');
   const [linguaScelta, setLinguaScelta] = useState('it');
 
-  // etichette dell'interfaccia e codice lingua per la voce e per il microfono
   const t = TRADUZIONI[linguaScelta];
   const tagLingua = LINGUE.find(l => l.codice === linguaScelta).tag;
 
@@ -66,14 +60,15 @@ function Player() {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
 
-  // --- INIZIO AGGIUNTE LIVE/QUIZ ---
   const [faseQuiz, setFaseQuiz] = useState(false);
   const [quizDati, setQuizDati] = useState(null);
   const [risposteStudente, setRisposteStudente] = useState({});
   const [votoCalcolato, setVotoCalcolato] = useState(null);
-  const [forzaAudioStamp, setForzaAudioStamp] = useState(0); // Trigger per forzare l'audio
+  const [forzaAudioStamp, setForzaAudioStamp] = useState(0); 
 
-  // Modifica per notificare il docente quando lo studente cambia livello/durata (Obiettivo 3)
+  const [audioInizializzato, setAudioInizializzato] = useState(!codiceSessione);
+  const [attesaAudio, setAttesaAudio] = useState(false);
+
   useEffect(() => {
     if (codiceSessione && socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('studente:cambiaLivello', {
@@ -83,10 +78,9 @@ function Player() {
       });
     }
   }, [livelloScelto, durataScelta, codiceSessione]);
-  // --- FINE AGGIUNTE ---
 
   useEffect(() => {
-    if (!visitaIdAttiva) return; // Aspetta l'ID dal socket se siamo in modalità live
+    if (!visitaIdAttiva) return;
     setLoading(true);
     fetchAuth(`/api/visite/${visitaIdAttiva}`)
       .then(res => res.json())
@@ -94,7 +88,6 @@ function Player() {
       .finally(() => setLoading(false));
   }, [visitaIdAttiva]);
 
-  // Gestione connessione Socket.io con i nomi attesi dal backend
   useEffect(() => {
     if (!codiceSessione) return;
 
@@ -102,26 +95,21 @@ function Player() {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      // Il backend si aspetta 'studente:entra' e richiede un parametro 'nome'
       socket.emit('studente:entra', { codice: codiceSessione, nome: nomeStudente });
     });
 
-    // Il backend inoltra il cambio slide usando 'stato:item'
     socket.on('stato:item', (dati) => {
       if (dati) {
         if (typeof dati.indice === 'number') {
           setIndiceAttuale(dati.indice);
         }
-        // Se il server manda l'ID della visita e differisce da quello corrente, lo aggiorniamo
         if (dati.visitaId) {
           setVisitaIdAttiva(prevId => prevId !== dati.visitaId ? dati.visitaId : prevId);
         }
       }
     });
 
-    // --- INIZIO AGGIUNTE LIVE/QUIZ (nel socket) ---
     socket.on('quiz:inizio', (dati) => {
-      // Accetta sia dati.domande (struttura inviata da Docente) che dati.quiz
       const domandeRicevute = dati?.domande || dati?.quiz;
       if (domandeRicevute) {
         setQuizDati(domandeRicevute);
@@ -131,22 +119,21 @@ function Player() {
       }
     });
 
-    // Ascolto del trigger forzato per l'audio inviato dalla docente
-    socket.on('studente:playAudio', () => {
-      setForzaAudioStamp(Date.now());
+    socket.on('studente:playAudio', () => setForzaAudioStamp(Date.now()));
+    socket.on('studente:forzaAudio', () => setForzaAudioStamp(Date.now()));
+
+    // Ascolto della chiusura della sessione per disconnettere lo studente
+    socket.on('sessione_terminata', () => {
+      alert("La lezione è stata terminata dal docente.");
+      window.speechSynthesis?.cancel();
+      navigate('/');
     });
-    // --- FINE AGGIUNTE ---
 
     return () => {
       socket.disconnect();
     };
-  }, [codiceSessione, nomeStudente]);
+  }, [codiceSessione, nomeStudente, navigate]);
 
-  // il museo indica (campo configFile) quale file caricare: mappa + posizioni + logistica.
-  // BASE_URL è la radice da cui è servita questa applicazione: '/' mentre si sviluppa,
-  // '/navigator/' una volta compilata. Con un percorso assoluto il file si andrebbe a
-  // cercare sotto la radice del sito, dove c'è il marketplace, e da lì tornerebbe la
-  // sua pagina con dentro dell'HTML: res.ok sarebbe vero e a rompersi sarebbe la json().
   useEffect(() => {
     const file = visita?.museoId?.configFile;
     if (!file) return;
@@ -155,8 +142,6 @@ function Player() {
       .then(setConfig);
   }, [visita]);
 
-  // le voci del browser arrivano in modo asincrono, e le tengo tutte: quale usare dipende
-  // dalla lingua scelta, che cambia mentre la visita è in corso
   useEffect(() => {
     const caricaVoci = () => setVoci(window.speechSynthesis.getVoices());
     caricaVoci();
@@ -164,23 +149,17 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
-  // se cambia item o combinazione livello/durata, azzero l'audio in corso
   useEffect(() => {
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
   }, [indiceAttuale, livelloScelto, durataScelta, linguaScelta]);
 
-  // esco dal player: fermo audio e microfono
   useEffect(() => () => {
     window.speechSynthesis.cancel();
     riconoscimentoRef.current?.abort();
   }, []);
 
-  // Il QR appeso di fianco all'opera contiene il codice Wikidata (operaId), niente altro.
-  // Se quell'opera è una tappa di questa visita ci salto sopra; se è del museo ma non del
-  // percorso lo dico e basta: gli item si comprano con la visita che li contiene, mostrarli
-  // qui vorrebbe dire regalarli.
   const gestisciCodice = async (codice) => {
     const tappeVisita = (visita?.items ?? []).filter(tappa => tappa.itemId);
     const indice = tappeVisita.findIndex(tappa => tappa.itemId.operaId === codice);
@@ -194,11 +173,8 @@ function Player() {
     setEsitoScansione(trovati.length > 0 ? t.fuoriVisita(trovati[0].titolo) : t.codiceIgnoto);
   };
 
-  // La fotocamera vuole un contesto sicuro: funziona su https e su localhost, non su un IP di rete.
   useEffect(() => {
     if (!mostraScanner || !videoRef.current) return;
-    // senza returnDetailedScanResult la libreria usa la firma vecchia e passa alla
-    // callback una stringa invece dell'oggetto: esito.data sarebbe undefined
     const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data), {
       returnDetailedScanResult: true
     });
@@ -207,26 +183,15 @@ function Player() {
     return () => { scanner.destroy(); scannerRef.current = null; };
   }, [mostraScanner]);
 
-  // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
-  // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
-  // tengo tutte e due le liste. Se un item è stato cancellato dal marketplace la populate
-  // restituisce null e scarto la tappa intera.
   const tappe = (visita?.items ?? []).filter(tappa => tappa.itemId);
   const items = tappe.map(tappa => tappa.itemId);
   const itemCorrente = items[indiceAttuale];
   const tappaCorrente = tappe[indiceAttuale];
 
-  // tra i testi dell'item cerco quello che combacia con livello e durata scelti
-  // i testi scritti prima che esistesse il campo lingua non ce l'hanno: sono in italiano
   const testoTrovato = itemCorrente?.testi?.find(
     testo => testo.livello === livelloScelto && testo.durata === durataScelta && (testo.lingua || 'it') === linguaScelta
   );
 
-  // Nessuno scrive tutte e sedici le combinazioni di livello e durata per ogni opera:
-  // quella che manca la chiediamo al backend, che la fa scrivere e la salva dentro
-  // l'item. Non c'è nessun bottone da premere, il testo compare e basta.
-  // Se testi non c'è proprio vuol dire che la visita non è nostra e il server ci ha
-  // mandato i soli titoli: lì non manca un testo, manca il permesso.
   useEffect(() => {
     if (!itemCorrente?.testi || testoTrovato) return;
     let annullato = false;
@@ -239,7 +204,6 @@ function Player() {
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(aggiornato => {
         if (annullato) return;
-        // rimpiazzo l'item dentro la visita: testoTrovato lo rilegge da lì
         setVisita(v => ({
           ...v,
           items: v.items.map(tappa => (tappa.itemId?._id === aggiornato._id ? { ...tappa, itemId: aggiornato } : tappa))
@@ -247,12 +211,9 @@ function Player() {
       })
       .catch(() => { if (!annullato) setErroreTesto(t.testoNonDisponibile); })
       .finally(() => { if (!annullato) setGenerando(false); });
-    // chi cambia tappa mentre il testo è in preparazione non deve vederselo arrivare addosso
     return () => { annullato = true; };
   }, [itemCorrente?._id, livelloScelto, durataScelta, linguaScelta]);
 
-  // pronuncia un testo con una voce della lingua scelta; onEnd opzionale.
-  // Se il sistema non ha una voce per quella lingua ci pensa il browser con la sua.
   const parla = (testo, onEnd) => {
     window.speechSynthesis.cancel();
     const voce = new SpeechSynthesisUtterance(testo);
@@ -263,52 +224,79 @@ function Player() {
     window.speechSynthesis.speak(voce);
   };
 
-  // azioni: le richiamano sia i bottoni sia i comandi vocali
   const leggi = () => {
     if (!testoTrovato) return;
-    // solo il testo dell'opera: dove si trova sta scritto a schermo e lo pronuncia
-    // il comando "come ci arrivo", che esiste apposta
     parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
     setParlando(true);
     setInPausa(false);
 
-    // --- AGGIUNTA LOG AZIONI ---
     if (socketRef.current && codiceSessione) {
       socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: 'ha avviato la riproduzione audio' });
     }
   };
 
-  // Attiva automaticamente la lettura se la docente invia il trigger
   useEffect(() => {
-    if (forzaAudioStamp > 0 && testoTrovato) {
-      leggi();
+    if (forzaAudioStamp > 0) {
+      setAttesaAudio(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forzaAudioStamp]);
 
-  // Qui finiscono gli hook, e solo qui si può uscire: React riconosce useState e useEffect
-  // dall'ordine in cui vengono chiamati, quindi un return più in alto ne salterebbe qualcuno
-  // e al ridisegno successivo l'ordine non tornerebbe.
+  useEffect(() => {
+    if (attesaAudio && testoTrovato) {
+      if (window.speechSynthesis.resume) {
+        window.speechSynthesis.resume();
+      }
+      
+      parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
+      setParlando(true);
+      setInPausa(false);
+      setAttesaAudio(false); 
+
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { 
+          codice: codiceSessione, 
+          azione: "ha avviato la riproduzione audio (forzata dal docente)" 
+        });
+      }
+    }
+  }, [attesaAudio, testoTrovato]);
+
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
   if (items.length === 0) return <div className="alert alert-warning m-3 text-center">{t.nessunItem}</div>;
 
-  // risposta a un comando vocale: apre il pannello, così il testo resta anche a schermo,
-  // e lo pronuncia.
+  if (codiceSessione && !audioInizializzato) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--bs-body-bg)', zIndex: 9999 }}>
+        <div className="bg-light d-flex flex-column align-items-center justify-content-center p-4 text-center border shadow-sm" style={{ width: '100%', maxWidth: '480px', height: '100%' }}>
+          <i className="bi bi-broadcast text-primary mb-3" style={{ fontSize: '4rem' }}></i>
+          <h2 className="fs-3 fw-bold mb-3">Lezione Live</h2>
+          <p className="text-muted mb-4">Per permettere al docente di avviare l'audio sul tuo dispositivo durante la spiegazione, devi sbloccare i permessi del browser.</p>
+          <button 
+            className="btn btn-primary btn-lg w-100 fw-bold py-3" 
+            onClick={() => {
+              const utterance = new SpeechSynthesisUtterance('');
+              utterance.volume = 0; 
+              window.speechSynthesis.speak(utterance);
+              setAudioInizializzato(true);
+            }}
+          >
+            <i className="bi bi-play-circle-fill me-2"></i> Entra e Sblocca Audio
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const rispondi = (testo) => {
     setMostraInfo(true);
     parla(testo);
   };
 
-  // etichetta, testo, frase pronunciata dal comando vocale, frasi che lo attivano.
-  // righeOpera sta solo fra i comandi vocali: autore e data sono già nella didascalia
-  // sotto al titolo, ripeterli nel pannello era un doppione.
   const righeOpera = [
     [t.comandi.autore, itemCorrente?.autoreOpera, t.frase.autore(itemCorrente?.autoreOpera), ['autore', 'dipinto']],
     [t.comandi.stile, itemCorrente?.stile, t.frase.stile(itemCorrente?.stile), ['stile', 'movimento']],
   ].filter(([, testo]) => testo);
 
-  // righeMuseo invece compare in tutti e due i posti: aggiungere una voce a LOGISTICA
-  // la fa apparire sia nel pannello sia fra i comandi.
   const righeMuseo = LOGISTICA
     .map(([chiave, frasi]) => [t.comandi[chiave], config?.logistica?.[chiave], config?.logistica?.[chiave], frasi])
     .filter(([, testo]) => testo);
@@ -317,7 +305,6 @@ function Player() {
     if (parlando && !inPausa) { 
       window.speechSynthesis.pause(); 
       setInPausa(true); 
-      // --- AGGIUNTA LOG AZIONI ---
       if (socketRef.current && codiceSessione) {
         socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
       }
@@ -328,20 +315,17 @@ function Player() {
     if (parlando && inPausa) { 
       window.speechSynthesis.resume(); 
       setInPausa(false); 
-      // --- AGGIUNTA LOG AZIONI ---
       if (socketRef.current && codiceSessione) {
         socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
       }
     }
   };
 
-  // il bottone centrale è un solo tasto, quindi alterna; i comandi vocali invece sono distinti
   const gestisciAudio = () => {
     if (!parlando) return leggi();
     inPausa ? riprendi() : pausa();
   };
 
-  // durante una lezione la tappa la decide il docente: lo studente non si sposta da solo
   const vaiIndietro = () => { 
     if (codiceSessione) {
       setStatoVoce('Navigazione gestita dal docente');
@@ -357,9 +341,6 @@ function Player() {
     if (indiceAttuale < items.length - 1) setIndiceAttuale(indiceAttuale + 1); 
   };
 
-  // "dimmi di piu" e "piu semplice" spostano di un posto sulla scala. Agli estremi si
-  // fermano invece di ricominciare: da "4 minuti" chi chiede più dettagli non deve
-  // ritrovarsi con la descrizione da 3 secondi.
   const unPassoSu = (scala, valore, verso) => {
     const posizione = scala.indexOf(valore) + verso;
     if (posizione < 0 || posizione >= scala.length) return valore;
@@ -369,16 +350,8 @@ function Player() {
   const cambiaLivello = (verso) => setLivelloScelto(l => unPassoSu(LIVELLI, l, verso));
 
   const staLeggendo = parlando && !inPausa;
-  // La rotella sul bottone va mostrata solo se il testo che aspetto non c'è ancora.
-  // Senza il secondo pezzo restava a girare per sempre: chi cambiava tappa durante una
-  // generazione arrivava su una tappa che il testo ce l'ha già, l'effetto usciva subito
-  // e non spegneva più niente.
   const staGenerando = generando && !testoTrovato;
 
-  // vocabolario controllato: ogni comando ha più frasi accettate e l'azione del bottone corrispondente
-  // Le frasi restano in italiano: sono la scorciatoia per chi visita in italiano, che così
-  // viene servito senza rete. In un'altra lingua non combaciano e la frase passa al backend,
-  // che la riconduce lo stesso a uno di questi comandi.
   const comandi = [
     { nome: t.comandi.prossimo, frasi: ['prossim', 'avanti', 'successiv'], azione: vaiAvanti },
     { nome: t.comandi.precedente, frasi: ['precedent', 'indietro'], azione: vaiIndietro },
@@ -394,23 +367,16 @@ function Player() {
     ...(tappaCorrente?.indicazioneLogistica ? [
       { nome: t.comandi.comeCiArrivo, frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
     ] : []),
-    // stessa fonte per bottoni e voce: ogni riga del pannello è anche un comando vocale
     ...[...righeOpera, ...righeMuseo].map(([nome, , dettato, frasi]) => ({ nome, frasi, azione: () => rispondi(dettato) })),
   ];
 
   const eseguiComando = async (trascrizione) => {
-    // Il riconoscimento vocale scrive l'italiano con gli accenti: "dimmi di piu" arriva
-    // accentato e non combacia con nessuna frase qui sopra, così anche i comandi previsti
-    // finivano dalla LLM. normalize('NFD') separa la lettera dal suo accento, e la
-    // sostituzione butta via l'accento rimasto da solo. Le frasi dei comandi sono già
-    // scritte in questa forma: senza accenti e senza apostrofi.
     const frase = trascrizione.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/['\u2019`]/g, '')
       .trim();
     const comando = comandi.find(c => c.frasi.some(f => frase.includes(f)));
     
-    // --- AGGIUNTA LOG AZIONI ---
     if (socketRef.current && codiceSessione) {
       socketRef.current.emit('studente:azione', { 
         codice: codiceSessione, 
@@ -425,10 +391,6 @@ function Player() {
       return;
     }
 
-    // Le frasi previste le riconosce il vocabolario qui sopra, subito e senza rete.
-    // Quello che resta fuori ("e adesso?", "mi scappa la pipi") lo mando al backend
-    // insieme all'elenco dei comandi di questa schermata: torna il nome di uno di
-    // quelli, oppure niente, e allora resta il messaggio di sempre.
     setStatoVoce(t.unMomento);
     const risposta = await fetchAuth('/api/ai/comando', {
       method: 'POST',
@@ -444,15 +406,9 @@ function Player() {
     }
   };
 
-  // push-to-talk: tocco il microfono, dico un comando, si ferma da solo dopo la frase.
-  // Su Firefox SpeechRecognition non esiste: il tasto resta al suo posto ma spento, così si
-  // vede che la funzione c'è senza far credere che sia rotta.
   const riconoscimentoSupportato = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
   const ascolta = () => {
     if (ascoltando) { riconoscimentoRef.current?.abort(); return; }
-    // Chi tocca il microfono mentre la voce legge vuole interromperla, non parlarci sopra:
-    // se no il microfono sente la voce del telefono insieme alla sua. cancel() e non
-    // pause(), che su Firefox non fa niente.
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
@@ -468,12 +424,10 @@ function Player() {
     rec.start();
   };
 
-  // --- INIZIO AGGIUNTE LIVE/QUIZ (Funzioni) ---
   const inviaQuiz = () => {
     if (!quizDati) return;
     let corrette = 0;
     const arrayRisposte = quizDati.map((domanda, index) => {
-      // Correzione: Docente.jsx invia la risposta corretta nella chiave "esatta"
       const isCorretta = risposteStudente[index] === domanda.esatta;
       if (isCorretta) corrette++;
       return { indiceDomanda: index, rispostaData: risposteStudente[index], corretta: isCorretta };
@@ -536,7 +490,6 @@ function Player() {
       </div>
     );
   }
-  // --- FINE AGGIUNTE ---
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', background: 'var(--bs-body-bg)' }}>
@@ -606,8 +559,6 @@ function Player() {
         ) : mostraMappa ? (
           <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: '#F4F1E9' }}>
             <svg viewBox="0 0 100 100" className="flex-grow-1" style={{ width: '100%', minHeight: 0, display: 'block' }}>
-              {/* nel config la piantina è solo il nome del file: sta nella stessa cartella del config,
-                  e il percorso si costruisce da BASE_URL come per il config stesso */}
               <image href={`${import.meta.env.BASE_URL}config/${config.mappa}`} x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet" />
               {items.map((op, i) => {
                 const pos = config.posizioni?.[op?.operaId];
@@ -625,7 +576,6 @@ function Player() {
                       setIndiceAttuale(i);
                     }}
                   >
-                    {/* il browser lo mostra passandoci sopra, e i lettori di schermo lo leggono */}
                     <title>{op?.titolo}</title>
                     <circle cx={pos.x} cy={pos.y} r={corrente ? 2.6 : 2} fill={corrente ? '#C63A24' : '#F4F1E9'} stroke={corrente ? '#C63A24' : '#8a7f6d'} strokeWidth="0.7" />
                     <text x={pos.x} y={pos.y + 0.9} textAnchor="middle" fontSize="2.5" fontWeight="600" fill={corrente ? '#fff' : '#1B1917'}>{i + 1}</text>
@@ -633,7 +583,6 @@ function Player() {
                 );
               })}
             </svg>
-            {/* i tondini portano alla tappa: qui sotto si legge su quale si è finiti */}
             <p className="text-center small mb-0 px-3 py-2 border-top">
               <span className="text-muted">{t.tappa} {indiceAttuale + 1}</span> · {itemCorrente?.titolo}
             </p>
@@ -653,7 +602,6 @@ function Player() {
               )}
             </h2>
 
-            {/* la didascalia da cartellino: autore, data, tecnica */}
             {itemCorrente?.descrizione && (
               <p className="text-muted small mb-3">{itemCorrente.descrizione}</p>
             )}
@@ -676,8 +624,6 @@ function Player() {
                 {testoTrovato.testo}
               </div>
             ) : generando ? (
-              // solo la rotella: chi guarda vede che sta arrivando, e chi usa un lettore di
-              // schermo lo sente dall'etichetta, senza una riga di testo che poi sparisce
               <div className="mb-3">
                 <span className="spinner-border spinner-border-sm text-muted" role="status" aria-label={t.ariaPreparando}></span>
               </div>

@@ -53,7 +53,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  // NUOVO: La docente forza la riproduzione dell'audio
+  // La docente forza la riproduzione dell'audio a tutti gli studenti
   socket.on('docente:forzaAudio', ({ codice }) => {
     const key = normalizzaCodice(codice)
     if (sessioni.has(key)) {
@@ -67,14 +67,22 @@ io.on('connection', (socket) => {
     if (sessione) {
       sessione.fase = 'quiz'
       sessione.quizDati = domande // Salviamo in RAM per chi perde la connessione
-      // Passiamo anche l'array di domande al client
+      // Passiamo l'array di domande al client
       io.to(key).emit('quiz:inizio', { quiz: domande })
     }
   })
 
+  // Vecchio evento di chiusura, mantenuto per compatibilità
   socket.on('docente:chiudi', ({ codice }) => {
     const key = normalizzaCodice(codice)
     io.to(key).emit('sessione:fine')
+    sessioni.delete(key)
+  })
+
+  // Nuovo evento sincronizzato per terminare la lezione forzatamente per tutti
+  socket.on('termina_sessione', ({ codiceSessione }) => {
+    const key = normalizzaCodice(codiceSessione)
+    io.to(key).emit('sessione_terminata')
     sessioni.delete(key)
   })
 
@@ -139,11 +147,26 @@ io.on('connection', (socket) => {
       const listaStudenti = Array.from(sessione.studenti.values())
       io.to(key).emit('sessione:studenti', listaStudenti)
 
-      // AGGIORNATO: Struttura log allineata a Docente.jsx
+      // Struttura log allineata alla dashboard del docente
       io.to(key).emit('docente:nuovaAttivita', {
         nome: studente.nome,
         tipo: 'Cambio Modalità',
         dettaglio: `Livello: ${livello} - ${durata}`,
+        orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      })
+    }
+  })
+
+  // TRACCIAMENTO AZIONI GENERICHE E COMANDI VOCALI STUDENTE
+  socket.on('studente:azione', ({ codice, azione, dettaglio }) => {
+    const key = normalizzaCodice(codice)
+    const sessione = sessioni.get(key)
+    if (sessione && sessione.studenti.has(socket.id)) {
+      const studente = sessione.studenti.get(socket.id)
+      io.to(key).emit('docente:nuovaAttivita', {
+        nome: studente.nome,
+        tipo: azione,
+        dettaglio: dettaglio || '',
         orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       })
     }
@@ -172,6 +195,14 @@ io.on('connection', (socket) => {
         voto: s.voto
       }))
       io.to(key).emit('docente:risultatiQuiz', risultati)
+
+      // Registrazione dell'evento completamento quiz nel feed attività docente
+      io.to(key).emit('docente:nuovaAttivita', {
+        nome: studente.nome,
+        tipo: 'Completato Quiz',
+        dettaglio: `Voto: ${voto}/10 (${corrette}/${totaleDomande})`,
+        orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      })
     }
   })
 
@@ -180,7 +211,7 @@ io.on('connection', (socket) => {
     console.log(`Socket disconnesso: ${socket.id}`)
     sessioni.forEach((sessione, key) => {
       if (sessione.studenti.has(socket.id)) {
-        // Non eliminiamo più lo studente per non perdere il voto, lo mettiamo solo offline
+        // Mantiene i dati dello studente (compreso il voto), contrassegnandolo offline
         const studente = sessione.studenti.get(socket.id)
         studente.online = false
         
@@ -194,7 +225,7 @@ io.on('connection', (socket) => {
 // --- MIDDLEWARE E ROTTE EXPRESS ---
 app.use(express.json())
 
-// NUOVO: Endpoint per salvare i voti. Inserito prima delle altre rotte visite
+// Endpoint per salvare i voti
 app.post('/api/visite/:visitaId/voti', async (req, res) => {
   const { visitaId } = req.params;
   const { codiceSessione, risultati } = req.body;
@@ -204,9 +235,6 @@ app.post('/api/visite/:visitaId/voti', async (req, res) => {
   try {
     const Visita = require('./models/Visita');
     
-    // Aggiorniamo il documento Visita inserendo lo storico della sessione
-    // Usiamo strict: false per garantire che il push avvenga anche se lo schema 
-    // non è stato esplicitamente aggiornato con il campo "storicoLive"
     await Visita.findByIdAndUpdate(
       visitaId,
       {
@@ -221,7 +249,6 @@ app.post('/api/visite/:visitaId/voti', async (req, res) => {
       { new: true, strict: false }
     );
     
-    // Ritorna status 200 per confermare il salvataggio alla dashboard del docente
     res.status(200).json({ success: true, message: 'Voti salvati con successo.' });
   } catch (error) {
     console.error('Errore durante il salvataggio su MongoDB:', error);
@@ -242,15 +269,9 @@ app.get('/api-status', (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../../marketplace')))
 
-// Il Navigator è l'altra applicazione. Una volta compilato (npm run build) diventa una
-// cartella di file statici che serviamo qui sotto /navigator: così marketplace, Navigator e
-// API stanno sulla stessa origine e nel codice non c'è nessun indirizzo scritto a mano.
-// Finché non è compilato — cioè mentre si sviluppa — si usa il server di Vite sulla 5173,
-// e qui ci limitiamo a mandare lì chi arriva per sbaglio.
 const cartellaNavigator = path.join(__dirname, '../../navigator/dist')
 if (fs.existsSync(cartellaNavigator)) {
   app.use('/navigator', express.static(cartellaNavigator))
-  // le rotte del Navigator non sono file: qualunque percorso riporta alla sua pagina
   app.get(/^\/navigator(\/.*)?$/, (req, res) => res.sendFile(path.join(cartellaNavigator, 'index.html')))
 } else {
   app.get(/^\/navigator(\/.*)?$/, (req, res) => res.redirect(`http://${req.hostname}:5173`))

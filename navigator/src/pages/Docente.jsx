@@ -24,11 +24,10 @@ export default function Docente() {
       .then(res => res.json())
       .then(data => {
         setVisita(data);
-        // Pre-imposta il codice mnemonico se è stato configurato nel marketplace
         if (data.codiceMnemonico) {
           setCodiceInput(data.codiceMnemonico.toUpperCase());
         } else {
-          setCodiceInput('FENICE-ROSSA'); // Fallback
+          setCodiceInput('FENICE-ROSSA'); 
         }
       });
 
@@ -46,7 +45,6 @@ export default function Docente() {
   }, [visitaId]);
 
   const creaSessione = () => {
-    // AGGIORNATO: allineato il nome della proprietà con backend (codiceMnemonico)
     socketRef.current?.emit('docente:crea', { visitaId, codiceMnemonico: codiceInput });
   };
 
@@ -59,11 +57,10 @@ export default function Docente() {
     socketRef.current?.emit('docente:vaiA', { codice: codiceAttivo, indice: nuovoIndice });
   };
 
-  // --- NUOVA FUNZIONE: Trigger Audio Studenti ---
   const forzaAudioStudenti = () => {
     socketRef.current?.emit('docente:forzaAudio', { codice: codiceAttivo });
+    socketRef.current?.emit('docente:playAudio', { codice: codiceAttivo }); 
     
-    // Aggiungo un log locale per feedback visivo alla docente
     const logLocale = {
       nome: 'Docente',
       tipo: 'Azione',
@@ -74,8 +71,6 @@ export default function Docente() {
   };
 
   const avviaQuizGenerico = () => {
-    // Utilizza il quiz configurato nel marketplace se presente,
-    // altrimenti usa le domande di default basate sulle tappe per la verifica finale
     const domandeQuiz = (visita?.quiz && visita.quiz.length > 0)
       ? visita.quiz.map((q, idx) => ({
           id: idx,
@@ -94,7 +89,6 @@ export default function Docente() {
     setQuizInCorso(true);
   };
 
-  // --- NUOVA FUNZIONE: Salvataggio Voti nel Database ---
   const salvaVoti = async () => {
     try {
       const response = await fetchAuth(`/api/visite/${visitaId}/voti`, {
@@ -117,21 +111,23 @@ export default function Docente() {
     }
   };
 
-  // --- NUOVA FUNZIONE: Chiusura Stanza sicura con salvataggio ---
   const chiudiSessione = async () => {
     if (risultatiQuiz.length > 0 && !votiSalvati) {
-      await salvaVoti(); // Salva in automatico se i voti ci sono ma la docente ha dimenticato di premere il bottone
+      await salvaVoti(); 
     }
     
-    socketRef.current?.emit('docente:chiudi', { codice: codiceAttivo });
+    // Invia il segnale a tutti gli studenti per chiudere la sessione
+    socketRef.current?.emit('termina_sessione', { codiceSessione: codiceAttivo });
     
-    // Reset dello stato locale
     setCodiceAttivo(null);
     setStudenti([]);
     setRisultatiQuiz([]);
     setQuizInCorso(false);
     setVotiSalvati(false);
     setAttivitaLog([]);
+
+    // Reindirizza il docente alla Home
+    navigate("/");
   };
 
   return (
@@ -158,7 +154,6 @@ export default function Docente() {
 
               <div className="d-flex flex-wrap gap-1 justify-content-center mb-3">
                 {studenti.map((s, i) => (
-                  // AGGIORNATO: Rendering dinamico per segnalare visivamente chi è temporaneamente caduto dalla rete
                   <span key={i} className={`badge ${s.online !== false ? 'bg-light text-dark border' : 'bg-secondary text-white border-secondary'}`}>
                     <i className={`bi ${s.online !== false ? 'bi-person' : 'bi-person-slash'} me-1`}></i>
                     {s.nome} {s.online === false && <span className="ms-1 fst-italic opacity-75">Offline</span>}
@@ -171,7 +166,6 @@ export default function Docente() {
               </button>
             </div>
 
-            {/* MONITORAGGIO RICHIESTE IN TEMPO REALE */}
             <div className="card p-3 shadow-sm mt-3" style={{ maxHeight: '300px', overflowY: 'auto' }}>
               <h6 className="fw-bold text-muted border-bottom pb-2">Feed Attenzione & Richieste</h6>
               {attivitaLog.length === 0 ? (
@@ -198,7 +192,6 @@ export default function Docente() {
                 <img src={itemCorrente.immagine} alt={itemCorrente.titolo} className="img-fluid rounded mb-3 mx-auto d-block" style={{ height: '140px', objectFit: 'cover' }} />
               )}
               
-              {/* Bottone per forzare l'audio a tutti gli studenti connessi */}
               <button 
                 className="btn btn-primary w-100 fw-bold mb-3 d-flex align-items-center justify-content-center gap-2"
                 onClick={forzaAudioStudenti}
@@ -213,7 +206,6 @@ export default function Docente() {
               </div>
             </div>
 
-            {/* TABELLA VOTI QUIZ E SALVATAGGIO */}
             {risultatiQuiz.length > 0 && (
               <div className="card p-3 shadow-sm mt-3">
                 <h6 className="fw-bold text-muted border-bottom pb-2">Risultati e Voti Quiz</h6>

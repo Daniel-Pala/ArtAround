@@ -4,14 +4,10 @@ const Visita = require('../models/Visita');
 const Utente = require('../models/Utente');
 const { richiediAutore, richiediAutenticazione } = require('../middleware/autorizzazione');
 
-// Ottiene tutte le visite (filtrabili per museo e per stato di pubblicazione).
-// La vetrina del visitatore passa ?pubblica=true; l'autore chiama senza filtro
-// perché nel suo museo deve continuare a vedere le proprie bozze.
+// Ottiene tutte le visite (filtrabili per museo e per stato di pubblicazione)
 router.get('/', async (req, res) => {
   try {
     const { museoId, pubblica } = req.query;
-    // i percorsi su misura non stanno in nessuna delle due liste: non sono in vendita e non
-    // sono del museo, li vede solo chi se li è fatti fare, da mie-visite
     const filtro = { suMisura: { $ne: true } };
     if (museoId) filtro.museoId = museoId;
     if (pubblica === 'true') filtro.pubblica = true;
@@ -24,14 +20,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Le visite che l'utente può avviare nel Navigator: quelle acquistate più,
-// se è un autore, quelle scritte da lui (i propri percorsi non si comprano).
+// Le visite che l'utente può avviare nel Navigator
 router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   try {
-    // Il token non scade mai e il seed ricrea gli utenti da zero: un token di un
-    // seed precedente ha la firma valida ma indica un utente che non esiste più.
-    // È una credenziale non valida, non una richiesta su una risorsa mancante:
-    // col 401 il client svuota la sessione e rimanda al login da solo.
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(401).json({ message: 'Sessione non più valida' });
 
@@ -41,7 +32,6 @@ router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
     });
 
     const proprie = await Visita.find({ autoreId: req.user.userId }).populate('museoId', 'nome');
-    // chi ha comprato una visita e poi l'ha ereditata come autore la vedrebbe due volte
     const acquistate = utente.acquisti.filter(v => String(v.autoreId) !== req.user.userId);
 
     res.json([...proprie, ...acquistate]);
@@ -50,9 +40,7 @@ router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   }
 });
 
-// Il dettaglio di una visita lo chiedono in due: il negozio, che mostra l'elenco
-// delle tappe prima dell'acquisto, e il Player, che invece ha bisogno dei testi.
-// Chi non l'ha comprata (e non è l'autore) riceve solo i titoli delle tappe.
+// Dettaglio di una visita
 router.get('/:id', richiediAutenticazione, async (req, res) => {
   try {
     const visita = await Visita.findById(req.params.id)
@@ -70,7 +58,7 @@ router.get('/:id', richiediAutenticazione, async (req, res) => {
   }
 });
 
-// Sblocca una visita per l'utente loggato (checkout finto, nessun pagamento)
+// Sblocca una visita per l'utente loggato
 router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
   try {
     const visita = await Visita.findById(req.params.id);
@@ -79,7 +67,6 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
     const utente = await Utente.findById(req.user.userId);
     if (!utente) return res.status(404).json({ message: 'Utente non trovato' });
 
-    // gli ObjectId non si confrontano con ===, servono le stringhe
     const haGiaAcquistato = utente.acquisti.some(id => id.toString() === visita._id.toString());
 
     if (haGiaAcquistato) {
@@ -95,10 +82,42 @@ router.post('/:id/acquista', richiediAutenticazione, async (req, res) => {
   }
 });
 
+// Salva i voti/risultati di una sessione live nel documento Visita
+router.post('/:id/voti', richiediAutenticazione, async (req, res) => {
+  const { id } = req.params;
+  const { codiceSessione, risultati } = req.body;
+  
+  console.log(`Salvando i voti nel DB per la visita ${id} (Sessione: ${codiceSessione})`);
+  
+  try {
+    const visitaAggiornata = await Visita.findByIdAndUpdate(
+      id,
+      {
+        $push: {
+          storicoLive: {
+            codiceSessione,
+            data: new Date(),
+            risultati
+          }
+        }
+      },
+      { new: true, strict: false }
+    );
+    
+    if (!visitaAggiornata) {
+      return res.status(404).json({ success: false, message: 'Visita non trovata' });
+    }
+    
+    res.status(200).json({ success: true, message: 'Voti salvati con successo.', visita: visitaAggiornata });
+  } catch (error) {
+    console.error('Errore durante il salvataggio su MongoDB:', error);
+    res.status(500).json({ success: false, message: 'Errore interno del server' });
+  }
+});
+
 // Crea una nuova visita (Solo Autori)
 router.post('/', richiediAutore, async (req, res) => {
   try {
-    //autoreID viene dal token JWT, quindi non può essere manipolato dall'utente
     const visita = new Visita({ ...req.body, autoreId: req.user.userId });
     await visita.save();
     res.status(201).json(visita);
