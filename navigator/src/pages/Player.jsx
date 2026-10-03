@@ -65,6 +65,7 @@ function Player() {
   const [risposteStudente, setRisposteStudente] = useState({});
   const [votoCalcolato, setVotoCalcolato] = useState(null);
   const [forzaAudioStamp, setForzaAudioStamp] = useState(0); 
+  const [riavviaAudioStamp, setRiavviaAudioStamp] = useState(0); 
 
   const [audioInizializzato, setAudioInizializzato] = useState(!codiceSessione);
   const [attesaAudio, setAttesaAudio] = useState(false);
@@ -120,7 +121,24 @@ function Player() {
     });
 
     socket.on('studente:playAudio', () => setForzaAudioStamp(Date.now()));
-    socket.on('studente:forzaAudio', () => setForzaAudioStamp(Date.now()));
+    
+    // Nuovi eventi audio dal docente
+    socket.on('studente:pausaAudio', () => {
+      window.speechSynthesis.pause();
+      setInPausa(true);
+    });
+
+    socket.on('studente:riprendiAudio', () => {
+      window.speechSynthesis.resume();
+      setInPausa(false);
+    });
+
+    socket.on('studente:riavviaAudio', () => {
+      window.speechSynthesis.cancel(); // Stoppa l'audio attuale
+      setInPausa(false);
+      setParlando(false);
+      setRiavviaAudioStamp(Date.now()); // Trigger per farlo ripartire
+    });
 
     // Ascolto della chiusura della sessione per disconnettere lo studente
     socket.on('sessione_terminata', () => {
@@ -260,6 +278,23 @@ function Player() {
       }
     }
   }, [attesaAudio, testoTrovato]);
+
+  // Gestione del riavvio forzato dal docente
+  useEffect(() => {
+    if (riavviaAudioStamp > 0 && testoTrovato) {
+      window.speechSynthesis.cancel();
+      parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
+      setParlando(true);
+      setInPausa(false);
+      
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { 
+          codice: codiceSessione, 
+          azione: "ha riavviato l'audio (forzato dal docente)" 
+        });
+      }
+    }
+  }, [riavviaAudioStamp, testoTrovato]);
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border text-primary"></div></div>;
   if (items.length === 0) return <div className="alert alert-warning m-3 text-center">{t.nessunItem}</div>;

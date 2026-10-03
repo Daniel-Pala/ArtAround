@@ -16,6 +16,8 @@ export default function Docente() {
   const [risultatiQuiz, setRisultatiQuiz] = useState([]);
   const [quizInCorso, setQuizInCorso] = useState(false);
   const [votiSalvati, setVotiSalvati] = useState(false);
+  
+  const [audioInPausa, setAudioInPausa] = useState(false); // Nuovo stato
 
   const socketRef = useRef(null);
 
@@ -57,17 +59,38 @@ export default function Docente() {
     socketRef.current?.emit('docente:vaiA', { codice: codiceAttivo, indice: nuovoIndice });
   };
 
-  const forzaAudioStudenti = () => {
-    socketRef.current?.emit('docente:forzaAudio', { codice: codiceAttivo });
-    socketRef.current?.emit('docente:playAudio', { codice: codiceAttivo }); 
-    
+  // Funzione helper per aggiungere i log
+  const aggiungiLogLocale = (tipo, dettaglio) => {
     const logLocale = {
       nome: 'Docente',
-      tipo: 'Azione',
-      dettaglio: 'Ha forzato la riproduzione audio per tutta la classe',
+      tipo,
+      dettaglio,
       orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
     setAttivitaLog(prev => [logLocale, ...prev.slice(0, 19)]);
+  };
+
+  const forzaAudioStudenti = () => {
+    socketRef.current?.emit('docente:forzaAudio', { codice: codiceAttivo });
+    setAudioInPausa(false);
+    aggiungiLogLocale('Azione', 'Ha forzato la riproduzione audio per tutta la classe');
+  };
+
+  const togglePausaAudio = () => {
+    if (audioInPausa) {
+      socketRef.current?.emit('docente:riprendiAudio', { codice: codiceAttivo });
+      aggiungiLogLocale('Azione', "Ha ripreso l'audio della classe");
+    } else {
+      socketRef.current?.emit('docente:pausaAudio', { codice: codiceAttivo });
+      aggiungiLogLocale('Azione', "Ha messo in pausa l'audio della classe");
+    }
+    setAudioInPausa(!audioInPausa);
+  };
+
+  const riavviaAudio = () => {
+    socketRef.current?.emit('docente:riavviaAudio', { codice: codiceAttivo });
+    setAudioInPausa(false);
+    aggiungiLogLocale('Azione', "Ha riavviato l'audio dall'inizio");
   };
 
   const avviaQuizGenerico = () => {
@@ -193,12 +216,30 @@ export default function Docente() {
               )}
               
               <button 
-                className="btn btn-primary w-100 fw-bold mb-3 d-flex align-items-center justify-content-center gap-2"
+                className="btn btn-primary w-100 fw-bold mb-2 d-flex align-items-center justify-content-center gap-2"
                 onClick={forzaAudioStudenti}
                 disabled={quizInCorso}
               >
-                <i className="bi bi-megaphone-fill"></i> Fai partire l'audio a tutti
+                <i className="bi bi-megaphone-fill"></i> Riproduci Audio
               </button>
+
+              <div className="d-flex gap-2 mb-3">
+                <button 
+                  className={`btn ${audioInPausa ? 'btn-success' : 'btn-warning'} flex-grow-1 fw-bold`} 
+                  onClick={togglePausaAudio} 
+                  disabled={quizInCorso}
+                >
+                  <i className={`bi ${audioInPausa ? 'bi-play-fill' : 'bi-pause-fill'} me-1`}></i>
+                  {audioInPausa ? 'Riprendi' : 'Pausa'}
+                </button>
+                <button 
+                  className="btn btn-secondary flex-grow-1 fw-bold" 
+                  onClick={riavviaAudio} 
+                  disabled={quizInCorso}
+                >
+                  <i className="bi bi-arrow-counterclockwise me-1"></i> Riavvia
+                </button>
+              </div>
 
               <div className="d-flex gap-2">
                 <button className="btn btn-outline-secondary flex-grow-1" disabled={indiceAttuale === 0 || quizInCorso} onClick={() => cambiaTappa(indiceAttuale - 1)}>← Precedente</button>

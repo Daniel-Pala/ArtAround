@@ -61,6 +61,28 @@ io.on('connection', (socket) => {
     }
   })
 
+  // Nuovi comandi di gestione audio per il docente
+  socket.on('docente:pausaAudio', ({ codice }) => {
+    const key = normalizzaCodice(codice)
+    if (sessioni.has(key)) {
+      io.to(key).emit('studente:pausaAudio')
+    }
+  })
+
+  socket.on('docente:riprendiAudio', ({ codice }) => {
+    const key = normalizzaCodice(codice)
+    if (sessioni.has(key)) {
+      io.to(key).emit('studente:riprendiAudio')
+    }
+  })
+
+  socket.on('docente:riavviaAudio', ({ codice }) => {
+    const key = normalizzaCodice(codice)
+    if (sessioni.has(key)) {
+      io.to(key).emit('studente:riavviaAudio')
+    }
+  })
+
   socket.on('docente:avviaQuiz', ({ codice, domande }) => {
     const key = normalizzaCodice(codice)
     const sessione = sessioni.get(key)
@@ -151,7 +173,7 @@ io.on('connection', (socket) => {
       io.to(key).emit('docente:nuovaAttivita', {
         nome: studente.nome,
         tipo: 'Cambio Modalità',
-        dettaglio: `Livello: ${livello} - ${durata}`,
+        dettaglio: `Livello: ${livello} -${durata}`,
         orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       })
     }
@@ -230,7 +252,7 @@ app.post('/api/visite/:visitaId/voti', async (req, res) => {
   const { visitaId } = req.params;
   const { codiceSessione, risultati } = req.body;
   
-  console.log(`Salvando i voti nel DB per la visita ${visitaId} (Sessione: ${codiceSessione})`);
+  console.log(`Salvando i voti nel DB per la visita ${visitaId} (Sessione:${codiceSessione})`);
   
   try {
     const Visita = require('./models/Visita');
