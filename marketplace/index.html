@@ -12,7 +12,17 @@
 
     <nav class="navbar navbar-dark bg-primary mb-5">
         <div class="container">
-            <span class="navbar-brand mb-0 h1">ArtAround</span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="navbar-brand mb-0 h1">ArtAround</span>
+                <!-- il simmetrico del link "Marketplace" nella navbar del Navigator: il Navigator
+                     è l'altra applicazione, quindi link vero e non una rotta. La freccia punta
+                     avanti perché da qui si entra nella visita, mentre da là si torna indietro.
+                     Serve a chi non ha comprato niente, come gli studenti di una lezione: senza
+                     questo dovrebbero scrivere l'indirizzo a mano. -->
+                <a class="small text-light text-decoration-none" href="/navigator/">
+                    Navigator<i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
             <div id="userBox" class="d-flex align-items-center"></div>
         </div>
     </nav>
