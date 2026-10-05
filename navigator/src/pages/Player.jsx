@@ -64,6 +64,10 @@ function Player() {
   const [esitoScansione, setEsitoScansione] = useState('');
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
+  // la voce stava leggendo quando è cambiata la tappa? Lo tengo in un ref e non in uno stato
+  // perché serve all'effetto qui sotto senza entrare fra le sue dipendenze: come stato lo
+  // farebbe ripartire a ogni play e a ogni pausa.
+  const continuaLettura = useRef(false);
 
   const [faseQuiz, setFaseQuiz] = useState(false);
   const [quizDati, setQuizDati] = useState(null);
@@ -179,8 +183,14 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
-  // se cambia item o combinazione livello/durata, azzero l'audio in corso
+  // se cambia item o combinazione livello/durata, azzero l'audio in corso. Ma se la voce
+  // stava leggendo la lettura non si interrompe: riprende sulla tappa nuova appena il suo
+  // testo è pronto (l'effetto subito dopo leggi()). Chi ascolta col telefono in tasca non
+  // deve ripremere play a ogni tappa.
+  // Se stesse leggendo lo chiedo a speechSynthesis invece che a parlando: lo so prima di
+  // azzerarlo e senza doverlo mettere fra le dipendenze.
   useEffect(() => {
+    continuaLettura.current = window.speechSynthesis.speaking && !window.speechSynthesis.paused;
     window.speechSynthesis.cancel();
     setParlando(false);
     setInPausa(false);
@@ -291,6 +301,16 @@ function Player() {
       socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: 'ha avviato la riproduzione audio' });
     }
   };
+
+  // la lettura che prosegue sulla tappa nuova. Se il testo va ancora generato la voce
+  // riparte quando arriva, perché testoTrovato cambia una seconda volta.
+  // Quando l'audio lo comanda il docente ci pensa l'effetto di attesaAudio: senza questo
+  // controllo parlerebbero tutti e due e la frase ripartirebbe da capo.
+  useEffect(() => {
+    if (!continuaLettura.current || !testoTrovato || attesaAudio) return;
+    continuaLettura.current = false;
+    leggi();
+  }, [testoTrovato]);
 
   useEffect(() => {
     if (forzaAudioStamp > 0) {
