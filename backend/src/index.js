@@ -247,37 +247,6 @@ io.on('connection', (socket) => {
 // --- MIDDLEWARE E ROTTE EXPRESS ---
 app.use(express.json())
 
-// Endpoint per salvare i voti
-app.post('/api/visite/:visitaId/voti', async (req, res) => {
-  const { visitaId } = req.params;
-  const { codiceSessione, risultati } = req.body;
-  
-  console.log(`Salvando i voti nel DB per la visita ${visitaId} (Sessione:${codiceSessione})`);
-  
-  try {
-    const Visita = require('./models/Visita');
-    
-    await Visita.findByIdAndUpdate(
-      visitaId,
-      {
-        $push: {
-          storicoLive: {
-            codiceSessione,
-            data: new Date(),
-            risultati
-          }
-        }
-      },
-      { new: true, strict: false }
-    );
-    
-    res.status(200).json({ success: true, message: 'Voti salvati con successo.' });
-  } catch (error) {
-    console.error('Errore durante il salvataggio su MongoDB:', error);
-    res.status(500).json({ success: false, message: 'Errore interno del server' });
-  }
-})
-
 app.use('/api/auth', require('./routes/autenticazione'))
 app.use('/api/musei', require('./routes/musei'))
 app.use('/api/items', require('./routes/items'))
@@ -291,9 +260,15 @@ app.get('/api-status', (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../../marketplace')))
 
+// Il Navigator è l'altra applicazione. Una volta compilato (npm run build) diventa una
+// cartella di file statici che serviamo qui sotto /navigator: così marketplace, Navigator e
+// API stanno sulla stessa origine e nel codice non c'è nessun indirizzo scritto a mano.
+// Finché non è compilato — cioè mentre si sviluppa — si usa il server di Vite sulla 5173,
+// e qui ci limitiamo a mandare lì chi arriva per sbaglio.
 const cartellaNavigator = path.join(__dirname, '../../navigator/dist')
 if (fs.existsSync(cartellaNavigator)) {
   app.use('/navigator', express.static(cartellaNavigator))
+  // le rotte del Navigator non sono file: qualunque percorso riporta alla sua pagina
   app.get(/^\/navigator(\/.*)?$/, (req, res) => res.sendFile(path.join(cartellaNavigator, 'index.html')))
 } else {
   app.get(/^\/navigator(\/.*)?$/, (req, res) => res.redirect(`http://${req.hostname}:5173`))
