@@ -64,10 +64,21 @@ function Player() {
   const [esitoScansione, setEsitoScansione] = useState('');
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
-  // la voce stava leggendo quando è cambiata la tappa? Lo tengo in un ref e non in uno stato
-  // perché serve all'effetto qui sotto senza entrare fra le sue dipendenze: come stato lo
-  // farebbe ripartire a ogni play e a ogni pausa.
-  const continuaLettura = useRef(false);
+  // "l'utente vuole sentire la voce", che non è la stessa cosa di "la voce sta parlando":
+  // il microfono zittisce la lettura per non sentirsi addosso la voce del telefono, ma
+  // l'intenzione resta, così un comando vocale che cambia tappa fa riprendere la lettura.
+  // È un ref e non uno stato perché gli effetti lo leggono senza doverlo mettere fra le
+  // dipendenze: come stato, l'effetto che azzera l'audio ripartirebbe a ogni play
+  // e zittirebbe la lettura appena avviata.
+  const vuoleAscoltare = useRef(false);
+
+  // numero della lettura in corso: lo alza chi fa partire o fermare la voce, e serve a
+  // riconoscere un onend che arriva in ritardo da una lettura già annullata.
+  const lettura = useRef(0);
+  const zittisci = () => {
+    lettura.current++;
+    window.speechSynthesis.cancel();
+  };
 
   const [faseQuiz, setFaseQuiz] = useState(false);
   const [quizDati, setQuizDati] = useState(null);
@@ -183,15 +194,11 @@ function Player() {
     return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 
-  // se cambia item o combinazione livello/durata, azzero l'audio in corso. Ma se la voce
-  // stava leggendo la lettura non si interrompe: riprende sulla tappa nuova appena il suo
-  // testo è pronto (l'effetto subito dopo leggi()). Chi ascolta col telefono in tasca non
-  // deve ripremere play a ogni tappa.
-  // Se stesse leggendo lo chiedo a speechSynthesis invece che a parlando: lo so prima di
-  // azzerarlo e senza doverlo mettere fra le dipendenze.
+  // se cambia item o combinazione livello/durata, azzero l'audio in corso. La lettura
+  // riprende poi sul testo nuovo, ma solo se l'utente la voleva: decide vuoleAscoltare,
+  // non speechSynthesis.speaking, che su Firefox e su Chrome non risponde allo stesso modo.
   useEffect(() => {
-    continuaLettura.current = window.speechSynthesis.speaking && !window.speechSynthesis.paused;
-    window.speechSynthesis.cancel();
+    zittisci();
     setParlando(false);
     setInPausa(false);
   }, [indiceAttuale, livelloScelto, durataScelta, linguaScelta]);
@@ -293,7 +300,18 @@ function Player() {
     if (!testoTrovato) return;
     // solo il testo dell'opera: dove si trova sta scritto a schermo e lo pronuncia
     // il comando "come ci arrivo", che esiste apposta
-    parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
+    vuoleAscoltare.current = true;
+    const mia = ++lettura.current;
+    // onend arriva anche per le letture annullate, e su Firefox arriva in ritardo: senza
+    // questo numero la fine della tappa precedente spegneva il tasto della tappa nuova.
+    // Quando invece il testo finisce davvero, l'intenzione cade: cambiare tappa dopo la
+    // fine non deve far ripartire la voce.
+    parla(testoTrovato.testo, () => {
+      if (mia !== lettura.current) return;
+      vuoleAscoltare.current = false;
+      setParlando(false);
+      setInPausa(false);
+    });
     setParlando(true);
     setInPausa(false);
 
@@ -307,8 +325,7 @@ function Player() {
   // Quando l'audio lo comanda il docente ci pensa l'effetto di attesaAudio: senza questo
   // controllo parlerebbero tutti e due e la frase ripartirebbe da capo.
   useEffect(() => {
-    if (!continuaLettura.current || !testoTrovato || attesaAudio) return;
-    continuaLettura.current = false;
+    if (!vuoleAscoltare.current || !testoTrovato || attesaAudio) return;
     leggi();
   }, [testoTrovato]);
 
@@ -407,6 +424,7 @@ function Player() {
 
   const pausa = () => {
     if (parlando && !inPausa) { 
+      vuoleAscoltare.current = false;
       window.speechSynthesis.pause(); 
       setInPausa(true); 
       if (socketRef.current && codiceSessione) {
@@ -417,6 +435,7 @@ function Player() {
 
   const riprendi = () => {
     if (parlando && inPausa) { 
+      vuoleAscoltare.current = true;
       window.speechSynthesis.resume(); 
       setInPausa(false); 
       if (socketRef.current && codiceSessione) {
@@ -542,7 +561,8 @@ function Player() {
     // Chi tocca il microfono mentre la voce legge vuole interromperla, non parlarci sopra:
     // se no il microfono sente la voce del telefono insieme alla sua. cancel() e non
     // pause(), che su Firefox non fa niente.
-    window.speechSynthesis.cancel();
+    // vuoleAscoltare resta com'è: se il comando detto cambia tappa, la lettura riprende là.
+    zittisci();
     setParlando(false);
     setInPausa(false);
     const Riconoscimento = window.SpeechRecognition || window.webkitSpeechRecognition;
