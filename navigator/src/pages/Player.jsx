@@ -744,6 +744,14 @@ function Player() {
               <p className="text-muted small mb-3">{itemCorrente.descrizione}</p>
             )}
 
+            {/* il codice Wikidata dell'opera: è lo stesso che sta dentro il QR appeso al muro
+                e identifica il dipinto fuori di qui, mentre l'_id vale solo nel nostro database.
+                Un item è il contenuto su un'opera, quindi più item possono portare lo stesso
+                codice: per questo resta una didascalia e non la chiave. */}
+            {itemCorrente?.operaId && (
+              <p className="small mb-3" style={{ fontWeight: 300 }}>ID WD: {itemCorrente.operaId}</p>
+            )}
+
             {itemCorrente?.immagine ? (
               <img
                 src={itemCorrente.immagine}
