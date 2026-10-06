@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function caricaDashboardAutore() {
     const listaMusei = document.getElementById('listaMusei');
-    const countMusei = document.getElementById('countMusei');
+    const rigaMusei = document.getElementById('rigaMusei');
     if (!listaMusei) return;
 
     try {
@@ -37,7 +37,12 @@ async function caricaDashboardAutore() {
         if (!response.ok) throw new Error("Impossibile caricare i musei");
 
         const musei = await response.json();
-        if (countMusei) countMusei.innerText = musei.length;
+        // i musei sono di tutti: non c'è un proprietario, quindi la riga lo dice
+        if (rigaMusei) {
+            rigaMusei.innerText = musei.length === 1
+                ? 'Un museo, visibile a tutti i curatori.'
+                : `${musei.length} musei, visibili a tutti i curatori.`;
+        }
 
         if (musei.length === 0) {
             listaMusei.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Non gestisci ancora nessun museo.</td></tr>`;

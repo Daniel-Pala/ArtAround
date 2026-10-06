@@ -54,7 +54,7 @@ async function fetchAuth(url, options = {}) {
     return res;
 }
 
-// La barra in alto, uguale su tutte le pagine: saluto e logout, oppure Accedi
+// La barra in alto, uguale su tutte le pagine: saluto ed Esci, oppure Accedi
 function renderNavbar(utente) {
     const userBox = document.getElementById('userBox');
     if (!userBox) return;
@@ -62,9 +62,7 @@ function renderNavbar(utente) {
     if (utente) {
         userBox.innerHTML = `
             <span class="text-light me-3">Ciao, <strong>${utente.username}</strong></span>
-            <button class="btn btn-outline-light btn-sm" id="btnLogout">
-                <i class="bi bi-box-arrow-right me-1"></i>Logout
-            </button>
+            <button class="btn btn-outline-light btn-sm fw-bold" id="btnLogout">Esci</button>
         `;
         document.getElementById('btnLogout').addEventListener('click', () => {
             localStorage.removeItem('utente');
