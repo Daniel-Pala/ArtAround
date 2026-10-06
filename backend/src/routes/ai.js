@@ -55,13 +55,19 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     const item = await Item.findById(itemId)
     if (!item) return res.status(404).json({ message: 'Item non trovato' })
 
-    // stessi permessi del dettaglio della visita: i testi sono contenuto a pagamento,
-    // e senza questo controllo basterebbe un id per farseli scrivere tutti
+    // Stessi permessi del dettaglio della visita, che i testi li manda a chi ha comprato
+    // la visita **o ne è l'autore**. La regola deve essere la stessa: una visita mette in
+    // fila item di curatori diversi, quindi chiedere che l'item sia proprio significava
+    // che l'autore di una visita leggeva i testi che c'erano e si sentiva rispondere
+    // "non disponibile" sulle tappe scritte da un collega.
     const utente = await Utente.findById(req.user.userId)
     if (!utente) return res.status(401).json({ message: 'Sessione non più valida' })
     const suo = String(item.autoreId) === req.user.userId
-    const acquistato = await Visita.exists({ 'items.itemId': item._id, _id: { $in: utente.acquisti } })
-    if (!suo && !acquistato) {
+    const inUnaSuaVisita = await Visita.exists({
+      'items.itemId': item._id,
+      $or: [{ autoreId: req.user.userId }, { _id: { $in: utente.acquisti } }]
+    })
+    if (!suo && !inUnaSuaVisita) {
       return res.status(403).json({ message: 'Questo contenuto non è tuo' })
     }
 
@@ -106,8 +112,10 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     // torna l'item intero: al Player serve rileggerlo per trovarci dentro il testo nuovo
     res.json(item)
   } catch (err) {
-    // qui l'unica cosa che va storta davvero è la chiamata alla LLM, e il suo
-    // messaggio è quello da leggere
+    // Il Player non può mostrare questo messaggio: la specifica vuole che il visitatore
+    // non sappia che dietro c'è una LLM, quindi a schermo resta "testo non disponibile".
+    // Qui però serve, perché altrimenti il motivo vero non si legge da nessuna parte.
+    console.error('Generazione del testo non riuscita:', err.message)
     res.status(502).json({ message: err.message })
   }
 })
