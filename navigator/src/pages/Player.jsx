@@ -12,6 +12,12 @@ const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 // strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X".
 // La stessa chiave nomina l'etichetta dentro traduzioni.js, quindi aggiungerne una qui la fa
 // comparire nel pannello, fra i comandi vocali e in tutte le lingue.
+// Si legge una frase alla volta perché su Firefox speechSynthesis.pause() non ferma la voce
+// (verificato: l'audio continua e paused resta false), mentre cancel() la ferma su tutti i
+// browser. Così la pausa è: fermo la frase in corso e mi ricordo qual era. Si riparte
+// dall'inizio di quella frase, non dalla parola esatta, e non serve nessuna libreria.
+const inFrasi = (testo) => testo.match(/[^.!?…]+[.!?…]*/g)?.map(f => f.trim()).filter(Boolean) ?? [testo];
+
 const LOGISTICA = [
   ['uscita', ['uscita']],
   ['toilette', ['toilette', 'bagno']],
@@ -64,19 +70,19 @@ function Player() {
   const [esitoScansione, setEsitoScansione] = useState('');
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
-  // "l'utente vuole sentire la voce", che non è la stessa cosa di "la voce sta parlando":
-  // il microfono zittisce la lettura per non sentirsi addosso la voce del telefono, ma
-  // l'intenzione resta, così un comando vocale che cambia tappa fa riprendere la lettura.
-  // È un ref e non uno stato perché gli effetti lo leggono senza doverlo mettere fra le
-  // dipendenze: come stato, l'effetto che azzera l'audio ripartirebbe a ogni play
-  // e zittirebbe la lettura appena avviata.
-  const vuoleAscoltare = useRef(false);
+  // Lo stato della voce: non serve a disegnare niente e cambia fra un disegno e l'altro
+  // senza doverlo provocare, quindi sta in un ref e non in useState. useRef(...).current
+  // dà un oggetto stabile per tutta la vita del componente.
+  const sintesi = useRef({
+    frasi: [],             // il testo spezzato in frasi, perché si legge una frase alla volta
+    indice: 0,             // la frase da pronunciare: è qui che riprende dopo una pausa
+    lettura: 0,            // numero della lettura in corso, per scartare gli onend in ritardo
+    vuoleAscoltare: false, // l'utente vuole sentire la voce (≠ la voce sta parlando)
+    onFine: null,
+  }).current;
 
-  // numero della lettura in corso: lo alza chi fa partire o fermare la voce, e serve a
-  // riconoscere un onend che arriva in ritardo da una lettura già annullata.
-  const lettura = useRef(0);
   const zittisci = () => {
-    lettura.current++;
+    sintesi.lettura++;
     window.speechSynthesis.cancel();
   };
 
@@ -285,14 +291,36 @@ function Player() {
 
   // pronuncia un testo con una voce della lingua scelta; onEnd opzionale.
   // Se il sistema non ha una voce per quella lingua ci pensa il browser con la sua.
-  const parla = (testo, onEnd) => {
-    window.speechSynthesis.cancel();
-    const voce = new SpeechSynthesisUtterance(testo);
+  // pronuncia la frase a cui siamo arrivati e si richiama da sola sulla successiva.
+  // Un onend che arriva da una lettura già annullata ha un numero vecchio e si scarta:
+  // su Firefox arriva in ritardo, e senza questo controllo la fine della tappa precedente
+  // spegneva il tasto della tappa nuova.
+  const pronunciaDaDoveEravamo = () => {
+    if (sintesi.indice >= sintesi.frasi.length) {
+      const fine = sintesi.onFine;
+      sintesi.onFine = null;
+      if (fine) fine();
+      return;
+    }
+    const mia = sintesi.lettura;
+    const voce = new SpeechSynthesisUtterance(sintesi.frasi[sintesi.indice]);
     voce.lang = tagLingua;
     const adatta = voci.find(v => v.lang.toLowerCase().startsWith(linguaScelta));
     if (adatta) voce.voice = adatta;
-    if (onEnd) voce.onend = onEnd;
+    voce.onend = () => {
+      if (mia !== sintesi.lettura) return;
+      sintesi.indice++;
+      pronunciaDaDoveEravamo();
+    };
     window.speechSynthesis.speak(voce);
+  };
+
+  const parla = (testo, onFine) => {
+    zittisci();
+    sintesi.frasi = inFrasi(testo);
+    sintesi.indice = 0;
+    sintesi.onFine = onFine ?? null;
+    pronunciaDaDoveEravamo();
   };
 
   // azioni: le richiamano sia i bottoni sia i comandi vocali
@@ -300,15 +328,11 @@ function Player() {
     if (!testoTrovato) return;
     // solo il testo dell'opera: dove si trova sta scritto a schermo e lo pronuncia
     // il comando "come ci arrivo", che esiste apposta
-    vuoleAscoltare.current = true;
-    const mia = ++lettura.current;
-    // onend arriva anche per le letture annullate, e su Firefox arriva in ritardo: senza
-    // questo numero la fine della tappa precedente spegneva il tasto della tappa nuova.
-    // Quando invece il testo finisce davvero, l'intenzione cade: cambiare tappa dopo la
-    // fine non deve far ripartire la voce.
+    sintesi.vuoleAscoltare = true;
+    // quando il testo finisce davvero l'intenzione cade: cambiare tappa dopo la fine non
+    // deve far ripartire la voce.
     parla(testoTrovato.testo, () => {
-      if (mia !== lettura.current) return;
-      vuoleAscoltare.current = false;
+      sintesi.vuoleAscoltare = false;
       setParlando(false);
       setInPausa(false);
     });
@@ -325,7 +349,7 @@ function Player() {
   // Quando l'audio lo comanda il docente ci pensa l'effetto di attesaAudio: senza questo
   // controllo parlerebbero tutti e due e la frase ripartirebbe da capo.
   useEffect(() => {
-    if (!vuoleAscoltare.current || !testoTrovato || attesaAudio) return;
+    if (!sintesi.vuoleAscoltare || !testoTrovato || attesaAudio) return;
     leggi();
   }, [testoTrovato]);
 
@@ -424,8 +448,10 @@ function Player() {
 
   const pausa = () => {
     if (parlando && !inPausa) { 
-      vuoleAscoltare.current = false;
-      window.speechSynthesis.pause(); 
+      sintesi.vuoleAscoltare = false;
+      // zittisci alza il numero della lettura, quindi l'onend della frase interrotta viene
+      // scartato e sintesi.indice resta su di lei: riprendi() la ripronuncia da capo.
+      zittisci();
       setInPausa(true); 
       if (socketRef.current && codiceSessione) {
         socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
@@ -435,8 +461,8 @@ function Player() {
 
   const riprendi = () => {
     if (parlando && inPausa) { 
-      vuoleAscoltare.current = true;
-      window.speechSynthesis.resume(); 
+      sintesi.vuoleAscoltare = true;
+      pronunciaDaDoveEravamo();
       setInPausa(false); 
       if (socketRef.current && codiceSessione) {
         socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
@@ -501,11 +527,20 @@ function Player() {
     { nome: t.comandi.piuAvanzato, frasi: ['troppo semplice', 'piu difficile', 'piu avanzato'], azione: () => cambiaLivello(1) },
     { nome: t.comandi.esci, frasi: ['esci', 'chiudi', 'torna alle visite'], azione: () => navigate('/') },
     ...(tappaCorrente?.indicazioneLogistica ? [
-      { nome: t.comandi.comeCiArrivo, frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], azione: () => parla(tappaCorrente.indicazioneLogistica) },
+      { nome: t.comandi.comeCiArrivo, frasi: ['come ci arrivo', 'come arrivo', 'dove devo andare', 'dove vado'], pronuncia: tappaCorrente.indicazioneLogistica },
     ] : []),
     // stessa fonte per bottoni e voce: ogni riga del pannello è anche un comando vocale
-    ...[...righeOpera, ...righeMuseo].map(([nome, , dettato, frasi]) => ({ nome, frasi, azione: () => rispondi(dettato) })),
+    ...[...righeOpera, ...righeMuseo].map(([nome, , dettato, frasi]) => ({ nome, frasi, dettato })),
   ];
+
+  // i comandi che non fanno altro che pronunciare un testo portano il testo, non una
+  // funzione: così la lettura parte da qui e la tabella dei comandi resta dati.
+  // dettato apre anche il pannello, pronuncia è solo voce.
+  const esegui = (comando) => {
+    if (comando.dettato) return rispondi(comando.dettato);
+    if (comando.pronuncia) return parla(comando.pronuncia);
+    comando.azione();
+  };
 
   const eseguiComando = async (trascrizione) => {
     // Il riconoscimento vocale scrive l'italiano con gli accenti: "dimmi di piu" arriva
@@ -529,7 +564,7 @@ function Player() {
 
     if (comando) {
       setStatoVoce(`${t.hoCapito}: ${comando.nome}`);
-      comando.azione();
+      esegui(comando);
       return;
     }
 
@@ -546,7 +581,7 @@ function Player() {
     const riconosciuto = comandi.find(c => c.nome === scelto);
     if (riconosciuto) {
       setStatoVoce(`${t.hoCapito}: ${riconosciuto.nome}`);
-      riconosciuto.azione();
+      esegui(riconosciuto);
     } else {
       setStatoVoce(`${t.nonHoCapito}: "${trascrizione}"`);
     }
@@ -561,7 +596,7 @@ function Player() {
     // Chi tocca il microfono mentre la voce legge vuole interromperla, non parlarci sopra:
     // se no il microfono sente la voce del telefono insieme alla sua. cancel() e non
     // pause(), che su Firefox non fa niente.
-    // vuoleAscoltare resta com'è: se il comando detto cambia tappa, la lettura riprende là.
+    // sintesi.vuoleAscoltare resta com'è: se il comando cambia tappa, la lettura riprende là.
     zittisci();
     setParlando(false);
     setInPausa(false);
