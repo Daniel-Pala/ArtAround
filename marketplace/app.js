@@ -37,10 +37,12 @@ async function caricaDashboardAutore() {
         if (!response.ok) throw new Error("Impossibile caricare i musei");
 
         const musei = await response.json();
-        // i musei sono di tutti: non c'è un proprietario, quindi la riga lo dice
+        // i musei sono di tutti: non c'è un proprietario, quindi la riga lo dice.
+        // Il numero resta una cifra anche quando è uno: è un conteggio, e si legge
+        // allo stesso modo mentre i musei crescono.
         if (rigaMusei) {
             rigaMusei.innerText = musei.length === 1
-                ? 'Un museo, visibile a tutti i curatori.'
+                ? '1 museo, visibile a tutti i curatori.'
                 : `${musei.length} musei, visibili a tutti i curatori.`;
         }
 
