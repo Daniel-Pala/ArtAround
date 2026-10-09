@@ -1,62 +1,55 @@
 # ArtAround
 
-Progetto di Tecnologie Web, A.A. 2025/26, Università di Bologna.
+Web Technologies course project, academic year 2025/26, University of Bologna.
 
-Un'audioguida per musei in due applicazioni. Il **marketplace** è dove i curatori scrivono i
-contenuti sulle opere e compongono le visite, e dove i visitatori le comprano. Il **navigator** è
-l'applicazione che si usa dentro al museo: legge o pronuncia i testi al livello e alla durata
-scelti, risponde ai comandi vocali, mostra la mappa e riconosce i codici QR appesi alle opere.
+A museum audio guide made of two applications. The **marketplace** is where curators write content about the artworks and assemble tours, and where visitors buy them. The **navigator** is the application used inside the museum: it shows or reads aloud the texts at the chosen level and length, answers voice commands, shows the map and recognises the QR codes placed next to the artworks.
 
-## Com'è fatto
+## How it is built
 
 ```
-backend/       Node.js, Express, MongoDB e Socket.io: le API, la visita guidata in tempo
-               reale, e la pubblicazione dei file delle due applicazioni
-marketplace/   HTML, CSS e JavaScript senza framework, una pagina per funzione
-navigator/     React e Vite
+backend/       Node.js, Express, MongoDB and Socket.io: the API, the real-time guided
+               tour, and serving the files of the two applications
+marketplace/   HTML, CSS and JavaScript with no framework, one page per feature
+navigator/     React and Vite
 ```
 
-In produzione un solo processo Express serve tutto: le API sotto `/api`, il marketplace alla
-radice e il navigator compilato sotto `/navigator`.
+In production a single Express process serves everything: the API under `/api`, the marketplace at the root and the compiled navigator under `/navigator`.
 
-## Avvio in locale
+## Running locally
 
-Serve Node.js 22 e un database MongoDB.
+You need Node.js 22 and a MongoDB database.
 
-**Backend.** Dentro `backend/` copia `.env.example` in `.env` e riempilo: la stringa di
-collegamento a MongoDB, una stringa qualsiasi come `JWT_SECRET`, e una chiave di un fornitore
-compatibile con l'API di OpenAI per le tre righe `AI_*` (quella preimpostata è Google Gemini).
+**Backend.** Inside `backend/`, copy `.env.example` to `.env` and fill it in: the MongoDB connection string, any string as `JWT_SECRET`, and a key from a provider compatible with the OpenAI API for the three `AI_*` lines (the default is Google Gemini).
 
 ```
 cd backend
 npm install
-node seed.js        # cancella il database e lo riempie con i dati di prova
-npm run dev         # porta 3000
+node seed.js        # wipes the database and fills it with sample data
+npm run dev         # port 3000
 ```
 
-Il marketplace è su `http://localhost:3000/login.html`.
+The marketplace is at `http://localhost:3000/login.html`.
 
-**Navigator.** In un secondo terminale:
+**Navigator.** In a second terminal:
 
 ```
 cd navigator
 npm install
-npm run dev         # porta 5173, gira le chiamate /api al backend sulla 3000
+npm run dev         # port 5173, forwards /api calls to the backend on 3000
 ```
 
-Il navigator è su `http://localhost:5173`. Per i comandi vocali serve Chrome o Safari: Firefox
-non ha il riconoscimento vocale.
+The navigator is at `http://localhost:5173`. Voice commands need Chrome or Safari: Firefox has no speech recognition.
 
-## Account di prova
+## Sample accounts
 
-Dopo `node seed.js`, tutti con password `12345678`:
+After `node seed.js`, all with password `12345678`:
 
-| utente | ruolo |
-|---|---|
-| `autore1`, `autore2` | curatori: scrivono item e compongono visite |
-| `visitatore1` | ha già comprato le visite pubbliche di tutti e due i musei |
-| `visitatore2` | non ha ancora comprato niente |
+| user | role |
+| --- | --- |
+| `autore1`, `autore2` | curators: they write items and assemble tours |
+| `visitatore1` | has already bought the public tours of both museums |
+| `visitatore2` | has not bought anything yet |
 
-## Documentazione
+## Documentation
 
-Le rotte dell'API sono descritte in [`API.md`](API.md).
+The API routes are described in [API.md](API.md).
