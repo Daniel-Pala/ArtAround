@@ -18,11 +18,27 @@ const io = new Server(server)
 
 // Stato globale delle sessioni in RAM
 const sessioni = new Map()
-app.locals.sessioni = sessioni // Condividiamo lo stato con le rotte Express per la gestione live degli studenti
 
 // Funzione helper per generare un codice stanza
 const generaCodice = () => Math.random().toString(36).substring(2, 8).toUpperCase()
-const normalizzaCodice = (str) => str ? str.trim().toUpperCase().replace(/\s+/g, '') : ''
+// Il codice della lezione la docente lo detta a voce ("fenice rossa"), quindi chi lo
+// scrive può metterci uno spazio, un trattino o niente: vanno tolti tutti e due, altrimenti
+// "FENICE-ROSSA" e "Fenice rossa" sono due stanze diverse. Da quando il codice è anche il
+// permesso per leggere i testi, non combaciare vuol dire restare senza audioguida.
+const normalizzaCodice = (str) => str ? str.trim().toUpperCase().replace(/[\s-]+/g, '') : ''
+
+// Alle rotte Express serve sapere se un codice è quello di una lezione aperta: è così che
+// uno studente legge i testi di una visita che non ha comprato. Esponiamo la ricerca e non
+// la mappa, così da fuori si può solo chiedere "questo codice è di una lezione viva?".
+app.locals.sessioneLive = (codice) => sessioni.get(normalizzaCodice(codice))
+
+// L'elenco della classe, il feed delle attività e la tabella dei voti sono roba della
+// docente: ci sono dentro i nomi e i voti dei compagni. Vanno al suo socket, non alla
+// stanza, dove li riceverebbero anche gli studenti.
+const alDocente = (sessione, evento, dati) => {
+  if (sessione?.docenteSocketId) io.to(sessione.docenteSocketId).emit(evento, dati)
+}
+const mandaElenco = (sessione) => alDocente(sessione, 'sessione:studenti', Array.from(sessione.studenti.values()))
 
 io.on('connection', (socket) => {
   console.log(`Socket connesso: ${socket.id}`)
@@ -32,17 +48,27 @@ io.on('connection', (socket) => {
     const codiceRaw = codiceMnemonico || generaCodice()
     const codiceChiave = normalizzaCodice(codiceRaw)
     
-    sessioni.set(codiceChiave, {
-      visitaId,
-      codiceOriginale: codiceRaw,
-      indiceCorrente: 0,
-      fase: 'visita',
-      quizDati: null, // Aggiunto per persistenza in caso di riconnessione
-      studenti: new Map()
-    })
+    // Se la lezione con questo codice esiste già significa che la docente ha ricaricato
+    // la pagina: la si riprende invece di ricrearla, altrimenti l'elenco della classe e
+    // i voti del quiz ripartirebbero da zero mentre gli studenti sono ancora dentro.
+    const esistente = sessioni.get(codiceChiave)
+    if (esistente) {
+      esistente.docenteSocketId = socket.id
+    } else {
+      sessioni.set(codiceChiave, {
+        visitaId,
+        codiceOriginale: codiceRaw,
+        indiceCorrente: 0,
+        fase: 'visita',
+        quizDati: null, // Aggiunto per persistenza in caso di riconnessione
+        docenteSocketId: socket.id,
+        studenti: new Map()
+      })
+    }
 
     socket.join(codiceChiave)
     socket.emit('sessione:creata', { codice: codiceRaw })
+    mandaElenco(sessioni.get(codiceChiave))
   })
 
   socket.on('docente:vaiA', ({ codice, indice }) => {
@@ -96,12 +122,6 @@ io.on('connection', (socket) => {
   })
 
   // Vecchio evento di chiusura, mantenuto per compatibilità
-  socket.on('docente:chiudi', ({ codice }) => {
-    const key = normalizzaCodice(codice)
-    io.to(key).emit('sessione:fine')
-    sessioni.delete(key)
-  })
-
   // Nuovo evento sincronizzato per terminare la lezione forzatamente per tutti
   socket.on('termina_sessione', ({ codiceSessione }) => {
     const key = normalizzaCodice(codiceSessione)
@@ -152,8 +172,7 @@ io.on('connection', (socket) => {
         socket.emit('quiz:inizio', { quiz: sessione.quizDati })
       }
       
-      const listaStudenti = Array.from(sessione.studenti.values())
-      io.to(key).emit('sessione:studenti', listaStudenti)
+      mandaElenco(sessione)
     } else {
       socket.emit('errore', { messaggio: 'Codice sessione non trovato' })
     }
@@ -167,11 +186,10 @@ io.on('connection', (socket) => {
       studente.livello = livello
       studente.durata = durata
       
-      const listaStudenti = Array.from(sessione.studenti.values())
-      io.to(key).emit('sessione:studenti', listaStudenti)
+      mandaElenco(sessione)
 
       // Struttura log allineata alla dashboard del docente
-      io.to(key).emit('docente:nuovaAttivita', {
+      alDocente(sessione, 'docente:nuovaAttivita', {
         nome: studente.nome,
         tipo: 'Cambio Modalità',
         dettaglio: `Livello: ${livello} - ${durata}`,
@@ -186,7 +204,7 @@ io.on('connection', (socket) => {
     const sessione = sessioni.get(key)
     if (sessione && sessione.studenti.has(socket.id)) {
       const studente = sessione.studenti.get(socket.id)
-      io.to(key).emit('docente:nuovaAttivita', {
+      alDocente(sessione, 'docente:nuovaAttivita', {
         nome: studente.nome,
         tipo: azione,
         dettaglio: dettaglio || '',
@@ -207,20 +225,19 @@ io.on('connection', (socket) => {
       studente.totale = totaleDomande
       
       // Manda la lista aggiornata per i log base
-      const listaStudenti = Array.from(sessione.studenti.values())
-      io.to(key).emit('sessione:studenti', listaStudenti)
+      mandaElenco(sessione)
 
       // Invia la classifica specifica per la tabella dei voti del docente
-      const risultati = listaStudenti.filter(s => s.voto !== null).map(s => ({
+      const risultati = Array.from(sessione.studenti.values()).filter(s => s.voto !== null).map(s => ({
         nome: s.nome,
         punteggio: s.punteggio,
         totale: s.totale,
         voto: s.voto
       }))
-      io.to(key).emit('docente:risultatiQuiz', risultati)
+      alDocente(sessione, 'docente:risultatiQuiz', risultati)
 
       // Registrazione dell'evento completamento quiz nel feed attività docente
-      io.to(key).emit('docente:nuovaAttivita', {
+      alDocente(sessione, 'docente:nuovaAttivita', {
         nome: studente.nome,
         tipo: 'Completato Quiz',
         dettaglio: `Voto: ${voto}/10 (${corrette}/${totaleDomande})`,
@@ -237,10 +254,15 @@ io.on('connection', (socket) => {
         // Mantiene i dati dello studente (compreso il voto), contrassegnandolo offline
         const studente = sessione.studenti.get(socket.id)
         studente.online = false
-        
-        const listaStudenti = Array.from(sessione.studenti.values())
-        io.to(key).emit('sessione:studenti', listaStudenti)
+        mandaElenco(sessione)
       }
+      if (sessione.docenteSocketId === socket.id) sessione.docenteSocketId = null
+
+      // Le stanze vivono in RAM: chiudere la finestra invece di premere "Chiudi sessione"
+      // le lasciava lì per sempre. La stanza si libera quando non è rimasto nessuno, così
+      // la docente che ricarica la pagina non interrompe la lezione alla classe.
+      const qualcunoOnline = Array.from(sessione.studenti.values()).some(s => s.online)
+      if (!sessione.docenteSocketId && !qualcunoOnline) sessioni.delete(key)
     })
   })
 })
