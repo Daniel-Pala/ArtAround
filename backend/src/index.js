@@ -22,7 +22,11 @@ app.locals.sessioni = sessioni // Condividiamo lo stato con le rotte Express per
 
 // Funzione helper per generare un codice stanza
 const generaCodice = () => Math.random().toString(36).substring(2, 8).toUpperCase()
-const normalizzaCodice = (str) => str ? str.trim().toUpperCase().replace(/\s+/g, '') : ''
+// Il codice della lezione la docente lo detta a voce ("fenice rossa"), quindi chi lo
+// scrive può metterci uno spazio, un trattino o niente. Vanno tolti tutti e due:
+// Docente.jsx propone "FENICE-ROSSA", lo studente scrive quello che sente, e con il solo
+// taglio degli spazi finivano in due stanze diverse.
+const normalizzaCodice = (str) => str ? str.trim().toUpperCase().replace(/[\s-]+/g, '') : ''
 
 io.on('connection', (socket) => {
   console.log(`Socket connesso: ${socket.id}`)
@@ -32,17 +36,28 @@ io.on('connection', (socket) => {
     const codiceRaw = codiceMnemonico || generaCodice()
     const codiceChiave = normalizzaCodice(codiceRaw)
     
-    sessioni.set(codiceChiave, {
-      visitaId,
-      codiceOriginale: codiceRaw,
-      indiceCorrente: 0,
-      fase: 'visita',
-      quizDati: null, // Aggiunto per persistenza in caso di riconnessione
-      studenti: new Map()
-    })
+    // Se la lezione con questo codice esiste già significa che la docente ha ricaricato
+    // la pagina: la si riprende invece di ricrearla, altrimenti l'elenco della classe e
+    // i voti del quiz ripartono da zero con gli studenti ancora dentro.
+    const esistente = sessioni.get(codiceChiave)
+    if (esistente) {
+      esistente.docenteSocketId = socket.id
+    } else {
+      sessioni.set(codiceChiave, {
+        visitaId,
+        codiceOriginale: codiceRaw,
+        indiceCorrente: 0,
+        fase: 'visita',
+        quizDati: null, // Aggiunto per persistenza in caso di riconnessione
+        docenteSocketId: socket.id,
+        studenti: new Map()
+      })
+    }
 
     socket.join(codiceChiave)
     socket.emit('sessione:creata', { codice: codiceRaw })
+    const sessione = sessioni.get(codiceChiave)
+    io.to(codiceChiave).emit('sessione:studenti', Array.from(sessione.studenti.values()))
   })
 
   socket.on('docente:vaiA', ({ codice, indice }) => {
@@ -241,6 +256,13 @@ io.on('connection', (socket) => {
         const listaStudenti = Array.from(sessione.studenti.values())
         io.to(key).emit('sessione:studenti', listaStudenti)
       }
+      if (sessione.docenteSocketId === socket.id) sessione.docenteSocketId = null
+
+      // La stanza si libera quando non è rimasto nessuno. Serve perché qui sopra una
+      // lezione che esiste viene ripresa: senza questo, riaprire la stessa lezione il
+      // giorno dopo ci ritroverebbe dentro gli studenti della volta prima.
+      const qualcunoOnline = Array.from(sessione.studenti.values()).some(s => s.online)
+      if (!sessione.docenteSocketId && !qualcunoOnline) sessioni.delete(key)
     })
   })
 })
