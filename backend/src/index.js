@@ -18,6 +18,7 @@ const io = new Server(server)
 
 // Stato globale delle sessioni in RAM
 const sessioni = new Map()
+app.locals.sessioni = sessioni // Condividiamo lo stato con le rotte Express per la gestione live degli studenti
 
 // Funzione helper per generare un codice stanza
 const generaCodice = () => Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -173,7 +174,7 @@ io.on('connection', (socket) => {
       io.to(key).emit('docente:nuovaAttivita', {
         nome: studente.nome,
         tipo: 'Cambio Modalità',
-        dettaglio: `Livello: ${livello} -${durata}`,
+        dettaglio: `Livello: ${livello} - ${durata}`,
         orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       })
     }

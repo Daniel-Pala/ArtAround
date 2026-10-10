@@ -63,7 +63,16 @@ router.get('/:id', richiediAutenticazione, async (req, res) => {
     const acquistata = await Utente.exists({ _id: req.user.userId, acquisti: visita._id });
     const sua = String(visita.autoreId?._id) === req.user.userId;
 
-    await visita.populate({ path: 'items.itemId', select: acquistata || sua ? undefined : 'titolo' });
+    // CONTROLLO SESSIONE LIVE: Se c'è una sessione live attiva per questa visita, 
+    // permettiamo agli studenti di accedere ai testi completi anche senza acquisto preventivo.
+    const sessioni = req.app.locals.sessioni;
+    const inSessioneLive = sessioni ? Array.from(sessioni.values()).some(
+      s => String(s.visitaId) === String(visita._id)
+    ) : false;
+
+    const autorizzato = acquistata || sua || inSessioneLive;
+
+    await visita.populate({ path: 'items.itemId', select: autorizzato ? undefined : 'titolo' });
     res.json(visita);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -158,7 +167,7 @@ router.put('/:id', richiediAutore, async (req, res) => {
 // Elimina una visita (Solo Autori proprietari)
 router.delete('/:id', richiediAutore, async (req, res) => {
   try {
-    const visita = await Visita.findById(req.params.id);
+    let visita = await Visita.findById(req.params.id);
     if (!visita) return res.status(404).json({ message: 'Visita non trovata' });
     if (String(visita.autoreId) !== req.user.userId) {
       return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' });
