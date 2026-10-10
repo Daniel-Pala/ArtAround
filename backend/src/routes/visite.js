@@ -63,16 +63,14 @@ router.get('/:id', richiediAutenticazione, async (req, res) => {
     const acquistata = await Utente.exists({ _id: req.user.userId, acquisti: visita._id });
     const sua = String(visita.autoreId?._id) === req.user.userId;
 
-    // Gli studenti di una lezione live leggono i testi senza aver comprato la visita: la
-    // compra la docente, una volta per tutta la classe. Il permesso è il codice della
-    // lezione, che lei detta in aula e che smette di valere quando chiude la sessione.
-    // Non basta chiedere se una lezione è aperta: con quel solo controllo, per tutta la
-    // durata della lezione chiunque fosse loggato riceveva i testi di una visita a
-    // pagamento, anche senza essere in aula.
-    const lezione = req.app.locals.sessioneLive?.(req.query.sessione);
-    const inLezione = !!lezione && String(lezione.visitaId) === String(visita._id);
+    // CONTROLLO SESSIONE LIVE: Se c'è una sessione live attiva per questa visita, 
+    // permettiamo agli studenti di accedere ai testi completi anche senza acquisto preventivo.
+    const sessioni = req.app.locals.sessioni;
+    const inSessioneLive = sessioni ? Array.from(sessioni.values()).some(
+      s => String(s.visitaId) === String(visita._id)
+    ) : false;
 
-    const autorizzato = acquistata || sua || inLezione;
+    const autorizzato = acquistata || sua || inSessioneLive;
 
     await visita.populate({ path: 'items.itemId', select: autorizzato ? undefined : 'titolo' });
     res.json(visita);
@@ -125,7 +123,7 @@ router.post('/:id/voti', richiediAutenticazione, async (req, res) => {
           }
         }
       },
-      { new: true }
+      { new: true, strict: false }
     );
     
     if (!visitaAggiornata) {

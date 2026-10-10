@@ -9,23 +9,6 @@ const domandaQuizSchema = new mongoose.Schema({
   rispostaCorretta: { type: Number, default: 0 }
 }, { _id: false })
 
-// Lo storico delle lezioni live: una riga per sessione, con i voti del quiz.
-// Sta nello schema invece di essere scritto di straforo con strict:false, così mongoose
-// controlla i campi: è proprio con strict:false che codiceMnemonico veniva scartato in
-// silenzio e il nome mnemonico è rimasto perso per settimane.
-const esitoQuizSchema = new mongoose.Schema({
-  nome: String,
-  punteggio: Number,
-  totale: Number,
-  voto: Number
-}, { _id: false })
-
-const sessioneLiveSchema = new mongoose.Schema({
-  codiceSessione: String,
-  data: { type: Date, default: Date.now },
-  risultati: [esitoQuizSchema]
-}, { _id: false })
-
 const visitaSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
@@ -44,7 +27,6 @@ const visitaSchema = new mongoose.Schema({
   prezzo: { type: Number, default: 0 },
   codiceMnemonico: { type: String }, // es. "Fenice rossa"
   quiz: [domandaQuizSchema],      // Array delle domande a risposta multipla create dal docente
-  storicoLive: [sessioneLiveSchema],
   createdAt: { type: Date, default: Date.now }
 })
 

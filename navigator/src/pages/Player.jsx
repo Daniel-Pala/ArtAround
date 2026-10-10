@@ -109,16 +109,11 @@ function Player() {
   useEffect(() => {
     if (!visitaIdAttiva) return;
     setLoading(true);
-    // in lezione il codice va mandato al server: è quello che gli fa sbloccare i testi
-    // per chi non ha comprato la visita
-    const indirizzo = codiceSessione
-      ? `/api/visite/${visitaIdAttiva}?sessione=${encodeURIComponent(codiceSessione)}`
-      : `/api/visite/${visitaIdAttiva}`;
-    fetchAuth(indirizzo)
+    fetchAuth(`/api/visite/${visitaIdAttiva}`)
       .then(res => res.json())
       .then(data => setVisita(data))
       .finally(() => setLoading(false));
-  }, [visitaIdAttiva, codiceSessione]);
+  }, [visitaIdAttiva]);
 
   useEffect(() => {
     if (!codiceSessione) return;
