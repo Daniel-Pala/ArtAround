@@ -41,8 +41,11 @@ function Player() {
   const [loading, setLoading] = useState(true);
 
   const [indiceAttuale, setIndiceAttuale] = useState(0);
+  // Livello e durata di partenza: la coppia più diffusa fra i testi scritti dai curatori,
+  // così la prima opera si sente subito. Partendo da una combinazione che quasi nessuna
+  // opera ha, la prima cosa che il visitatore incontra è l'attesa del testo da scrivere.
   const [livelloScelto, setLivelloScelto] = useState('medio');
-  const [durataScelta, setDurataScelta] = useState('15s');
+  const [durataScelta, setDurataScelta] = useState('1min');
   const [linguaScelta, setLinguaScelta] = useState('it');
 
   // etichette dell'interfaccia e codice lingua per la voce e per il microfono
