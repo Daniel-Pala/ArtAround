@@ -591,7 +591,7 @@ const VISITE_PEPOLI = [
     autore: 'autore2',
     pubblica: true,
     prezzo: 3,
-    infoLogistiche: 'Un percorso breve, tutto col naso all\'insù: le cinque volte affrescate, da Canuti a Creti. Circa mezz\'ora.',
+    infoLogistiche: 'Ingresso da via Castiglione, le sale sono al piano nobile. Il percorso tocca solo le cinque volte affrescate e dura circa mezz\'ora.',
     tappe: [
       { opera: 'quadratura', indicazione: 'Nell\'atrio, prima di salire: che cos\'è la quadratura.' },
       { opera: 'Q131543603', indicazione: 'Sali lo scalone e gira a destra, nel Salone d\'onore.' },

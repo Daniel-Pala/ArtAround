@@ -6,7 +6,8 @@ const { richiediAutore } = require('../middleware/autorizzazione')
 router.get('/', async (req, res) => {
   try {
     //ritorna tuttti i musei presenti in MongoDB 
-    const musei = await Museo.find() 
+    // in ordine alfabetico: senza sort l'elenco segue l'ordine di inserimento
+    const musei = await Museo.find().sort({ nome: 1 })
     res.json(musei)
   } catch (err) {
     res.status(500).json({ message: err.message })
