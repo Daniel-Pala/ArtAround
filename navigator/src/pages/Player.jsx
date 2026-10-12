@@ -58,8 +58,6 @@ function Player() {
   const [generando, setGenerando] = useState(false);
   const [erroreTesto, setErroreTesto] = useState('');
 
-  const [voci, setVoci] = useState([]);
-
   const [ascoltando, setAscoltando] = useState(false);
   const [statoVoce, setStatoVoce] = useState('');
   const riconoscimentoRef = useRef(null);
@@ -80,6 +78,7 @@ function Player() {
     indice: 0,             // la frase da pronunciare: è qui che riprende dopo una pausa
     lettura: 0,            // numero della lettura in corso, per scartare gli onend in ritardo
     vuoleAscoltare: false, // l'utente vuole sentire la voce (≠ la voce sta parlando)
+    voce: null,            // la voce scelta per questa lettura, uguale per tutte le frasi
     onFine: null,
   }).current;
 
@@ -188,15 +187,6 @@ function Player() {
       .then(setConfig);
   }, [visita]);
 
-  // le voci del browser arrivano in modo asincrono, e le tengo tutte: quale usare dipende
-  // dalla lingua scelta, che cambia mentre la visita è in corso
-  useEffect(() => {
-    const caricaVoci = () => setVoci(window.speechSynthesis.getVoices());
-    caricaVoci();
-    window.speechSynthesis.onvoiceschanged = caricaVoci;
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
-  }, []);
-
   // se cambia item o combinazione livello/durata, azzero l'audio in corso. La lettura
   // riprende poi sul testo nuovo, ma solo se l'utente la voleva: decide vuoleAscoltare,
   // non speechSynthesis.speaking, che su Firefox e su Chrome non risponde allo stesso modo.
@@ -288,8 +278,17 @@ function Player() {
     return () => { annullato = true; };
   }, [itemCorrente?._id, livelloScelto, durataScelta, linguaScelta]);
 
-  // pronuncia un testo con una voce della lingua scelta; onEnd opzionale.
-  // Se il sistema non ha una voce per quella lingua ci pensa il browser con la sua.
+  // L'elenco delle voci il browser lo riempie a ondate: appena aperta la pagina è vuoto,
+  // mezzo secondo dopo ha venti voci. Lo leggo quindi quando serve, non una volta sola
+  // all'avvio, e prendo la voce del paese esatto (it-IT) prima di una qualsiasi italiana.
+  // Senza voce ci pensa il browser con la sua.
+  const scegliVoce = () => {
+    const disponibili = window.speechSynthesis.getVoices();
+    return disponibili.find(v => v.lang.toLowerCase() === tagLingua.toLowerCase())
+      || disponibili.find(v => v.lang.toLowerCase().startsWith(linguaScelta))
+      || null;
+  };
+
   // pronuncia la frase a cui siamo arrivati e si richiama da sola sulla successiva.
   // Un onend che arriva da una lettura già annullata ha un numero vecchio e si scarta:
   // su Firefox arriva in ritardo, e senza questo controllo la fine della tappa precedente
@@ -304,8 +303,9 @@ function Player() {
     const mia = sintesi.lettura;
     const voce = new SpeechSynthesisUtterance(sintesi.frasi[sintesi.indice]);
     voce.lang = tagLingua;
-    const adatta = voci.find(v => v.lang.toLowerCase().startsWith(linguaScelta));
-    if (adatta) voce.voice = adatta;
+    // se la lettura è partita quando l'elenco era ancora vuoto, riprovo adesso
+    if (!sintesi.voce) sintesi.voce = scegliVoce();
+    if (sintesi.voce) voce.voice = sintesi.voce;
     voce.onend = () => {
       if (mia !== sintesi.lettura) return;
       sintesi.indice++;
@@ -319,6 +319,10 @@ function Player() {
     sintesi.frasi = inFrasi(testo);
     sintesi.indice = 0;
     sintesi.onFine = onFine ?? null;
+    // La voce si sceglie una volta per lettura e vale per tutte le frasi. Scegliendola a
+    // ogni frase, come si faceva prima, un elenco che si riempiva nel frattempo portava
+    // la frase dopo su una voce diversa: su Safari il testo cambiava lingua a metà strada.
+    sintesi.voce = scegliVoce();
     pronunciaDaDoveEravamo();
   };
 
@@ -343,7 +347,10 @@ function Player() {
     }
   };
 
-  const pausa = () => {
+  // daDocente dice solo chi ha premuto, e serve al registro della docente: la sua pausa
+  // passa da qui, e senza questa distinzione il registro le diceva che a fermarsi erano
+  // stati gli studenti, uno per uno. La dicitura è quella che usa già l'avvio forzato.
+  const pausa = ({ daDocente } = {}) => {
     if (parlando && !inPausa) { 
       sintesi.vuoleAscoltare = false;
       // zittisci alza il numero della lettura, quindi l'onend della frase interrotta viene
@@ -351,18 +358,24 @@ function Player() {
       zittisci();
       setInPausa(true); 
       if (socketRef.current && codiceSessione) {
-        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
+        socketRef.current.emit('studente:azione', {
+          codice: codiceSessione,
+          azione: daDocente ? "ha messo in pausa l'audio (forzata dal docente)" : "ha messo in pausa l'audio"
+        });
       }
     }
   };
 
-  const riprendi = () => {
+  const riprendi = ({ daDocente } = {}) => {
     if (parlando && inPausa) { 
       sintesi.vuoleAscoltare = true;
       pronunciaDaDoveEravamo();
       setInPausa(false); 
       if (socketRef.current && codiceSessione) {
-        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
+        socketRef.current.emit('studente:azione', {
+          codice: codiceSessione,
+          azione: daDocente ? "ha ripreso l'audio (forzato dal docente)" : "ha ripreso l'audio"
+        });
       }
     }
   };
@@ -404,8 +417,8 @@ function Player() {
   // docente il play dello studente restava muto.
   useEffect(() => {
     if (!comandoAudioDocente) return;
-    if (comandoAudioDocente.azione === 'pausa') pausa();
-    else riprendi();
+    if (comandoAudioDocente.azione === 'pausa') pausa({ daDocente: true });
+    else riprendi({ daDocente: true });
   }, [comandoAudioDocente]);
 
   // Gestione del riavvio forzato dal docente
