@@ -67,7 +67,17 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
       'items.itemId': item._id,
       $or: [{ autoreId: req.user.userId }, { _id: { $in: utente.acquisti } }]
     })
-    if (!suo && !inUnaSuaVisita) {
+    // Durante una lezione sincrona gli studenti non hanno comprato niente: il loro permesso
+    // è la lezione aperta, come nel dettaglio della visita. Lì il controllo parte dalla
+    // visita che si sta aprendo, qui parto dall'item e guardo se sta in una di quelle in
+    // lezione. Senza questo lo studente leggeva i testi già scritti ma cambiando livello
+    // si sentiva rispondere "testo non disponibile", ed era l'unica cosa che poteva scegliere.
+    const inLezione = Array.from(req.app.locals.sessioni.values()).map(s => s.visitaId)
+    const inSessioneLive = inLezione.length > 0 && await Visita.exists({
+      _id: { $in: inLezione },
+      'items.itemId': item._id
+    })
+    if (!suo && !inUnaSuaVisita && !inSessioneLive) {
       return res.status(403).json({ message: 'Questo contenuto non è tuo' })
     }
 
@@ -156,7 +166,9 @@ router.post('/comando', richiediAutenticazione, async (req, res) => {
 // Il museo lo sceglie l'utente nel form, perché mappa e logistica valgono per un museo solo:
 // un percorso che ne mescolasse due non si potrebbe nemmeno seguire. Sta dentro la query, così
 // chiedere un museo in cui non si ha nessuna visita dà semplicemente zero risultati.
-// Torna anche le indicazioni logistiche, che ogni tappa si porta dietro dalla visita da cui viene.
+// Torna anche l'indicazione per arrivare a ogni tappa, che si porta dietro dalla visita da
+// cui viene, e le informazioni logistiche della prima visita che la query restituisce: sono
+// quelle del museo (ingresso, biglietto, guardaroba), quindi valgono anche qui.
 async function opereDisponibili(utente, museoId) {
   const sue = await Visita.find({
     museoId,
@@ -257,15 +269,11 @@ router.post('/visita', richiediAutenticazione, async (req, res) => {
       nome: scelta.nome || `Visita di ${tempi[minuti]}`,
       museoId,
       autoreId: utente._id,
-      pubblica: false,
       suMisura: true,
-      prezzo: 0,
       infoLogistiche,
       // l'indicazione per arrivare a una tappa se la porta dietro dalla visita da cui viene
-      items: scelti.map((id, posizione) => ({
+      items: scelti.map(id => ({
         itemId: id,
-        ordine: posizione + 1,
-        opzionale: false,
         indicazioneLogistica: indicazioni.get(id)
       }))
     })

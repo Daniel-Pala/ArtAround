@@ -13,9 +13,10 @@ const visitaSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   museoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Museo', required: true },
   autoreId: { type: mongoose.Schema.Types.ObjectId, ref: 'Utente', required: true },
+  // La sequenza delle tappe è la loro posizione in questo array: non c'è nessun campo
+  // "ordine", perché un numero scritto accanto alla posizione può solo contraddirla.
   items: [{
     itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
-    ordine: Number,
     opzionale: { type: Boolean, default: false },
     indicazioneLogistica: String
   }],
@@ -26,7 +27,7 @@ const visitaSchema = new mongoose.Schema({
   suMisura: { type: Boolean, default: false },
   prezzo: { type: Number, default: 0 },
   codiceMnemonico: { type: String }, // es. "Fenice rossa"
-  quiz: [domandaQuizSchema],      // Array delle domande a risposta multipla create dal docente
+  quiz: [domandaQuizSchema], // il test finale della lezione sincrona
   createdAt: { type: Date, default: Date.now }
 })
 

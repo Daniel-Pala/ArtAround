@@ -24,8 +24,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Le visite che l'utente può avviare nel Navigator: quelle acquistate più,
-// se è un autore, quelle scritte da lui (i propri percorsi non si comprano).
+// Le visite che l'utente può avviare nel Navigator: quelle acquistate più quelle di cui
+// risulta autore. Non si guarda il ruolo di proposito: oltre ai percorsi di un curatore,
+// che non ha senso far comprare a sé stesso, questo fa comparire i percorsi su misura, che
+// hanno come autore il visitatore che se li è fatti comporre.
 router.get('/mie-visite', richiediAutenticazione, async (req, res) => {
   try {
     // Il token non scade mai e il seed ricrea gli utenti da zero: un token di un
@@ -173,6 +175,9 @@ router.delete('/:id', richiediAutore, async (req, res) => {
       return res.status(403).json({ message: 'Non sei il proprietario di questa risorsa' });
     }
     await Visita.findByIdAndDelete(req.params.id);
+    // come fa la delete dell'item con i percorsi che lo contenevano: l'id va tolto anche da
+    // chi aveva comprato la visita, altrimenti resta negli acquisti a puntare al vuoto
+    await Utente.updateMany({}, { $pull: { acquisti: req.params.id } });
     res.json({ messaggio: 'Visita eliminata' });
   } catch (err) {
     res.status(500).json({ message: err.message });

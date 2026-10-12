@@ -60,8 +60,13 @@ function Dashboard() {
     });
     const dati = await res.json();
     setComponendo(false);
-    if (res.ok) navigate(`/player/${dati._id}`);
-    else setErroreMisura(dati.message || 'Non sono riuscito a preparare il percorso.');
+    if (res.ok) return navigate(`/player/${dati._id}`);
+    // Sui 400 il messaggio è nostro ed è in italiano ("scegli un museo", "nessuna opera
+    // disponibile"). Sui 5xx invece dentro c'è il testo che manda il fornitore della LLM,
+    // e il visitatore non deve sapere che dietro c'è una LLM: quello resta nei log.
+    setErroreMisura(res.status < 500 && dati.message
+      ? dati.message
+      : 'Non sono riuscito a preparare il percorso. Riprova.');
   };
 
   return (

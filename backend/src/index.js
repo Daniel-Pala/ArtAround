@@ -45,7 +45,6 @@ io.on('connection', (socket) => {
     } else {
       sessioni.set(codiceChiave, {
         visitaId,
-        codiceOriginale: codiceRaw,
         indiceCorrente: 0,
         fase: 'visita',
         quizDati: null, // Aggiunto per persistenza in caso di riconnessione
@@ -277,6 +276,8 @@ app.use('/api/visite', require('./routes/visite'))
 app.use('/api/ai', require('./routes/ai'))
 app.use('/api/admin', require('./routes/admin'))
 
+// Nessun client la chiama: serve a controllare a mano, dopo un deploy, che il processo sia
+// vivo e che sia questo a rispondere e non la pagina statica.
 app.get('/api-status', (req, res) => {
   res.json({ messaggio: 'ArtAround backend funziona' })
 })

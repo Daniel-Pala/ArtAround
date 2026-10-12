@@ -47,7 +47,7 @@ async function caricaDashboardAutore() {
         }
 
         if (musei.length === 0) {
-            listaMusei.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Non gestisci ancora nessun museo.</td></tr>`;
+            listaMusei.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Nessun museo registrato.</td></tr>`;
             return;
         }
 
@@ -121,8 +121,9 @@ async function caricaMarketplaceVisitatore() {
         
         if (resAcquisti.ok) {
             const acquistiRaw = await resAcquisti.json();
-            // la rotta restituisce le visite popolate, ma in altri punti sono solo id: normalizzo a stringa
-            acquistiIds = acquistiRaw.map(a => String(a._id || a));
+            // mie-visite restituisce le visite intere: tengo solo l'id, come stringa,
+            // perché è con quello che confronto le visite della vetrina
+            acquistiIds = acquistiRaw.map(v => String(v._id));
         }
 
         if (visite.length === 0) {

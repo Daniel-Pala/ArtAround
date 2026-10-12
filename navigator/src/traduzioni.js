@@ -66,7 +66,7 @@ export const TRADUZIONI = {
     ariaMicrofono: 'Voice command', ariaFermaMicrofono: 'Stop listening',
     ariaQr: 'Scan the QR code of an artwork', ariaChiudiQr: 'Close the camera',
     ascoltando: 'Listening...', unMomento: 'One moment...',
-    hoCapito: 'Understood', nonHoCapito: "I didn't get", nonHoSentito: "I didn't hear you, try again",
+    hoCapito: 'Understood', nonHoCapito: "I didn't get that", nonHoSentito: "I didn't hear you, try again",
     fuoriVisita: (titolo) => `"${titolo}" is not part of this tour.`,
     codiceIgnoto: 'This code does not match any artwork.',
     fotocameraKo: 'I cannot open the camera.',

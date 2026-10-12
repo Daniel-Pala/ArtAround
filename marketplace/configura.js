@@ -72,29 +72,11 @@ async function caricaVisitaEsistente() {
         // Popola il nome della visita
         document.getElementById('nomeVisita').value = visita.nome;
         
-        // Popola il codice mnemonico se presente
-        const codiceField = document.getElementById('codiceMnemonico');
-        if (codiceField) {
-            codiceField.value = visita.codiceMnemonico || '';
-        }
-
-        // Popola le informazioni logistiche se presenti
-        const infoLogisticheField = document.getElementById('infoLogistiche');
-        if (infoLogisticheField) {
-            infoLogisticheField.value = visita.infoLogistiche || '';
-        }
-
-        // Popola il prezzo
-        const prezzoField = document.getElementById('prezzoVisita');
-        if (prezzoField) {
-            prezzoField.value = visita.prezzo || 0;
-        }
-
-        // Popola lo stato di pubblicazione
-        const pubblicaCheckbox = document.getElementById('pubblicaVisita');
-        if (pubblicaCheckbox) {
-            pubblicaCheckbox.checked = visita.pubblica || false;
-        }
+        document.getElementById('codiceMnemonico').value = visita.codiceMnemonico || '';
+        document.getElementById('infoLogistiche').value = visita.infoLogistiche || '';
+        // un campo numerico vuoto darebbe NaN, e la casella vuole un booleano
+        document.getElementById('prezzoVisita').value = visita.prezzo || 0;
+        document.getElementById('pubblicaVisita').checked = visita.pubblica || false;
 
         // Popola il quiz se presente
         if (visita.quiz && Array.isArray(visita.quiz)) {
@@ -108,8 +90,7 @@ async function caricaVisitaEsistente() {
             _id: tappa.itemId._id,
             titolo: tappa.itemId.titolo,
             autoreId: tappa.itemId.autoreId,
-            // le visite salvate prima di questa funzione non hanno il campo:
-            // senza il fallback in pagina comparirebbe la scritta "undefined"
+            // l'indicazione è facoltativa: senza il ripiego in pagina comparirebbe "undefined"
             indicazioneLogistica: tappa.indicazioneLogistica || '',
             opzionale: tappa.opzionale
         }));
@@ -315,28 +296,28 @@ async function salvaVisita() {
         return;
     }
 
-    const codiceMnemonico = document.getElementById('codiceMnemonico')?.value.trim() || '';
+    const codiceMnemonico = document.getElementById('codiceMnemonico').value.trim();
     
     // Controllo validità form Quiz
     const quizValido = quizDomande.every(q => q.quesito.trim() !== '' && q.opzioni.every(o => o.trim() !== ''));
-    if (quizDomande.length > 0 && !quizValido) {
+    if (!quizValido) {
         alert("Per favore, completa tutti i campi del quiz (il quesito e le 4 opzioni di risposta per ogni domanda) prima di salvare.");
         return;
     }
 
     // autoreId lo mette il backend dal token, non lo mandiamo dal client
-    const infoLogistiche = document.getElementById('infoLogistiche')?.value || '';
-    const prezzo = parseFloat(document.getElementById('prezzoVisita')?.value) || 0;
-    const pubblica = document.getElementById('pubblicaVisita')?.checked || false;
+    const infoLogistiche = document.getElementById('infoLogistiche').value;
+    // un campo numerico vuoto dà NaN, non 0
+    const prezzo = parseFloat(document.getElementById('prezzoVisita').value) || 0;
+    const pubblica = document.getElementById('pubblicaVisita').checked;
 
     const payload = {
         nome: nomeVisita,
         codiceMnemonico: codiceMnemonico, // Inviato al backend per la sessione live
         quiz: quizDomande, // Inviato al backend
         museoId: museoIdAttuale,
-        items: itemsSelezionati.map((item, index) => ({
+        items: itemsSelezionati.map(item => ({
             itemId: item._id,
-            ordine: index + 1,
             indicazioneLogistica: item.indicazioneLogistica,
             opzionale: item.opzionale
         })),

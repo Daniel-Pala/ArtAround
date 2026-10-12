@@ -31,7 +31,8 @@ const Visita = require('./src/models/Visita');
 
 const img = (file) => `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=600`;
 
-// Le 15 opere. `sala` serve solo a me per raggrupparle, nel database non finisce.
+// Le 21 schede della Pinacoteca: 15 opere esposte, 3 secondi item sulla stessa opera
+// e 3 approfondimenti. `sala` serve solo a me per raggrupparle, nel database non finisce.
 const OPERE = [
   {
     operaId: 'Q3907499', sala: 1, autore: 'autore1',
@@ -655,9 +656,8 @@ async function popola() {
         nome: v.nome,
         museoId: museo._id,
         autoreId: utenti[v.autore]._id,
-        items: v.tappe.map((t, i) => ({
+        items: v.tappe.map(t => ({
           itemId: idPerItem[t.opera],
-          ordine: i + 1,
           opzionale: Boolean(t.opzionale),
           indicazioneLogistica: t.indicazione
         })),

@@ -9,15 +9,15 @@ import { LINGUE, TRADUZIONI } from '../traduzioni';
 const DURATE = ['3s', '15s', '1min', '4min'];
 const LIVELLI = ['infantile', 'elementare', 'medio', 'specialistico'];
 
-// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X".
-// La stessa chiave nomina l'etichetta dentro traduzioni.js, quindi aggiungerne una qui la fa
-// comparire nel pannello, fra i comandi vocali e in tutte le lingue.
 // Si legge una frase alla volta perché su Firefox speechSynthesis.pause() non ferma la voce
 // (verificato: l'audio continua e paused resta false), mentre cancel() la ferma su tutti i
 // browser. Così la pausa è: fermo la frase in corso e mi ricordo qual era. Si riparte
 // dall'inizio di quella frase, non dalla parola esatta, e non serve nessuna libreria.
 const inFrasi = (testo) => testo.match(/[^.!?…]+[.!?…]*/g)?.map(f => f.trim()).filter(Boolean) ?? [testo];
 
+// strutture del museo: chiavi del blocco logistica del config, per pannello info e comandi "dov'e X".
+// La stessa chiave nomina l'etichetta dentro traduzioni.js, quindi aggiungerne una qui la fa
+// comparire nel pannello, fra i comandi vocali e in tutte le lingue.
 const LOGISTICA = [
   ['uscita', ['uscita']],
   ['toilette', ['toilette', 'bagno']],
@@ -72,7 +72,6 @@ function Player() {
   const [mostraScanner, setMostraScanner] = useState(false);
   const [esitoScansione, setEsitoScansione] = useState('');
   const videoRef = useRef(null);
-  const scannerRef = useRef(null);
   // Lo stato della voce: non serve a disegnare niente e cambia fra un disegno e l'altro
   // senza doverlo provocare, quindi sta in un ref e non in useState. useRef(...).current
   // dà un oggetto stabile per tutta la vita del componente.
@@ -95,6 +94,12 @@ function Player() {
   const [votoCalcolato, setVotoCalcolato] = useState(null);
   const [forzaAudioStamp, setForzaAudioStamp] = useState(0); 
   const [riavviaAudioStamp, setRiavviaAudioStamp] = useState(0); 
+  // pausa e ripresa comandate dal docente: arrivano da un socket, quindi non possono
+  // chiamare pausa() e riprendi() direttamente (chiuderebbero sui valori del primo
+  // disegno). Passano da qui e le esegue un effetto, che vede lo stato aggiornato.
+  const [comandoAudioDocente, setComandoAudioDocente] = useState(null);
+  // il riquadro del testo: lo riporto in cima quando cambia tappa
+  const testoRef = useRef(null);
 
   const [audioInizializzato, setAudioInizializzato] = useState(!codiceSessione);
   const [attesaAudio, setAttesaAudio] = useState(false);
@@ -128,15 +133,11 @@ function Player() {
       socket.emit('studente:entra', { codice: codiceSessione, nome: nomeStudente });
     });
 
-    socket.on('stato:item', (dati) => {
-      if (dati) {
-        if (typeof dati.indice === 'number') {
-          setIndiceAttuale(dati.indice);
-        }
-        if (dati.visitaId) {
-          setVisitaIdAttiva(prevId => prevId !== dati.visitaId ? dati.visitaId : prevId);
-        }
-      }
+    // la tappa la decide la docente. Il server manda sempre tutti e due i campi, e anche
+    // la visita, perché lo studente arriva su /player/live senza saperla.
+    socket.on('stato:item', ({ indice, visitaId }) => {
+      setIndiceAttuale(indice);
+      setVisitaIdAttiva(visitaId);
     });
 
     socket.on('quiz:inizio', (dati) => {
@@ -152,18 +153,11 @@ function Player() {
     socket.on('studente:playAudio', () => setForzaAudioStamp(Date.now()));
     
     // Nuovi eventi audio dal docente
-    socket.on('studente:pausaAudio', () => {
-      window.speechSynthesis.pause();
-      setInPausa(true);
-    });
-
-    socket.on('studente:riprendiAudio', () => {
-      window.speechSynthesis.resume();
-      setInPausa(false);
-    });
+    socket.on('studente:pausaAudio', () => setComandoAudioDocente({ azione: 'pausa', quando: Date.now() }));
+    socket.on('studente:riprendiAudio', () => setComandoAudioDocente({ azione: 'riprendi', quando: Date.now() }));
 
     socket.on('studente:riavviaAudio', () => {
-      window.speechSynthesis.cancel(); // Stoppa l'audio attuale
+      zittisci();
       setInPausa(false);
       setParlando(false);
       setRiavviaAudioStamp(Date.now()); // Trigger per farlo ripartire
@@ -206,10 +200,13 @@ function Player() {
   // se cambia item o combinazione livello/durata, azzero l'audio in corso. La lettura
   // riprende poi sul testo nuovo, ma solo se l'utente la voleva: decide vuoleAscoltare,
   // non speechSynthesis.speaking, che su Firefox e su Chrome non risponde allo stesso modo.
+  // Il riquadro del testo scorre per conto suo, quindi si porta dietro la posizione: con
+  // un testo lungo, la tappa dopo si apriva già scorrita a metà.
   useEffect(() => {
     zittisci();
     setParlando(false);
     setInPausa(false);
+    if (testoRef.current) testoRef.current.scrollTop = 0;
   }, [indiceAttuale, livelloScelto, durataScelta, linguaScelta]);
 
   // esco dal player: fermo audio e microfono
@@ -244,11 +241,10 @@ function Player() {
       returnDetailedScanResult: true
     });
     scanner.start().catch(() => setEsitoScansione(t.fotocameraKo));
-    scannerRef.current = scanner;
-    return () => { scanner.destroy(); scannerRef.current = null; };
+    return () => scanner.destroy();
   }, [mostraScanner]);
 
-  // visita.items sono le TAPPE del percorso: { itemId, ordine, opzionale, indicazioneLogistica }.
+  // visita.items sono le TAPPE del percorso: { itemId, opzionale, indicazioneLogistica }.
   // L'item vero sta dentro itemId, ma indicazione e opzionale stanno sulla tappa, quindi
   // tengo tutte e due le liste. Se un item è stato cancellato dal marketplace la populate
   // restituisce null e scarto la tappa intera.
@@ -347,6 +343,30 @@ function Player() {
     }
   };
 
+  const pausa = () => {
+    if (parlando && !inPausa) { 
+      sintesi.vuoleAscoltare = false;
+      // zittisci alza il numero della lettura, quindi l'onend della frase interrotta viene
+      // scartato e sintesi.indice resta su di lei: riprendi() la ripronuncia da capo.
+      zittisci();
+      setInPausa(true); 
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
+      }
+    }
+  };
+
+  const riprendi = () => {
+    if (parlando && inPausa) { 
+      sintesi.vuoleAscoltare = true;
+      pronunciaDaDoveEravamo();
+      setInPausa(false); 
+      if (socketRef.current && codiceSessione) {
+        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
+      }
+    }
+  };
+
   // la lettura che prosegue sulla tappa nuova. Se il testo va ancora generato la voce
   // riparte quando arriva, perché testoTrovato cambia una seconda volta.
   // Quando l'audio lo comanda il docente ci pensa l'effetto di attesaAudio: senza questo
@@ -364,10 +384,6 @@ function Player() {
 
   useEffect(() => {
     if (attesaAudio && testoTrovato) {
-      if (window.speechSynthesis.resume) {
-        window.speechSynthesis.resume();
-      }
-      
       parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
       setParlando(true);
       setInPausa(false);
@@ -381,6 +397,16 @@ function Player() {
       }
     }
   }, [attesaAudio, testoTrovato]);
+
+  // La pausa del docente passa per la pausa dello studente, non per quella del browser:
+  // su Firefox pause() non fa niente (la voce continuava mentre lo schermo diceva "in
+  // pausa") e su Chrome lascia la frase congelata in coda, quindi dopo una pausa del
+  // docente il play dello studente restava muto.
+  useEffect(() => {
+    if (!comandoAudioDocente) return;
+    if (comandoAudioDocente.azione === 'pausa') pausa();
+    else riprendi();
+  }, [comandoAudioDocente]);
 
   // Gestione del riavvio forzato dal docente
   useEffect(() => {
@@ -415,7 +441,10 @@ function Player() {
           <button 
             className="btn btn-primary btn-lg w-100 fw-bold py-3" 
             onClick={() => {
-              const utterance = new SpeechSynthesisUtterance('');
+              // Una frase vuota il browser non la sintetizza, quindi non vale come "l'utente
+              // ha dato il via" e il primo audio comandato dal docente restava muto. Una
+              // parola a volume zero invece sblocca la voce e non si sente.
+              const utterance = new SpeechSynthesisUtterance('ok');
               utterance.volume = 0; 
               window.speechSynthesis.speak(utterance);
               setAudioInizializzato(true);
@@ -448,30 +477,6 @@ function Player() {
   const righeMuseo = LOGISTICA
     .map(([chiave, frasi]) => [t.comandi[chiave], config?.logistica?.[chiave], config?.logistica?.[chiave], frasi])
     .filter(([, testo]) => testo);
-
-  const pausa = () => {
-    if (parlando && !inPausa) { 
-      sintesi.vuoleAscoltare = false;
-      // zittisci alza il numero della lettura, quindi l'onend della frase interrotta viene
-      // scartato e sintesi.indice resta su di lei: riprendi() la ripronuncia da capo.
-      zittisci();
-      setInPausa(true); 
-      if (socketRef.current && codiceSessione) {
-        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha messo in pausa l'audio" });
-      }
-    }
-  };
-
-  const riprendi = () => {
-    if (parlando && inPausa) { 
-      sintesi.vuoleAscoltare = true;
-      pronunciaDaDoveEravamo();
-      setInPausa(false); 
-      if (socketRef.current && codiceSessione) {
-        socketRef.current.emit('studente:azione', { codice: codiceSessione, azione: "ha ripreso l'audio" });
-      }
-    }
-  };
 
   // il bottone centrale è un solo tasto, quindi alterna; i comandi vocali invece sono distinti
   const gestisciAudio = () => {
@@ -783,7 +788,7 @@ function Player() {
             </p>
           </div>
         ) : (
-          <div className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
+          <div ref={testoRef} className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
             {tappaCorrente?.indicazioneLogistica && (
               <p className="text-center fst-italic text-muted small mb-3">
                 {tappaCorrente.indicazioneLogistica}

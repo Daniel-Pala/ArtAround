@@ -1,7 +1,8 @@
 /* ArtAround — tema marketplace.
    Estetica "galleria contemporanea": carta + inchiostro, un accento vermiglio,
    titoli serif, superfici piatte separate da bordi e spazio (niente ombre).
-   Direzione condivisa col Navigator — vedi Design.md. */
+   Direzione condivisa col Navigator, che ha la copia di questi colori in
+   navigator/src/index.css. */
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
 
@@ -31,7 +32,6 @@
   --bs-border-radius-sm: .2rem;
 
   /* token propri (non Bootstrap) */
-  --surface: #EEE8DC;      /* superficie righe/box */
   --ink-faint: #8A7F70;    /* etichette ed elementi tenui */
 }
 
@@ -130,7 +130,6 @@ h1, h2, h3, h4, h5, h6,
   color: var(--bs-secondary-color);
   max-width: 54ch;
 }
-.uppercase { text-transform: uppercase; letter-spacing: .05em; }
 
 /* card del catalogo (visite) */
 .card-interactive { transition: transform .18s ease, border-color .18s ease; }

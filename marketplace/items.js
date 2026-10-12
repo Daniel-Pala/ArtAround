@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await caricaItems();
     setupFormItem();
+    // una riga di testo c'è da subito, come dopo ogni salvataggio: un item senza
+    // nemmeno un testo il backend non lo accetta, e il form non deve far scoprire
+    // la regola con un avviso al primo tentativo
+    aggiungiRigaTesto();
 });
 
 async function caricaItems() {
