@@ -76,6 +76,10 @@ export default function Docente() {
     setAttivitaLog(prev => [logLocale, ...prev.slice(0, 19)]);
   };
 
+  // Finché l'audio non è partito il tasto è spento e mostra "Riprendi": di pausa non c'è
+  // niente, e scriverci "Pausa" faceva credere che la classe stesse già ascoltando.
+  const mostraRiprendi = !audioAvviato || audioInPausa;
+
   const forzaAudioStudenti = () => {
     socketRef.current?.emit('docente:forzaAudio', { codice: codiceAttivo });
     setAudioInPausa(false);
@@ -233,12 +237,12 @@ export default function Docente() {
 
               <div className="d-flex gap-2 mb-3">
                 <button 
-                  className={`btn ${audioInPausa ? 'btn-success' : 'btn-warning'} flex-grow-1 fw-bold`} 
+                  className={`btn ${mostraRiprendi ? 'btn-success' : 'btn-warning'} flex-grow-1 fw-bold`} 
                   onClick={togglePausaAudio} 
                   disabled={quizInCorso || !audioAvviato}
                 >
-                  <i className={`bi ${audioInPausa ? 'bi-play-fill' : 'bi-pause-fill'} me-1`}></i>
-                  {audioInPausa ? 'Riprendi' : 'Pausa'}
+                  <i className={`bi ${mostraRiprendi ? 'bi-play-fill' : 'bi-pause-fill'} me-1`}></i>
+                  {mostraRiprendi ? 'Riprendi' : 'Pausa'}
                 </button>
                 <button 
                   className="btn btn-secondary flex-grow-1 fw-bold" 
