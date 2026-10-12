@@ -384,8 +384,11 @@ function Player() {
   // riparte quando arriva, perché testoTrovato cambia una seconda volta.
   // Quando l'audio lo comanda il docente ci pensa l'effetto di attesaAudio: senza questo
   // controllo parlerebbero tutti e due e la frase ripartirebbe da capo.
+  // In lezione invece non prosegue affatto: la docente cambia opera e la racconta, e i
+  // telefoni che ripartono da soli le coprono la voce. Lì si riparte solo se qualcuno lo
+  // chiede, lei per tutta la classe o lo studente sul suo telefono.
   useEffect(() => {
-    if (!sintesi.vuoleAscoltare || !testoTrovato || attesaAudio) return;
+    if (!sintesi.vuoleAscoltare || !testoTrovato || attesaAudio || codiceSessione) return;
     leggi();
   }, [testoTrovato]);
 

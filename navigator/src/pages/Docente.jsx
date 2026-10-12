@@ -18,6 +18,10 @@ export default function Docente() {
   const [votiSalvati, setVotiSalvati] = useState(false);
   
   const [audioInPausa, setAudioInPausa] = useState(false); // Nuovo stato
+  // L'audio della classe deve essere stato avviato almeno una volta, altrimenti il tasto
+  // dice "Pausa" su un audio che non sta andando. Al cambio di tappa i telefoni si
+  // fermano, quindi torna spento.
+  const [audioAvviato, setAudioAvviato] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -56,6 +60,8 @@ export default function Docente() {
   const cambiaTappa = (nuovoIndice) => {
     if (nuovoIndice < 0 || nuovoIndice >= tappe.length) return;
     setIndiceAttuale(nuovoIndice);
+    setAudioAvviato(false);
+    setAudioInPausa(false);
     socketRef.current?.emit('docente:vaiA', { codice: codiceAttivo, indice: nuovoIndice });
   };
 
@@ -73,6 +79,7 @@ export default function Docente() {
   const forzaAudioStudenti = () => {
     socketRef.current?.emit('docente:forzaAudio', { codice: codiceAttivo });
     setAudioInPausa(false);
+    setAudioAvviato(true);
     aggiungiLogLocale('Azione', 'Ha forzato la riproduzione audio per tutta la classe');
   };
 
@@ -90,6 +97,7 @@ export default function Docente() {
   const riavviaAudio = () => {
     socketRef.current?.emit('docente:riavviaAudio', { codice: codiceAttivo });
     setAudioInPausa(false);
+    setAudioAvviato(true);
     aggiungiLogLocale('Azione', "Ha riavviato l'audio dall'inizio");
   };
 
@@ -227,7 +235,7 @@ export default function Docente() {
                 <button 
                   className={`btn ${audioInPausa ? 'btn-success' : 'btn-warning'} flex-grow-1 fw-bold`} 
                   onClick={togglePausaAudio} 
-                  disabled={quizInCorso}
+                  disabled={quizInCorso || !audioAvviato}
                 >
                   <i className={`bi ${audioInPausa ? 'bi-play-fill' : 'bi-pause-fill'} me-1`}></i>
                   {audioInPausa ? 'Riprendi' : 'Pausa'}
