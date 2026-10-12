@@ -196,6 +196,9 @@ function Player() {
     zittisci();
     setParlando(false);
     setInPausa(false);
+    // se il docente aveva chiesto l'audio e il testo non era ancora arrivato, quella
+    // richiesta era per la tappa di prima: non deve far partire la voce su questa
+    setAttesaAudio(false);
     if (testoRef.current) testoRef.current.scrollTop = 0;
   }, [indiceAttuale, livelloScelto, durataScelta, linguaScelta]);
 
@@ -431,6 +434,10 @@ function Player() {
       parla(testoTrovato.testo, () => { setParlando(false); setInPausa(false); });
       setParlando(true);
       setInPausa(false);
+      // Il comando vale una volta sola. Lasciando l'orario scritto, questo pezzo ripartiva a
+      // ogni cambio di testo: da quel momento l'audio si riaccendeva da solo su ogni tappa
+      // nuova, e la docente non aveva più modo di fermarlo.
+      setRiavviaAudioStamp(0);
       
       if (socketRef.current && codiceSessione) {
         socketRef.current.emit('studente:azione', { 
