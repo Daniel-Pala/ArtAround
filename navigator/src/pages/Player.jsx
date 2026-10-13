@@ -185,7 +185,7 @@ function Player() {
     fetch(`${import.meta.env.BASE_URL}config/${file}`)
       .then(res => res.ok ? res.json() : null)
       .then(setConfig);
-  }, [visita]);
+  }, [visita?.museoId?.configFile]); // FIX: Ricarica solo se cambia il file, ignorando gli aggiornamenti di testo dentro l'oggetto visita
 
   // se cambia item o combinazione livello/durata, azzero l'audio in corso. La lettura
   // riprende poi sul testo nuovo, ma solo se l'utente la voleva: decide vuoleAscoltare,
@@ -373,6 +373,7 @@ function Player() {
     if (parlando && inPausa) { 
       sintesi.vuoleAscoltare = true;
       pronunciaDaDoveEravamo();
+      setParlando(true);
       setInPausa(false); 
       if (socketRef.current && codiceSessione) {
         socketRef.current.emit('studente:azione', {

@@ -65,14 +65,15 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     const suo = String(item.autoreId) === req.user.userId
     const inUnaSuaVisita = await Visita.exists({
       'items.itemId': item._id,
-      $or: [{ autoreId: req.user.userId }, { _id: { $in: utente.acquisti } }]
+      $or: [{ autoreId: req.user.userId }, { _id: {$in: utente.acquisti } }]
     })
     // Durante una lezione sincrona gli studenti non hanno comprato niente: il loro permesso
     // è la lezione aperta, come nel dettaglio della visita. Lì il controllo parte dalla
     // visita che si sta aprendo, qui parto dall'item e guardo se sta in una di quelle in
     // lezione. Senza questo lo studente leggeva i testi già scritti ma cambiando livello
     // si sentiva rispondere "testo non disponibile", ed era l'unica cosa che poteva scegliere.
-    const inLezione = Array.from(req.app.locals.sessioni.values()).map(s => s.visitaId)
+    const sessioniValori = req.app.locals.sessioni ? Array.from(req.app.locals.sessioni.values()) : []
+    const inLezione = sessioniValori.map(s => s.visitaId)
     const inSessioneLive = inLezione.length > 0 && await Visita.exists({
       _id: { $in: inLezione },
       'items.itemId': item._id
@@ -125,8 +126,8 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     // Il Player non può mostrare questo messaggio: la specifica vuole che il visitatore
     // non sappia che dietro c'è una LLM, quindi a schermo resta "testo non disponibile".
     // Qui però serve, perché altrimenti il motivo vero non si legge da nessuna parte.
-    console.error('Generazione del testo non riuscita:', err.message)
-    res.status(502).json({ message: err.message })
+    console.error('Generazione del testo non riuscita:', err.message || err)
+    res.status(502).json({ message: "Il testo richiesto non è disponibile al momento." })
   }
 })
 
@@ -156,7 +157,8 @@ router.post('/comando', richiediAutenticazione, async (req, res) => {
     const scelto = comandi.find(c => c.toLowerCase() === risposta.toLowerCase())
     res.json({ comando: scelto || null })
   } catch (err) {
-    res.status(502).json({ message: err.message })
+    console.error('Generazione del comando non riuscita:', err.message || err)
+    res.status(502).json({ message: 'Impossibile elaborare il comando.' })
   }
 })
 
@@ -172,7 +174,7 @@ router.post('/comando', richiediAutenticazione, async (req, res) => {
 async function opereDisponibili(utente, museoId) {
   const sue = await Visita.find({
     museoId,
-    $or: [{ autoreId: utente._id }, { _id: { $in: utente.acquisti } }]
+    $or: [{ autoreId: utente._id }, { _id: {$in: utente.acquisti } }]
   }).populate('items.itemId')
   if (sue.length === 0) return null
 
@@ -280,7 +282,8 @@ router.post('/visita', richiediAutenticazione, async (req, res) => {
 
     res.status(201).json(visita)
   } catch (err) {
-    res.status(502).json({ message: err.message })
+    console.error('Generazione della visita su misura non riuscita:', err.message || err)
+    res.status(502).json({ message: "Impossibile generare la visita su misura al momento." })
   }
 })
 
