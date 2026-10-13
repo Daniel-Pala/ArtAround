@@ -9,11 +9,14 @@ const { richiediAutenticazione } = require('../middleware/autorizzazione')
 // Quanto deve venire lungo il testo: ad alta voce si leggono circa due parole e mezzo al
 // secondo. Accanto al numero di parole ci va la forma, perché col solo numero il modello
 // tira via e da un testo da quattro minuti tira fuori un riassunto invece di una frase.
+// secondi è quanto aspettiamo il modello prima di dare il testo per non disponibile:
+// misurati il 13 ott 2026 su gemini-3.5-flash-lite, 1,8 s per 40 parole e 6,5 s per 600,
+// e lasciato quasi il doppio di margine.
 const lunghezze = {
-  '3s': { parole: 8, forma: 'una frase sola e corta' },
-  '15s': { parole: 40, forma: 'due o tre frasi' },
-  '1min': { parole: 150, forma: 'un paragrafo' },
-  '4min': { parole: 600, forma: 'quattro o cinque paragrafi' },
+  '3s': { parole: 8, forma: 'una frase sola e corta', secondi: 5 },
+  '15s': { parole: 40, forma: 'due o tre frasi', secondi: 5 },
+  '1min': { parole: 150, forma: 'un paragrafo', secondi: 7 },
+  '4min': { parole: 600, forma: 'quattro o cinque paragrafi', secondi: 12 },
 }
 
 // Le lingue in cui sappiamo scrivere: il nome per esteso finisce dentro al prompt.
@@ -116,7 +119,7 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
           `Lunghezza: ${lunghezze[durata].forma}, circa ${lunghezze[durata].parole} parole, e non di più.`
         ].filter(Boolean).join('\n')
       }
-    ])
+    ], lunghezze[durata].secondi)
 
     item.testi.push({ livello, durata, lingua, testo, generatoDa: process.env.AI_MODEL })
     await item.save()
@@ -152,7 +155,7 @@ router.post('/comando', richiediAutenticazione, async (req, res) => {
         role: 'user',
         content: `Comandi disponibili:\n${comandi.join('\n')}\n\nFrase del visitatore: "${frase}"`
       }
-    ])
+    ], 5)
 
     const scelto = comandi.find(c => c.toLowerCase() === risposta.toLowerCase())
     res.json({ comando: scelto || null })
@@ -253,7 +256,7 @@ router.post('/visita', richiediAutenticazione, async (req, res) => {
           `Scegli ${Math.min(Math.round(Number(minuti) / 3), candidati.size)} tappe fra quelle disponibili.`
         ].filter(Boolean).join('\n')
       }
-    ])
+    ], 10)
 
     // alcuni modelli incartano il JSON in un blocco di codice anche quando gli dici di no
     const scelta = JSON.parse(risposta.replace(/```json|```/g, '').trim())
