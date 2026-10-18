@@ -22,14 +22,14 @@ const lunghezze = {
 // Le lingue in cui sappiamo scrivere: il nome per esteso finisce dentro al prompt.
 const lingue = { it: 'italiano', en: 'inglese', fr: 'francese', es: 'spagnolo', de: 'tedesco' }
 
-// Ogni tanto il modello lascia cadere gli apostrofi e scrive "c è", "l alto", "L œuvre",
+// Ogni tanto il modello lascia cadere gli apostrofi e scrive "c è", "ce n è", "l alto", "L œuvre",
 // anche con il prompt che glieli chiede: nei testi da quattro minuti è capitato tre volte
 // di fila sulla stessa opera. Li rimettiamo noi prima di salvare. È sicuro perché queste
 // sono parole che da sole, davanti a una vocale, in italiano e in francese non esistono:
 // "l alto" non può voler dire altro che "l'alto". Spagnolo e tedesco non elidono, e
 // l'inglese ha le sue regole ("it s"), quindi li lasciamo come vengono.
 const elisioni = {
-  it: ['l', 'd', 'c', 'm', 't', 's', 'v', 'dell', 'nell', 'sull', 'dall', 'all', 'coll', 'quest', 'quell', 'anch'],
+  it: ['l', 'd', 'c', 'n', 'm', 't', 's', 'v', 'dell', 'nell', 'sull', 'dall', 'all', 'coll', 'quest', 'quell', 'anch'],
   fr: ['l', 'd', 'c', 'j', 'm', 'n', 's', 't', 'qu', 'jusqu', 'lorsqu', 'puisqu'],
 }
 
