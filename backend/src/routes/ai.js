@@ -22,6 +22,22 @@ const lunghezze = {
 // Le lingue in cui sappiamo scrivere: il nome per esteso finisce dentro al prompt.
 const lingue = { it: 'italiano', en: 'inglese', fr: 'francese', es: 'spagnolo', de: 'tedesco' }
 
+// Ogni tanto il modello lascia cadere gli apostrofi e scrive "c è", "l alto", "L œuvre",
+// anche con il prompt che glieli chiede: nei testi da quattro minuti è capitato tre volte
+// di fila sulla stessa opera. Li rimettiamo noi prima di salvare. È sicuro perché queste
+// sono parole che da sole, davanti a una vocale, in italiano e in francese non esistono:
+// "l alto" non può voler dire altro che "l'alto". Spagnolo e tedesco non elidono, e
+// l'inglese ha le sue regole ("it s"), quindi li lasciamo come vengono.
+const elisioni = {
+  it: ['l', 'd', 'c', 'm', 't', 's', 'v', 'dell', 'nell', 'sull', 'dall', 'all', 'coll', 'quest', 'quell', 'anch'],
+  fr: ['l', 'd', 'c', 'j', 'm', 'n', 's', 't', 'qu', 'jusqu', 'lorsqu', 'puisqu'],
+}
+
+function rimettiApostrofi(testo, lingua) {
+  if (!elisioni[lingua]) return testo
+  return testo.replace(new RegExp(`\\b(${elisioni[lingua].join('|')}) (?=[aeiouhàèéìòùœ])`, 'gi'), "$1'")
+}
+
 // Quanto tempo ha il visitatore e con chi è. Sono tendine, non caselle di testo: il
 // prompt lo compone il backend, l'utente sceglie e basta.
 const tempi = { '30': 'mezz\'ora', '60': "un'ora", '120': 'due ore' }
@@ -121,7 +137,7 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
       }
     ], lunghezze[durata].secondi)
 
-    item.testi.push({ livello, durata, lingua, testo, generatoDa: process.env.AI_MODEL })
+    item.testi.push({ livello, durata, lingua, testo: rimettiApostrofi(testo, lingua), generatoDa: process.env.AI_MODEL })
     await item.save()
     // torna l'item intero: al Player serve rileggerlo per trovarci dentro il testo nuovo
     res.json(item)
