@@ -813,6 +813,21 @@ function Player() {
           </div>
         ) : (
           <div ref={testoRef} className="p-3 flex-grow-1 overflow-auto" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
+            {/* l'immagine sta in cima e il riquadro è alto sempre uguale, con o senza foto:
+                cambiando tappa non si sposta niente di quello che viene sotto */}
+            {itemCorrente?.immagine ? (
+              <img
+                src={itemCorrente.immagine}
+                alt={itemCorrente.titolo}
+                className="rounded mb-3 w-100"
+                style={{ height: '200px', objectFit: 'contain' }}
+              />
+            ) : (
+              <div className="d-flex align-items-center justify-content-center text-muted rounded mb-3 w-100" style={{ height: '200px', border: '1px dashed var(--bs-border-color)' }}>
+                <i className="bi bi-image fs-4"></i>
+              </div>
+            )}
+
             {tappaCorrente?.indicazioneLogistica && (
               <p className="text-center fst-italic text-muted small mb-3">
                 {tappaCorrente.indicazioneLogistica}
@@ -839,19 +854,6 @@ function Player() {
               <p className="small mb-3" style={{ fontWeight: 300 }}>ID WD: {itemCorrente.operaId}</p>
             )}
 
-            {itemCorrente?.immagine ? (
-              <img
-                src={itemCorrente.immagine}
-                alt={itemCorrente.titolo}
-                className="img-fluid rounded mb-3 w-100"
-                style={{ maxHeight: '200px', objectFit: 'contain' }}
-              />
-            ) : (
-              <div className="d-flex align-items-center justify-content-center text-muted mx-auto rounded mb-3" style={{ width: '96px', height: '96px', border: '1px dashed var(--bs-border-color)' }}>
-                <i className="bi bi-image fs-4"></i>
-              </div>
-            )}
-
             {testoTrovato ? (
               <div className="mb-3" style={{ lineHeight: '1.6' }}>
                 {testoTrovato.testo}
@@ -866,6 +868,13 @@ function Player() {
               <div className="text-muted fst-italic mb-3">{erroreTesto || t.nessunTesto}</div>
             )}
 
+          </div>
+        )}
+
+        {/* le tendine stanno ferme sopra la barra dei comandi, invece di scendere e salire
+            con la lunghezza del testo */}
+        {!mostraScanner && !mostraMappa && (
+          <div className="bg-light border-top px-3 py-2 flex-shrink-0">
             <div className="row g-2">
               <div className="col-4">
                 <label className="form-label small text-muted mb-1">{t.lingua}</label>
