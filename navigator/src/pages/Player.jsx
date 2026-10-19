@@ -844,7 +844,7 @@ function Player() {
                 src={itemCorrente.immagine}
                 alt={itemCorrente.titolo}
                 className="img-fluid rounded mb-3 w-100"
-                style={{ maxHeight: '200px', objectFit: 'cover' }}
+                style={{ maxHeight: '200px', objectFit: 'contain' }}
               />
             ) : (
               <div className="d-flex align-items-center justify-content-center text-muted mx-auto rounded mb-3" style={{ width: '96px', height: '96px', border: '1px dashed var(--bs-border-color)' }}>
