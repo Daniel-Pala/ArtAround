@@ -224,7 +224,8 @@ const OPERE = [
   // Secondi item sulle stesse opere
   // La specifica lo chiede espressamente: "Ogni visita può (dovrebbe!!!) avere
   // multipli item per lo stesso oggetto di visita". Stesso codice Wikidata, autore
-  // diverso, taglio diverso: è il caso in cui il visitatore sceglie chi ascoltare.
+  // diverso, taglio diverso. Stanno nel catalogo ma non nelle visite del seed: due tappe
+  // sulla stessa opera finirebbero sullo stesso punto della mappa.
   // `chiave` serve solo qui dentro per distinguerli quando si montano le visite.
   {
     chiave: 'polittico-materiali', operaId: 'Q3907499', sala: 1, autore: 'autore2',
@@ -321,7 +322,6 @@ const VISITE = [
     tappe: [
       { opera: 'Q3907499', indicazione: 'Dall\'ingresso sali la scala principale ed entra nella Sala 1: la tavola dorata è sulla parete di fronte.' },
       // stessa opera, un altro autore: chi vuole sapere com'è fatta resta qui davanti
-      { opera: 'polittico-materiali', indicazione: 'Resta davanti alla stessa tavola.', opzionale: true },
       { opera: 'Q27345212', indicazione: 'Stessa sala, sulla parete a sinistra.' },
       { opera: 'Q3889219', indicazione: 'Sempre in Sala 1, ultima parete a destra prima del passaggio.' },
       { opera: 'Q16038421', indicazione: 'Attraversa il passaggio ed entra in Sala 2: la pala è subito a sinistra.' },
@@ -344,12 +344,10 @@ const VISITE = [
       { opera: 'Q1103801', indicazione: 'Al centro della Sala 2.' },
       { opera: 'Q3842737', indicazione: 'Sulla parete di destra.' },
       { opera: 'Q126599960', indicazione: 'A fianco della precedente, stessa parete.' },
-      { opera: 'frate-volto', indicazione: 'Resta davanti al ritratto.', opzionale: true },
       { opera: 'manierismo', indicazione: 'Da ascoltare qui, guardando le due tavole di questa parete.', opzionale: true },
       { opera: 'Q3208041', indicazione: 'Scendi in Sala 3, prima parete a sinistra.' },
       { opera: 'Q3685503', indicazione: 'Prosegui sulla stessa parete.' },
       { opera: 'Q2448678', indicazione: 'Al centro della parete lunga.' },
-      { opera: 'strage-composizione', indicazione: 'Resta davanti alla tela grande.', opzionale: true },
       { opera: 'guido-reni', indicazione: 'Da ascoltare in Sala 3, dove ci sono le sue opere.', opzionale: true },
       { opera: 'Q25217589', indicazione: 'Subito a destra della precedente.' },
       { opera: 'Q23008334', indicazione: 'Ancora a destra, verso il fondo della Sala 3.' },
@@ -543,7 +541,7 @@ const OPERE_PEPOLI = [
     descrizione: 'La famiglia che ha costruito e affrescato il palazzo.',
     stile: 'Barocco',
     licenza: 'CC-BY-SA', prezzo: 0,
-    immagine: null,
+    immagine: img('Arms_of_the_house_of_Pepoli.svg'),
     testi: [
       { durata: '15s', livello: 'elementare', testo: 'I Pepoli sono una famiglia bolognese che si arricchì facendo i cambiavalute. Nel Trecento uno di loro, Taddeo, diventò signore di Bologna. I loro simboli sono lo scaccato bianco e nero e il cigno: li troverai in ogni sala.' },
       { durata: '1min', livello: 'medio', testo: 'La ricchezza dei Pepoli nasce dal cambio del denaro: lo scaccato bianco e nero dello stemma ricorda la scacchiera su cui i cambiavalute facevano i conti. Nel 1337 Taddeo Pepoli si fa signore di Bologna e la governa per dieci anni. Nei secoli successivi, con la città sotto il governo del papa, la famiglia resta fra le più potenti e siede nel Senato cittadino. Nel Seicento un ramo della famiglia costruisce questo palazzo, e tre suoi esponenti, Odoardo, Ercole e Alessandro, lo fanno affrescare uno dopo l\'altro. Scelgono eroi che portano i nomi di casa: Ercole, come il padre di Odoardo e il nipote, e Alessandro Magno, come Alessandro.' }
@@ -576,7 +574,6 @@ const VISITE_PEPOLI = [
       { opera: 'casato-pepoli', indicazione: 'Nell\'atrio, prima di salire: chi erano i Pepoli.' },
       { opera: 'Q123685640', indicazione: 'Sullo scalone: i due ovali dipinti.' },
       { opera: 'Q131543603', indicazione: 'In cima allo scalone gira a destra ed entra nel Salone d\'onore. Alza la testa.' },
-      { opera: 'salone-stemma', indicazione: 'Resta nel salone e guarda la base della volta, poi il pavimento.', opzionale: true },
       { opera: 'Q131628822', indicazione: 'Passa nella sala accanto al salone, la Sala di Felsina: la scena è sulla volta.' },
       { opera: 'Q131628823', indicazione: 'Prosegui nella Sala delle Stagioni: guarda prima i bordi del soffitto, poi il centro.' },
       { opera: 'Q123685655', indicazione: 'Stessa sala, sulle pareti.' },
@@ -599,7 +596,6 @@ const VISITE_PEPOLI = [
       { opera: 'Q131628822', indicazione: 'Nella sala accanto, la Sala di Felsina.' },
       { opera: 'Q131628823', indicazione: 'Prosegui nella Sala delle Stagioni.' },
       { opera: 'Q123685682', indicazione: 'Poi la Sala dell\'Olimpo.' },
-      { opera: 'olimpo-colori', indicazione: 'Resta sotto la stessa volta e cerca il bianco e il nero.', opzionale: true },
       { opera: 'Q131449654', indicazione: 'Ultima, la Sala di Alessandro.' }
     ]
   }
