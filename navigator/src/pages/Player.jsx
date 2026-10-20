@@ -829,8 +829,9 @@ function Player() {
             )}
 
             {tappaCorrente?.indicazioneLogistica && (
-              <p className="text-center fst-italic text-muted small mb-3">
-                {tappaCorrente.indicazioneLogistica}
+              <p className="d-flex gap-2 text-muted small mb-3">
+                <i className="bi bi-signpost-2" aria-hidden="true"></i>
+                <span>{tappaCorrente.indicazioneLogistica}</span>
               </p>
             )}
 
@@ -853,6 +854,9 @@ function Player() {
             {itemCorrente?.operaId && (
               <p className="small mb-3" style={{ fontWeight: 300 }}>ID WD: {itemCorrente.operaId}</p>
             )}
+
+            {/* sopra la linea il cartellino dell'opera, sotto il racconto */}
+            <hr className="my-3" />
 
             {testoTrovato ? (
               <div className="mb-3" style={{ lineHeight: '1.6' }}>
