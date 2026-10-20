@@ -19,7 +19,8 @@ export async function fetchAuth(endpoint, options = {}) {
   
   if (res.status === 401) {
     localStorage.removeItem('utente');
-    window.location.href = '/login';
+    // sul server il Navigator sta sotto /navigator/: '/login' porterebbe al login del marketplace
+    window.location.href = `${import.meta.env.BASE_URL}login`;
   }
   
   return res;
