@@ -4,6 +4,8 @@ const path = require('path')
 const fs = require('fs')
 const http = require('http')
 const { Server } = require('socket.io')
+const Item = require('./models/Item')
+const { sistemaTestiSalvati } = require('./cifre')
 // il .env sta nella cartella backend, non in quella da cui si lancia il comando
 require('dotenv').config({ path: path.join(__dirname, '../.env') })
 
@@ -309,6 +311,9 @@ app.use((req, res) => {
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connesso a MongoDB')
+    sistemaTestiSalvati(Item)
+      .then(n => { if (n) console.log(`Anni in cifre in ${n} testi già salvati`) })
+      .catch(err => console.error('Anni in cifre non riusciti:', err.message))
     server.listen(process.env.PORT, () => {
       console.log(`Server HTTP e Socket.io avviati sulla porta ${process.env.PORT}`)
     })

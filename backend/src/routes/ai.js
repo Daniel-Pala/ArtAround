@@ -4,6 +4,7 @@ const Item = require('../models/Item')
 const Visita = require('../models/Visita')
 const Utente = require('../models/Utente')
 const { chiedi } = require('../ai')
+const { cifre } = require('../cifre')
 const { richiediAutenticazione } = require('../middleware/autorizzazione')
 
 // Quanto deve venire lungo il testo: ad alta voce si leggono circa due parole e mezzo al
@@ -121,7 +122,7 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
     const testo = await chiedi([
       {
         role: 'system',
-        content: `Sei il curatore di un museo e scrivi le audioguide. Riscrivi il materiale che ti viene dato senza aggiungere fatti che non ci sono, e taglia quello che non ci sta: la lunghezza richiesta è un vincolo, non un consiglio, anche quando il materiale di partenza è molto più lungo. Rispondi in ${lingue[lingua]} con il solo testo da ascoltare: niente titolo, niente elenchi, niente asterischi e nessuna virgoletta attorno al testo, dato che quello che scrivi lo legge ad alta voce una voce sintetica. Gli apostrofi dentro le parole servono e vanno scritti.`
+        content: `Sei il curatore di un museo e scrivi le audioguide. Riscrivi il materiale che ti viene dato senza aggiungere fatti che non ci sono, e taglia quello che non ci sta: la lunghezza richiesta è un vincolo, non un consiglio, anche quando il materiale di partenza è molto più lungo. Rispondi in ${lingue[lingua]} con il solo testo da ascoltare: niente titolo, niente elenchi, niente asterischi e nessuna virgoletta attorno al testo, dato che quello che scrivi lo legge ad alta voce una voce sintetica. Gli apostrofi dentro le parole servono e vanno scritti. Anni, date e numeri scrivili in cifre: la voce li legge bene lo stesso, e il testo si legge anche a schermo.`
       },
       {
         role: 'user',
@@ -137,7 +138,7 @@ router.post('/testo', richiediAutenticazione, async (req, res) => {
       }
     ], lunghezze[durata].secondi)
 
-    item.testi.push({ livello, durata, lingua, testo: rimettiApostrofi(testo, lingua), generatoDa: process.env.AI_MODEL })
+    item.testi.push({ livello, durata, lingua, testo: lingua === 'it' ? cifre(rimettiApostrofi(testo, lingua)) : rimettiApostrofi(testo, lingua), generatoDa: process.env.AI_MODEL })
     await item.save()
     // torna l'item intero: al Player serve rileggerlo per trovarci dentro il testo nuovo
     res.json(item)
