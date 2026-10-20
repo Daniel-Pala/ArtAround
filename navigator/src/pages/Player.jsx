@@ -230,7 +230,15 @@ function Player() {
     if (!mostraScanner || !videoRef.current) return;
     // senza returnDetailedScanResult la libreria usa la firma vecchia e passa alla
     // callback una stringa invece dell'oggetto: esito.data sarebbe undefined
-    const scanner = new QrScanner(videoRef.current, (esito) => gestisciCodice(esito.data), {
+    // la libreria richiama la funzione a ogni fotogramma in cui vede il QR, fino a 25 volte
+    // al secondo: lo stesso codice lo gestisco una volta sola, se no un'opera fuori percorso
+    // lasciata inquadrata manda al server una richiesta per fotogramma
+    let ultimoCodice = null;
+    const scanner = new QrScanner(videoRef.current, (esito) => {
+      if (esito.data === ultimoCodice) return;
+      ultimoCodice = esito.data;
+      gestisciCodice(esito.data);
+    }, {
       returnDetailedScanResult: true
     });
     scanner.start().catch(() => setEsitoScansione(t.fotocameraKo));
